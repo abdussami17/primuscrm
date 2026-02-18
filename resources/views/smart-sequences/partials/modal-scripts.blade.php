@@ -1253,44 +1253,90 @@ function replaceTokens(content, values) {
                 });
             }
 
-               // -------------------------
+       // -------------------------
     // Unsaved changes handling
     // -------------------------
 
-    // serialize only user-editable fields
     function serializeForm(form) {
-        if (!form) return '';
-        try {
-            const fd = new FormData(form);
-            const arr = [];
-            for (const pair of fd.entries()) {
-                const el = form.elements[pair[0]];
-                // ignore hidden, readonly, disabled
-                if (el && (el.type === 'hidden' || el.readOnly || el.disabled)) continue;
-                arr.push(`${pair[0]}=${pair[1]}`);
-            }
-            arr.sort();
-            return arr.join('&');
-        } catch (e) {
-            return '';
-        }
-    }
+    if (!form) return '';
+    try {
+        const fd = new FormData(form);
+        const arr = [];
 
-    function isSequenceFormDirty() {
-        const form = document.getElementById('sequenceForm');
-        if (!form || !window._initialSequenceFormState) return false;
-        return serializeForm(form) !== window._initialSequenceFormState;
+        console.log('--- serializeForm start ---');
+
+        for (const pair of fd.entries()) {
+            const name = pair[0];
+            const value = pair[1];
+            const el = form.elements[name];
+
+            if (!el) {
+                console.log(`Skipping ${name}: element not found`);
+                continue;
+            }
+
+            let ignore = false;
+
+            // multiple elements (checkbox/radio)
+            if (el.length && el.length > 0) {
+                for (let i = 0; i < el.length; i++) {
+                    const e = el[i];
+                    if (e.type === 'hidden' || e.readOnly || e.disabled || e.classList.contains('time-of-day')) {
+                        console.log(`Ignoring ${name}[${i}] due to hidden/readonly/disabled/time-of-day`);
+                        ignore = true;
+                        break;
+                    }
+                }
+            } else {
+                // single element
+                if (el.type === 'hidden' || el.readOnly || el.disabled || el.classList.contains('time-of-day')) {
+                    console.log(`Ignoring ${name} due to hidden/readonly/disabled/time-of-day`);
+                    ignore = true;
+                }
+            }
+
+            if (ignore) continue;
+
+            console.log(`Including ${name}=${value}`);
+            arr.push(`${name}=${value}`);
+        }
+
+        arr.sort();
+        const result = arr.join('&');
+        console.log('Serialized result:', result);
+        console.log('--- serializeForm end ---');
+        return result;
+    } catch (e) {
+        console.error('serializeForm error:', e);
+        return '';
     }
+}
+
+
+function shouldIgnoreField(el) {
+    return el.type === 'hidden' || el.readOnly || el.disabled || el.classList.contains('time-of-day');
+}
+function isSequenceFormDirty() {
+    const form = document.getElementById('sequenceForm');
+    if (!form || !window._initialSequenceFormState) return false;
+    return serializeForm(form) !== window._initialSequenceFormState;
+}
+
 
     // capture initial state AFTER modal fully shown
     $('#addSmartSequenceModal').on('shown.bs.modal', function () {
-        const form = document.getElementById('sequenceForm');
-        if (!form) return;
+    const form = document.getElementById('sequenceForm');
+    if (!form) return;
+
+    // Delay baseline capture slightly to let populateModalForEdit finish
+    setTimeout(() => {
         window._initialSequenceFormState = serializeForm(form);
         window._closeAfterSave = false;
         window._forceClose = false;
         window._isSavingSequence = false;
-    });
+    }, 100); // adjust delay if needed
+});
+
 
     // Unsaved modal creation (once)
     function ensureUnsavedModalExists() {
@@ -1363,12 +1409,12 @@ function replaceTokens(content, values) {
 
     // Warn on main modal close if form dirty
     $('#addSmartSequenceModal').on('hide.bs.modal', function (e) {
-        if (!window._forceClose && isSequenceFormDirty()) {
-            e.preventDefault(); // stop modal from closing
-            const $unsavedModal = $('#unsavedConfirmModal');
-            $unsavedModal.modal('show');
-        }
-    });
+    if (!window._forceClose && isSequenceFormDirty()) {
+        e.preventDefault();
+        $('#unsavedConfirmModal').modal('show');
+    }
+});
+
 
     // Warn on full-page unload if editing and dirty
     window.addEventListener('beforeunload', function (e) {
