@@ -74,13 +74,13 @@ class SequenceCriteria extends Model
                 'operators' => [self::OP_IS, self::OP_IS_BETWEEN, self::OP_IS_GREATER_EQUAL, self::OP_IS_LESS_EQUAL, self::OP_IS_BLANK, self::OP_IS_NOT_BLANK],
             ],
             'number' => [
-                'fields' => ['odometer', 'doors', 'saleprice', 'sellingprice', 'internetprice', 'equity', 'tradeinsellingprice', 'buyout'],
+                'fields' => ['odometer', 'doors', 'saleprice', 'sellingprice', 'internetprice', 'equity','lastkms','estimatedkms','servicecost', 'tradeinsellingprice', 'buyout'],
                 'operators' => [self::OP_IS, self::OP_IS_NOT, self::OP_IS_BETWEEN, self::OP_IS_NOT_BETWEEN, self::OP_IS_GREATER_EQUAL, self::OP_IS_LESS_EQUAL, self::OP_IS_BLANK, self::OP_IS_NOT_BLANK],
             ],
             'date' => [
                 'fields' => [
                     'appointmentcreationdate', 'appointmentdate', 'createddate', 'deliverydate',
-                    'demodate', 'lastcontacteddate', 'leasematuritydate', 'solddate', 'taskcompleteddate',
+                    'demodate', 'lastcontacteddate','servicedate', 'leasematuritydate', 'solddate','lastservicedate','taskcompleteddate',
                     'taskduedate', 'financematuritydate', 'firstcontactdate', 'financestartdate',
                     'leasestartdate', 'warrantyexpiration', 'assigneddate', 'date', 'birthday', 'updated', 'showroomvisitdate'
                 ],
@@ -214,6 +214,8 @@ class SequenceCriteria extends Model
             ['value' => 'lastcontacteddate', 'text' => 'Last Contacted Date'],
             ['value' => 'leasematuritydate', 'text' => 'Lease Maturity Date'],
             ['value' => 'solddate', 'text' => 'Sold Date'],
+            ['value' => 'lastservicedate', 'text' => 'Last Service Date'],
+            ['value' => 'servicedate', 'text' => 'Service Date'],
             ['value' => 'taskcompleteddate', 'text' => 'Task Completed Date'],
             ['value' => 'taskduedate', 'text' => 'Task Due Date'],
             ['value' => 'financematuritydate', 'text' => 'Finance Maturity Date'],
@@ -244,6 +246,9 @@ class SequenceCriteria extends Model
             ['value' => 'language', 'text' => 'Language'],
             ['value' => 'businessname', 'text' => 'Business Name'],
             ['value' => 'buyout', 'text' => 'Buyout'],
+            ['value' => 'lastkms', 'text' => 'Last KMs'],
+            ['value' => 'estimatedkms', 'text' => 'Estimated KMs'],
+            ['value' => 'servicecost', 'text' => 'Service Cost'],
             ['value' => 'wishlist', 'text' => 'Wishlist'],
             ['value' => 'updatedby', 'text' => 'Updated By'],
             ['value' => 'trim', 'text' => 'Trim'],

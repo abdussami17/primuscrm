@@ -23,11 +23,11 @@ function replaceTokens(content, values) {
     .ss-clone-btn{color:#0b1f3a;padding:6px;}
     .ss-delete-btn{color:#dc3545;border:0;background:transparent}
     /* Unsaved modal custom styles to match site look and feel */
-    #unsavedConfirmModal .modal-content{border-radius:12px;background:linear-gradient(180deg,#ffffff,#f7fbff);box-shadow:0 12px 30px rgba(2,6,23,0.08);border:1px solid rgba(13,110,253,0.06);}
+    #unsavedConfirmModal .modal-content{border-radius:12px;background:#fff;box-shadow:0 12px 30px rgba(2,6,23,0.08);border:1px solid rgba(13,110,253,0.06);}
     #unsavedConfirmModal .modal-header{border-bottom:none;padding-bottom:0}
     #unsavedConfirmModal .modal-body{padding-top:4px;padding-bottom:10px}
     #unsavedConfirmModal .unsaved-icon{font-size:40px;color:#0d6efd;margin-bottom:6px}
-    #unsavedConfirmModal .unsaved-title{font-weight:700;color:#073b6b;margin-bottom:4px}
+    #unsavedConfirmModal .unsaved-title{font-weight:700;color:#000;margin-bottom:4px}
     #unsavedConfirmModal .unsaved-desc{color:#495057;margin-bottom:10px}
     #unsavedConfirmModal .modal-footer{border-top:none;display:flex;justify-content:center;gap:8px;padding-top:6px}
     #unsavedConfirmModal .btn{min-width:110px}
@@ -89,7 +89,7 @@ function replaceTokens(content, values) {
             const DATE_FIELDS_WITHIN_LAST = ['appointmentcreationdate', 'createddate', 'appointmentdate',
                 'assigneddate', 'birthday', 'deliverydate', 'demodate', 'financematuritydate',
                 'financestartdate', 'firstcontactdate', 'lastcontacteddate', 'leasematuritydate',
-                'leasestartdate', 'solddate', 'taskcompleteddate', 'taskduedate', 'updated', 'showroomvisitdate'
+                'leasestartdate', 'solddate','servicedate','lastservicedate', 'taskcompleteddate', 'taskduedate', 'updated', 'showroomvisitdate'
             ];
 
             let groupCounter = 0;
@@ -1356,9 +1356,9 @@ function isSequenceFormDirty() {
                         <div class="unsaved-desc">You have unsaved changes in this area. Review and Save before exiting to avoid losing any changes.</div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" id="unsavedSaveBtn"><i class="ti ti-check me-1"></i> Save</button>
-                        <button type="button" class="btn btn-outline-danger" id="unsavedDiscardBtn"><i class="ti ti-trash me-1"></i> Discard</button>
-                        <button type="button" class="btn btn-light" id="unsavedCancelBtn"><i class="ti ti-x me-1"></i> Cancel</button>
+                        <button type="button" class="btn btn-primary" id="unsavedSaveBtn"> Save</button>
+                        <button type="button" class="btn btn-danger" id="unsavedDiscardBtn"> Discard</button>
+                        <button type="button" class="btn btn-light border-1 border" id="unsavedCancelBtn">Cancel</button>
                     </div>
                 </div>
             </div>
