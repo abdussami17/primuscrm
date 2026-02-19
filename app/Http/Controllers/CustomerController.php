@@ -20,74 +20,173 @@ use App\Models\Deal;
 
 class CustomerController extends Controller
 {
-    /**
-     * Display a listing of customers.
-     */
+
+    
     public function index(Request $request)
     {
-        $query = Customer::with(['assignedUser', 'assignedManagerUser', 'secondaryAssignedUser', 'bdcAgentUser'])
-            ->withCount('deals');
+        try {
+    
+            $query = Customer::with([
+                    'assignedUser',
+                    'assignedManagerUser',
+                    'secondaryAssignedUser',
+                    'bdcAgentUser'
+                ])
+                ->withCount('deals');
+    
+            /*
+            |--------------------------------------------------------------------------
+            | GLOBAL SEARCH (SAFE + NO CRASH)
+            |--------------------------------------------------------------------------
+            */
+    
+            if ($request->filled('search')) {
+    
+                $search = trim($request->search);
+    
+                $query->where(function ($q) use ($search) {
+    
+                    // Names
+                    $q->where('first_name', 'like', "%{$search}%")
+                      ->orWhere('middle_name', 'like', "%{$search}%")
+                      ->orWhere('last_name', 'like', "%{$search}%")
+                      ->orWhere(DB::raw("CONCAT(first_name,' ',last_name)"), 'like', "%{$search}%");
+    
+                    // Contact
+                    $q->orWhere('email', 'like', "%{$search}%")
+                      ->orWhere('phone', 'like', "%{$search}%")
+                      ->orWhere('cell_phone', 'like', "%{$search}%")
+                      ->orWhere('work_phone', 'like', "%{$search}%");
+    
+                  
+    
+                    // Extra emails (safe if relation exists)
+                    $q->orWhereHas('emails', function ($emailQuery) use ($search) {
+                        $emailQuery->where('email', 'like', "%{$search}%");
+                    });
+    
+                    $q->orWhereHas('deals', function ($dealQuery) use ($search) {
 
-        // Apply date filter if provided
-        if ($request->has('date_field') && $request->has('from_date') && $request->has('to_date')) {
-            $dateField = $request->input('date_field');
-            $fromDate = $request->input('from_date');
-            $toDate = $request->input('to_date');
-
-            // Map frontend field names to database columns
-            $fieldMap = [
-                'Created Date' => 'created_at',
-                'Sold Date' => 'sold_date',
-                'Delivery Date' => 'delivery_date',
-                'Appointment Date' => 'appointment_date',
-                'Last Contacted Date' => 'last_contacted_at',
-            ];
-
-            $column = $fieldMap[$dateField] ?? 'created_at';
-            $query->whereBetween($column, [$fromDate, $toDate]);
+                        // deal fields
+                        $dealQuery->where('deal_number', 'like', "%{$search}%")
+                                  ->orWhere('vehicle_description', 'like', "%{$search}%")
+                    
+                                  // inventory fields (stock + vin)
+                                  ->orWhereHas('inventory', function ($inventoryQuery) use ($search) {
+                                        $inventoryQuery->where('stock_number', 'like', "%{$search}%")
+                                                       ->orWhere('vin', 'like', "%{$search}%");
+                                  });
+                    
+                    });
+    
+                });
+            }
+    
+            /*
+            |--------------------------------------------------------------------------
+            | DATE FILTER
+            |--------------------------------------------------------------------------
+            */
+    
+            if ($request->has(['date_field','from_date','to_date'])) {
+    
+                $fieldMap = [
+                    'Created Date'        => 'created_at',
+                    'Sold Date'           => 'sold_date',
+                    'Delivery Date'       => 'delivery_date',
+                    'Appointment Date'    => 'appointment_date',
+                    'Last Contacted Date' => 'last_contacted_at',
+                ];
+    
+                $column = $fieldMap[$request->date_field] ?? 'created_at';
+    
+                $query->whereBetween($column, [
+                    $request->from_date,
+                    $request->to_date
+                ]);
+            }
+    
+            /*
+            |--------------------------------------------------------------------------
+            | GET DATA
+            |--------------------------------------------------------------------------
+            */
+    
+            $customers = $query
+                ->orderBy('created_at', 'desc')
+                ->get();
+    
+    
+            /*
+            |--------------------------------------------------------------------------
+            | AJAX
+            |--------------------------------------------------------------------------
+            */
+    
+            if ($request->ajax()) {
+                return response()->json([
+                    'success'   => true,
+                    'customers' => $customers,
+                    'html'      => view('partials.customers-table-rows', compact('customers'))->render()
+                ]);
+            }
+    
+    
+            /*
+            |--------------------------------------------------------------------------
+            | DROPDOWNS
+            |--------------------------------------------------------------------------
+            */
+    
+            $users = User::where('is_active', true)->orderBy('name')->get();
+    
+            $salesManagers = User::where('is_active', true)
+                ->whereHas('roles', fn($q) => $q->where('name', 'Sales Manager'))
+                ->orderBy('name')
+                ->get();
+    
+            $financeManagers = User::where('is_active', true)
+                ->whereHas('roles', fn($q) => $q->where('name', 'Finance Director'))
+                ->orderBy('name')
+                ->get();
+    
+            $bdcAgents = User::where('is_active', true)
+                ->whereHas('roles', fn($q) => $q->where('name', 'BDC Agent'))
+                ->orderBy('name')
+                ->get();
+    
+    
+            return view('customers.index', compact(
+                'customers',
+                'users',
+                'salesManagers',
+                'financeManagers',
+                'bdcAgents'
+            ));
+    
+        } catch (\Throwable $e) {
+    
+            /*
+            |--------------------------------------------------------------------------
+            | SAFE FAIL (NO WHITE SCREEN)
+            |--------------------------------------------------------------------------
+            */
+    
+            Log::error('Customer index error: '.$e->getMessage());
+    
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Something went wrong'
+                ]);
+            }
+    
+            return redirect()
+                ->back()
+                ->with('error', 'Something went wrong. Please try again.');
         }
-
-        $customers = $query->orderBy('created_at', 'desc')->get();
-
-        // If AJAX request, return JSON
-        if ($request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'customers' => $customers,
-                'html' => view('partials.customers-table-rows', compact('customers'))->render()
-            ]);
-        }
-
-        $users = User::where('is_active', true)
-            ->orderBy('name')
-            ->get();
-
-        // Get users by role for the form dropdowns
-        $salesManagers = User::where('is_active', true)
-            ->whereHas('roles', function($q) {
-                $q->where('name', 'Sales Manager');
-            })
-            ->orderBy('name')
-            ->get();
-
-        $financeManagers = User::where('is_active', true)
-            ->whereHas('roles', function($q) {
-                $q->where('name', 'Finance Director');
-            })
-            ->orderBy('name')
-            ->get();
-
-        $bdcAgents = User::where('is_active', true)
-            ->whereHas('roles', function($q) {
-                $q->where('name', 'BDC Agent');
-            })
-            ->orderBy('name')
-            ->get();
-
-        return view('customers.index', compact('customers', 'users', 'salesManagers', 'financeManagers', 'bdcAgents'));
     }
-
-
+    
 public function create() {
 
     return view('customers.create');

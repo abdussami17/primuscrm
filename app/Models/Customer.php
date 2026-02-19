@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
+use App\Models\CustomerEmail;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Customer extends Model
 {
@@ -204,5 +205,11 @@ public function getPrimaryEmailAttribute(): ?string
             $this->update(['email' => $defaultEmail]);
         }
     }
+
+    public function emails()
+{
+    return $this->hasMany(CustomerEmail::class);
+}
+
 
 }

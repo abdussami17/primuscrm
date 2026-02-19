@@ -382,7 +382,12 @@
             </div>
         </div>
 
-
+        @if(request('search'))
+        <div class="alert alert-success">
+            Showing results for: <strong>{{ request('search') }}</strong>
+        </div>
+        @endif
+        
         <!-- Customer Table -->
         <div class="table-responsive">
             <table id="customerTable" class="table table-hover table-nowrap ">

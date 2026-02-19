@@ -101,12 +101,26 @@
           </div>
 
           <div class="search-area">
-              <div class="search-box">
-                  <i class="ti ti-search"></i>
-                  <input type="text" placeholder="Search">
-              </div>
-              <button data-size="lg" data-url="{{ route('customers.create') }}" data-ajax-popup="true"  data-title="{{__('New Customers')}}"><i class="ti ti-plus"></i><i class="ti ti-user"></i></button>
-          </div>
+           <form action="{{ route('customers.index') }}" method="GET" class="search-box d-flex">
+    <i class="ti ti-search"></i>
+            <input
+        type="text"
+        name="search"
+        class="form-control form-control-sm bg-white"
+        placeholder="Search"
+        value="{{ request('search') }}"
+    >
+</form>
+
+        
+            <button data-size="lg"
+                    data-url="{{ route('customers.create') }}"
+                    data-ajax-popup="true"
+                    data-title="New Customers">
+                <i class="ti ti-plus"></i><i class="ti ti-user"></i>
+            </button>
+        </div>
+        
 
           <div id="sidebar-menu" class="sidebar-menu">
               <ul>
