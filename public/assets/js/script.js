@@ -238,29 +238,59 @@ Template Name: Kanakku - Bootstrap Admin Template
 		});
 	}
 
-	// Sidebar
-	var Sidemenu = function() {
-		this.$menuItem = $('.sidebar-menu a');
-	};
+// ===============================
+// Sidebar — Stable version
+// ===============================
+function initSidebar() {
 
-	function init() {
-		var $this = Sidemenu;
-		$('.sidebar-menu a').on('click', function(e) {
-			if($(this).parent().hasClass('submenu')) {
-				e.preventDefault();
-			}
-			if(!$(this).hasClass('subdrop')) {
-				$('ul', $(this).parents('ul:first')).slideUp(250);
-				$('a', $(this).parents('ul:first')).removeClass('subdrop');
-				$(this).next('ul').slideDown(350);
-				$(this).addClass('subdrop');
-			} else if($(this).hasClass('subdrop')) {
-				$(this).removeClass('subdrop');
-				$(this).next('ul').slideUp(350);
-			}
-		});
-		$('.sidebar-menu ul li.submenu a.active').parents('li:last').children('a:first').addClass('active').trigger('click');
-	}
+
+
+    const $menu = $('.sidebar-menu');
+
+    // remove ALL previous handlers safely
+    $menu.off('click.sidebar');
+
+    // ONLY submenu anchors
+    $menu.on('click.sidebar', 'li.submenu > a', function (e) {
+
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
+        const $parent = $(this).parent();
+        const $menuList = $(this).next('ul');
+
+
+        if (!$menuList.length) return;
+
+        const isOpen = $parent.hasClass('subdrop');
+
+        // close all others
+        $('.sidebar-menu li.submenu')
+            .removeClass('subdrop')
+            .children('ul')
+            .stop(true, true)
+            .slideUp(200);
+
+        // open only if previously closed
+        if (!isOpen) {
+            $parent.addClass('subdrop');
+            $menuList.stop(true, true).slideDown(200);
+        }
+    });
+
+    // ==========================
+    // auto-open active WITHOUT click
+    // ==========================
+    $('.sidebar-menu li.submenu a.active')
+        .closest('li.submenu')
+        .addClass('subdrop')
+        .children('ul')
+        .show();
+}
+
+
+// run once
+$(document).ready(initSidebar);
 
 	
 	// Sidebar Initiate

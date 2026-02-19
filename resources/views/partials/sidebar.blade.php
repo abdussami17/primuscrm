@@ -127,40 +127,42 @@
                               @endif
                           @endforeach
 
-                          <!-- Help / Settings Submenu -->
                           @php
-                              $helpMenus = \App\Helpers\PermissionHelper::getHelpSubmenu();
-                              $helpRoutes = collect($helpMenus)->pluck('route')->toArray();
-                              $isHelpActive = request()->routeIs(...$helpRoutes);
-                              
-                              // Check if user can see at least one help menu item
-                              $canSeeHelpMenu = collect($helpMenus)->contains(function($item) {
-                                  return \App\Helpers\PermissionHelper::canViewMenu($item['permission']);
-                              });
-                          @endphp
+    $helpMenus = \App\Helpers\PermissionHelper::getHelpSubmenu();
 
-                          @if($canSeeHelpMenu)
-                              <li class="submenu">
-                                  <a href="javascript:void(0);" class="{{ $isHelpActive ? 'subdrop' : '' }}">
-                                      <i class="ti ti-help-hexagon"></i><span>Help</span>
-                                      <span class="menu-arrow"></span>
-                                  </a>
-                              
-                                  <ul style="{{ $isHelpActive ? 'display: block;' : '' }}">
-                                      @foreach($helpMenus as $helpMenu)
-                                          @if(\App\Helpers\PermissionHelper::canViewMenu($helpMenu['permission']))
-                                              <li>
-                                                  <a href="{{ route($helpMenu['route']) }}" 
-                                                     class="{{ request()->routeIs($helpMenu['route']) ? 'active' : '' }}">
-                                                      {{ $helpMenu['label'] }}
-                                                  </a>
-                                              </li>
-                                          @endif
-                                      @endforeach
-                                  </ul>
-                              </li>
-                          @endif
-                        
+    $helpRoutes = collect($helpMenus)->pluck('route')->map(function ($r) {
+        return $r . '*'; // wildcard fix
+    })->toArray();
+
+    $isHelpActive = request()->routeIs(...$helpRoutes);
+
+    $canSeeHelpMenu = collect($helpMenus)->contains(function($item) {
+        return \App\Helpers\PermissionHelper::canViewMenu($item['permission']);
+    });
+@endphp
+
+@if($canSeeHelpMenu)
+<li class="submenu {{ $isHelpActive ? 'active open' : '' }}">
+    <a href="#" class="submenu-toggle">
+        <i class="ti ti-help-hexagon"></i>
+        <span>Help</span>
+        <span class="menu-arrow"></span>
+    </a>
+
+    <ul class="submenu-list">
+        @foreach($helpMenus as $helpMenu)
+            @if(\App\Helpers\PermissionHelper::canViewMenu($helpMenu['permission']))
+                <li>
+                    <a href="{{ route($helpMenu['route']) }}"
+                       class="{{ request()->routeIs($helpMenu['route'].'*') ? 'active' : '' }}">
+                        {{ $helpMenu['label'] }}
+                    </a>
+                </li>
+            @endif
+        @endforeach
+    </ul>
+</li>
+@endif
 
                           <!-- Dark Mode -->
                           <li class="mt-4 mb-0">
@@ -198,3 +200,6 @@
   </div>
 </div>
 <!-- Sidenav Menu End -->
+
+
+

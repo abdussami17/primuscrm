@@ -1455,7 +1455,8 @@ function warningAlert(message) {
     {{-- =============================================================
     | CLOUDFLARE (KEEP LAST)
     ============================================================== --}}
-   <script src="{{ asset('assets/cdn-cgi/scripts/7d0fa10a/cloudflare-static/rocket-loader.min.js') }}"
+   <script data-cfasync="false"
+ src="{{ asset('assets/cdn-cgi/scripts/7d0fa10a/cloudflare-static/rocket-loader.min.js') }}"
         data-cf-settings="65c7fe927c0a86c8f89afb90-|49" defer></script>
 
     <script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015"
