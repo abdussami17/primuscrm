@@ -183,6 +183,8 @@
                                             <option value="Finance">Finance</option>
                                             <option value="Cash">Cash</option>
                                             <option value="Lease">Lease</option>
+                                            <option value="Unknown">Unknown</option>
+
                                         </select>
                                     </div>
 
@@ -499,6 +501,7 @@
             }
 
             populateUsers();
+            fetchWishlist();
             // wire date-range quick picks
             const dateSpans = document.querySelectorAll('.dates-option span[data-range]');
 
