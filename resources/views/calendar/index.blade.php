@@ -140,7 +140,7 @@
                                             <th class="text-center bg-light py-2 {{ $day['isToday'] ? 'bg-primary text-white' : '' }}"
                                                 style="width: 14.28%;">
                                                 <a href=""> {{ $day['dayName'] }} {{ $day['dayNum'] }} </a>
-                                            
+
                                             </th>
                                         @endforeach
                                     </tr>
@@ -165,18 +165,18 @@
                                                                 }
                                                             }
                                                         @endphp
-<a href="#"
-data-bs-toggle="modal"
-data-bs-target="#taskModal{{ $task->id }}"
-class="event task-{{ $task->task_type_class }}"
-style="background-color: {{ $bg }}; border-color: {{ $bg }}; color: #ffffff;"
-data-bs-toggle="tooltip"
-data-bs-placement="top"
-title="{{ $task->due_time }} - {{ $task->task_type }} - {{ $task->customer->first_name ?? 'Unknown' }} {{ $task->customer->last_name ?? '' }}">
-{{ $task->due_time }} - {{ $task->task_type }} - {{ $task->customer->first_name ?? 'Unknown' }} {{ $task->customer->last_name ?? '' }}
-</a>
+                                                        <a href="#" data-bs-toggle="modal"
+                                                            data-bs-target="#taskModal{{ $task->id }}"
+                                                            class="event task-{{ $task->task_type_class }}"
+                                                            style="background-color: {{ $bg }}; border-color: {{ $bg }}; color: #ffffff;"
+                                                            data-bs-toggle="tooltip" data-bs-placement="top"
+                                                            title="{{ $task->due_time }} - {{ $task->task_type }} - {{ $task->customer->first_name ?? 'Unknown' }} {{ $task->customer->last_name ?? '' }}">
+                                                            {{ $task->due_time }} - {{ $task->task_type }} -
+                                                            {{ $task->customer->first_name ?? 'Unknown' }}
+                                                            {{ $task->customer->last_name ?? '' }}
+                                                        </a>
 
-                                                  
+
                                                     @empty
                                                         {{-- <span class="text-muted small">No tasks</span> --}}
                                                     @endforelse
@@ -233,92 +233,197 @@ title="{{ $task->due_time }} - {{ $task->task_type }} - {{ $task->customer->firs
         </div>
     </div>
 
-    <!-- Filter Offcanvas -->
-    <div class="offcanvas offcanvas-end" tabindex="-1" id="customcanvas">
-        <div class="offcanvas-header">
-            <h5 class="offcanvas-title">Filters</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
-        </div>
-        <form action="{{ route('calendar.index') }}" method="GET">
-            <input type="hidden" name="view" value="{{ $view }}">
-            <input type="hidden" name="date" value="{{ $currentDate }}">
+<!-- Filter Offcanvas -->
+<div class="offcanvas offcanvas-end filter-canvas" tabindex="-1" id="customcanvas">
 
-            <div class="offcanvas-body flex-grow-1 overflow-auto">
-                <div class="mb-3">
-                    <label class="form-label">Status Type</label>
-                    <select name="status_type[]" class="form-select tom-multi" multiple size="4">
-                        @foreach (['Open', 'Completed', 'Missed', 'Cancelled', 'No Response', 'No Show'] as $status)
-                            <option value="{{ $status }}"
-                                {{ in_array($status, (array) request('status_type', [])) ? 'selected' : '' }}>
-                                {{ $status }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Task Type</label>
-                    <select name="task_type[]" class="form-select tom-multi" multiple size="4">
-                        @foreach (['Inbound Call', 'Outbound Call', 'Inbound Text', 'Outbound Text', 'Inbound Email', 'Outbound Email', 'Appointment', 'Other'] as $type)
-                            <option value="{{ $type }}"
-                                {{ in_array($type, (array) request('task_type', [])) ? 'selected' : '' }}>
-                                {{ $type }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Assigned To</label>
-                    <select name="assigned_to[]" class="form-select tom-multi" multiple size="4">
-                        @foreach ($users as $user)
-                            <option value="{{ $user->id }}"
-                                {{ in_array($user->id, (array) request('assigned_to', [])) ? 'selected' : '' }}>
-                                {{ $user->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Created By</label>
-                    <select name="created_by[]" class="form-select tom-multi" multiple size="4">
-                        @foreach ($users as $user)
-                            <option value="{{ $user->id }}"
-                                {{ in_array($user->id, (array) request('created_by', [])) ? 'selected' : '' }}>
-                                {{ $user->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Priority</label>
-                    <select name="priority[]" class="form-select tom-multi" multiple size="3">
-                        @foreach (['Low', 'Normal', 'High', 'Urgent'] as $priority)
-                            <option value="{{ $priority }}"
-                                {{ in_array($priority, (array) request('priority', [])) ? 'selected' : '' }}>
-                                {{ $priority }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-
-            <div class="offcanvas-footer border-top p-3 mt-auto">
-                <div class="row g-2">
-                    <div class="col-6">
-                        <a href="{{ route('calendar.index', ['view' => $view, 'date' => $currentDate]) }}"
-                            class="btn btn-light border w-100">Reset</a>
-                    </div>
-                    <div class="col-6">
-                        <button type="submit" class="btn btn-primary w-100">Apply</button>
-                    </div>
-                </div>
-            </div>
-        </form>
+    <div class="offcanvas-header border-bottom">
+        <h5 class="offcanvas-title">Filters</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
     </div>
 
+    <form action="{{ route('calendar.index') }}" method="GET">
+
+        <input type="hidden" name="view" value="{{ $view }}">
+        <input type="hidden" name="date" value="{{ $currentDate }}">
+
+        {{-- Scroll Body --}}
+        <div class="offcanvas-body filter-scroll">
+
+
+            {{-- 1 Lead Status --}}
+            <div class="mb-3">
+                <label class="form-label">Lead Status</label>
+                <select name="lead_status[]" class="form-select tom-multi" multiple>
+                    @foreach (['active','duplicate','invalid','lost','sold','wishlist','buy-in'] as $s)
+                        <option value="{{ $s }}" {{ in_array($s,(array)request('lead_status',[]))?'selected':'' }}>
+                            {{ ucfirst($s) }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- 2 Lead Type --}}
+            <div class="mb-3">
+                <label class="form-label">Lead Type</label>
+                <select name="lead_type[]" class="form-select tom-multi" multiple>
+                    @foreach (['internet','walk-in','phoneup','textup','websitechat','service','import','wholesale'] as $t)
+                        <option value="{{ $t }}" {{ in_array($t,(array)request('lead_type',[]))?'selected':'' }}>
+                            {{ ucfirst($t) }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- 3 Inventory Type --}}
+            <div class="mb-3">
+                <label class="form-label">Inventory Type</label>
+                <select name="inventory_type[]" class="form-select tom-multi" multiple>
+                    @foreach (['new','pre-owned','cpo','demo','wholesale','leaserenewal','unknown'] as $t)
+                        <option value="{{ $t }}" {{ in_array($t,(array)request('inventory_type',[]))?'selected':'' }}>
+                            {{ ucfirst($t) }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- 4 Sales Status --}}
+            <div class="mb-3">
+                <label class="form-label">Sales Status</label>
+                <select name="sales_status[]" class="form-select tom-multi" multiple>
+                    @foreach (['uncontacted','attempted','contacted','dealervisit','demo','write-up','pendingf&i','sold','lost','delivered'] as $t)
+                        <option value="{{ $t }}" {{ in_array($t,(array)request('sales_status',[]))?'selected':'' }}>
+                            {{ ucfirst($t) }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- 5 Status Type --}}
+            <div class="mb-3">
+                <label class="form-label">Status Type</label>
+                <select name="status_type[]" class="form-select tom-multi" multiple>
+                    @foreach (['Open','Completed','Missed','Cancelled','No Response','No Show'] as $status)
+                        <option value="{{ $status }}" {{ in_array($status,(array)request('status_type',[]))?'selected':'' }}>
+                            {{ $status }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- 6 Task Type --}}
+            <div class="mb-3">
+                <label class="form-label">Task Type</label>
+                <select name="task_type[]" class="form-select tom-multi" multiple>
+                    @foreach (['Inbound Call','Outbound Call','Inbound Text','Outbound Text','Inbound Email','Outbound Email','Appointment','Other'] as $type)
+                        <option value="{{ $type }}" {{ in_array($type,(array)request('task_type',[]))?'selected':'' }}>
+                            {{ $type }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- 7 Assigned To --}}
+            <div class="mb-3">
+                <label class="form-label">Assigned To</label>
+                <select name="assigned_to[]" class="form-select tom-multi" multiple>
+                    @foreach ($users as $user)
+                        <option value="{{ $user->id }}" {{ in_array($user->id,(array)request('assigned_to',[]))?'selected':'' }}>
+                            {{ $user->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- 8 Assigned By --}}
+            <div class="mb-3">
+                <label class="form-label">Assigned By</label>
+                <select name="assigned_by[]" class="form-select tom-multi" multiple>
+                    @foreach ($users as $user)
+                        <option value="{{ $user->id }}" {{ in_array($user->id,(array)request('assigned_by',[]))?'selected':'' }}>
+                            {{ $user->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- 9 Created By --}}
+            <div class="mb-3">
+                <label class="form-label">Created By</label>
+                <select name="created_by[]" class="form-select tom-multi" multiple>
+                    @foreach ($users as $user)
+                        <option value="{{ $user->id }}" {{ in_array($user->id,(array)request('created_by',[]))?'selected':'' }}>
+                            {{ $user->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- 10 Priority --}}
+            <div class="mb-3">
+                <label class="form-label">Priority</label>
+                <select name="priority[]" class="form-select tom-multi" multiple>
+                    @foreach (['Low','Normal','High','Urgent'] as $priority)
+                        <option value="{{ $priority }}" {{ in_array($priority,(array)request('priority',[]))?'selected':'' }}>
+                            {{ $priority }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- 11 Automated --}}
+            <div class="mb-3">
+                <label class="form-label">Automated</label>
+                <select name="automated[]" class="form-select tom-multi" multiple>
+                    <option value="0" {{ in_array('0',(array)request('automated',[]))?'selected':'' }}>Manual</option>
+                    <option value="1" {{ in_array('1',(array)request('automated',[]))?'selected':'' }}>Automatic</option>
+                </select>
+            </div>
+
+        </div>
+
+        {{-- Footer --}}
+        <div class="filter-footer border-top bg-white p-3">
+            <div class="row g-2">
+                <div class="col-6">
+                    <a href="{{ route('calendar.index',['view'=>$view,'date'=>$currentDate]) }}"
+                       class="btn btn-light border w-100">Reset</a>
+                </div>
+                <div class="col-6">
+                    <button type="submit" class="btn btn-primary w-100">Apply</button>
+                </div>
+            </div>
+        </div>
+
+    </form>
+</div>
+
+
+    </form>
+</div>
+
+
+<style>/* Offcanvas full height */
+    .filter-canvas {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Scroll only here */
+    .filter-scroll {
+        overflow-y: auto;
+        height: calc(100vh - 140px); /* header + footer space */
+        padding-bottom: 10px;
+    }
+    
+    /* Always visible footer */
+    .filter-footer {
+        position: sticky;
+        bottom: 0;
+        background: #fff;
+        z-index: 10;
+    }
+    </style>
     <!-- Task Modals -->
     @foreach ($allTasks as $task)
         <div class="modal fade" id="taskModal{{ $task->id }}" tabindex="-1">
@@ -613,7 +718,7 @@ title="{{ $task->due_time }} - {{ $task->task_type }} - {{ $task->customer->firs
                                                     const newWrapper = tmp.querySelector(
                                                         '#serverCalendarWrapper');
                                                     if (newWrapper) wrapper.outerHTML = newWrapper
-                                                    .outerHTML;
+                                                        .outerHTML;
                                                 })
                                                 .catch(err => console.warn('Failed to refresh calendar HTML',
                                                     err));
@@ -757,39 +862,39 @@ title="{{ $task->due_time }} - {{ $task->task_type }} - {{ $task->customer->firs
         .offcanvas-footer {
             border-top: 1px solid #ddd;
         }
+
         .event {
-    display: block;
-    padding: 4px 6px;
-    margin-bottom: 4px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 500;
-    text-decoration: none;
-    white-space: nowrap;       /* keep text in one line */
-    overflow: hidden;          /* hide overflow */
-    text-overflow: ellipsis;   /* show "..." if too long */
-    transition: transform 0.1s, box-shadow 0.2s;
-}
+            display: block;
+            padding: 4px 6px;
+            margin-bottom: 4px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            text-decoration: none;
+            white-space: nowrap;
+            /* keep text in one line */
+            overflow: hidden;
+            /* hide overflow */
+            text-overflow: ellipsis;
+            /* show "..." if too long */
+            transition: transform 0.1s, box-shadow 0.2s;
+        }
 
-.event:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
-    cursor: pointer;
-}
-
+        .event:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+        }
     </style>
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    // Select all elements with data-bs-toggle="tooltip"
-    var tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Select all elements with data-bs-toggle="tooltip"
+            var tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
 
-    // Initialize each tooltip
-    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
-        new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-});
-</script>
-
+            // Initialize each tooltip
+            tooltipTriggerList.forEach(function(tooltipTriggerEl) {
+                new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
 @endpush
-
-

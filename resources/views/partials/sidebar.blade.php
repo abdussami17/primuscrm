@@ -156,8 +156,9 @@
 @endphp
 
 @if($canSeeHelpMenu)
-<li class="submenu {{ $isHelpActive ? 'active open' : '' }}">
-    <a href="#" class="submenu-toggle">
+<li class="submenu {{ $isHelpActive ? ' open' : '' }}">
+    <a href="#" class="submenu-toggle {{ $isHelpActive ? 'subdrop' : '' }}">
+
         <i class="ti ti-help-hexagon"></i>
         <span>Help</span>
         <span class="menu-arrow"></span>

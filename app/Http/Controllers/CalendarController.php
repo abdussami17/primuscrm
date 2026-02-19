@@ -37,6 +37,44 @@ class CalendarController extends Controller
         if ($request->filled('priority')) {
             $taskQuery->whereIn('priority', (array) $request->priority);
         }
+        // Lead Status (customer)
+if ($request->filled('lead_status')) {
+    $taskQuery->whereHas('customer', function ($q) use ($request) {
+        $q->whereIn('status', (array) $request->lead_status);
+    });
+}
+
+// Lead Type
+if ($request->filled('lead_type')) {
+    $taskQuery->whereHas('deal', function ($q) use ($request) {
+        $q->whereIn('lead_type', (array) $request->lead_type);
+    });
+}
+
+// Inventory Type
+if ($request->filled('inventory_type')) {
+    $taskQuery->whereHas('deal', function ($q) use ($request) {
+        $q->whereIn('inventory_type', (array) $request->inventory_type);
+    });
+}
+
+// Sales Status
+if ($request->filled('sales_status')) {
+    $taskQuery->whereHas('deal', function ($q) use ($request) {
+        $q->whereIn('status', (array) $request->sales_status);
+    });
+}
+
+// Assigned By
+if ($request->filled('assigned_by')) {
+    $taskQuery->whereIn('created_by', (array) $request->assigned_by);
+}
+
+// Automated (boolean)
+if ($request->filled('automated')) {
+    $taskQuery->whereIn('is_automated', (array) $request->automated);
+}
+
 
         // Calculate date ranges and navigation dates based on view
         switch ($view) {
