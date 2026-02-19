@@ -34379,17 +34379,21 @@ width:40px !important;  /* centers them better inside button */
 
 /* Custom User/Team Dropdown Styling */
 .custom-user-dropdown {
-  min-width: 220px;
+  width: auto;
+  min-width: 120px;
+  max-width: 180px;
   border: 2px solid rgb(0, 33, 64);
-  border-radius: 8px;
-  background-color: #ffffff;
+  border-radius: 6px;
+  background-color: #fff;
   color: rgb(0, 33, 64);
+  font-size: 12px;
   font-weight: 500;
-  padding: 8px 16px;
-  box-shadow: 0 2px 8px rgba(0, 33, 64, 0.1);
-  transition: all 0.3s ease;
+  padding: 6px 28px 6px 10px;
   cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 33, 64, 0.1);
+  transition: 0.2s ease;
 }
+
 
 .custom-user-dropdown:hover {
   border-color: rgb(0, 33, 64);
@@ -34454,11 +34458,7 @@ width:40px !important;  /* centers them better inside button */
   border-color: rgb(0, 33, 64);
 }
 
-/* Add icon before dropdown (optional - makes it look more premium) */
-.custom-user-dropdown::before {
-  content: "👤";
-  margin-right: 8px;
-}
+
 
 
 /* Performance-Based Distribution Styling */

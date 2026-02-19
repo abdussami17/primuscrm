@@ -69,6 +69,12 @@
                         <option value="jackson_anderson">Jackson Anderson</option>
 
                     </select>
+                     <select  class="form-select form-select-sm custom-user-dropdown">
+                        <option value="en" selected>English</option>
+                        <option value="fr">French</option>
+                        <option value="sp">Spanish</option>
+
+                    </select>
                 </div>
 
 
