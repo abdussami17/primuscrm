@@ -168,6 +168,15 @@ class ManagerDeskLogController extends Controller
         if ($request->filled('sales_status')) {
             $query->where('status', $request->sales_status);
         }
+        if ($request->filled('sales_type')) {
+            $query->where('sales_type', $request->sales_type);
+        }
+        if ($request->filled('task_type')) {
+            $query->where('task_type', $request->task_type);
+        }
+        if ($request->filled('status_type')) {
+            $query->where('status_type', $request->status_type);
+        }
         if ($request->filled('deal_type')) {
             $query->where('deal_type', $request->deal_type);
         }
@@ -211,6 +220,10 @@ class ManagerDeskLogController extends Controller
                 ['id' => 3, 'name' => '#19234 Bannister Ford'],
                 ['id' => 4, 'name' => '#19345 Bannister Nissan'],
             ],
+            'salesTypes' => ['Sales','Service','Parts'],
+            'statusTypes' => ['Open','Completed','Missed','Cancelled','No Response','No Show'],
+            'taskTypes' => ['Inbound Call','Outbound Call','Inbound Text','Outbound Text','Inbound Email','Outbound Email','CSI','Appointments','Other'],
+
         ];
     }
 

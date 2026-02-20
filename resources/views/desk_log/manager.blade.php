@@ -141,6 +141,10 @@
                             {{-- <a href="{{ route('desk-log.manager') }}" class="btn btn-light border">View All</a> --}}
                             <a href="{{ route('desk-log.export', $filters) }}" class="btn btn-outline-primary">Export</a>
                             <button type="button" class="btn btn-outline-dark" onclick="window.print()">Print</button>
+                            <button type="button" id="serviceApptBtn" class="btn btn-outline-primary d-flex align-items-center justify-content-center" title="Today's Service Appointments">
+                                <i class="bi bi-tools"></i>
+                              </button>
+                        
                         </div>
 
                         <div class="col-12" id="toggleFiltersBtn">
@@ -239,6 +243,40 @@
                                     @endforeach
                                 </select>
                             </div>
+                            <div class="col-md-3 mb-2">
+                                <label class="form-label">Sales Type</label>
+                                <select class="form-select" name="sales_type">
+                                    <option value="">--ALL--</option>
+                                    @foreach ($salesTypes as $type)
+                                        <option value="{{ $type }}"
+                                            {{ ($filters['sales_type'] ?? '') == $type ? 'selected' : '' }}>
+                                            {{ $type }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <label class="form-label">Task Type</label>
+                                <select class="form-select" name="task_type">
+                                    <option value="">--ALL--</option>
+                                    @foreach ($taskTypes as $type)
+                                        <option value="{{ $type }}"
+                                            {{ ($filters['task_type'] ?? '') == $type ? 'selected' : '' }}>
+                                            {{ $type }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <label class="form-label">Status Type</label>
+                                <select class="form-select" name="status_type">
+                                    <option value="">--ALL--</option>
+                                    @foreach ($statusTypes as $type)
+                                        <option value="{{ $type }}"
+                                            {{ ($filters['status_type'] ?? '') == $type ? 'selected' : '' }}>
+                                            {{ $type }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                           
                         </div>
                     </form>
                 </div>
@@ -1101,52 +1139,123 @@
     <script>
         // Saved Filters (localStorage only - minimal JS)
         document.addEventListener('DOMContentLoaded', function() {
-            const dropdown = document.getElementById('savedFiltersDropdown');
-            const saveBtn = document.getElementById('confirmSaveFilter');
-            const nameInput = document.getElementById('filterName');
 
-            // Load saved filters
-            const filters = JSON.parse(localStorage.getItem('desklogFilters') || '[]');
-            filters.forEach((f, i) => {
-                const opt = document.createElement('option');
-                opt.value = i;
-                opt.textContent = f.name;
-                dropdown.appendChild(opt);
-            });
+const dropdown = document.getElementById('savedFiltersDropdown');
+const saveBtn = document.getElementById('confirmSaveFilter');
+const nameInput = document.getElementById('filterName');
+const form = document.getElementById('filterForm');
 
-            // Apply saved filter
-            dropdown.addEventListener('change', function() {
-                if (this.value !== '') {
-                    const filter = filters[this.value];
-                    if (filter && filter.url) {
-                        window.location.href = filter.url;
-                    }
-                }
-            });
+if (!saveBtn || !dropdown || !form) {
+    console.error('Desklog filter elements missing');
+    return;
+}
 
-            // Save current filter
-            saveBtn?.addEventListener('click', function() {
-                const name = nameInput.value.trim();
-                if (name) {
-                    filters.push({
-                        name: name,
-                        url: window.location.href
-                    });
-                    localStorage.setItem('desklogFilters', JSON.stringify(filters));
-                    try {
-                        const modalEl = document.getElementById('saveFilterModal');
-                        if (modalEl) {
-                            const modal = (typeof bootstrap.Modal.getInstance === 'function' ? bootstrap
-                                .Modal.getInstance(modalEl) : null) || new bootstrap.Modal(modalEl);
-                            modal.hide();
-                        }
-                    } catch (e) {
-                        /* ignore */
-                    }
-                    location.reload();
-                }
-            });
+// -------------------------
+// Load dropdown
+// -------------------------
+function loadDropdown() {
+    const filters = JSON.parse(localStorage.getItem('desklogFilters') || '[]');
+    dropdown.innerHTML = '<option value="">Select Saved Filter</option>';
+    filters.forEach((f, i) => {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = f.name;
+        dropdown.appendChild(opt);
+    });
+    console.log('Dropdown loaded with filters:', filters);
+}
+
+loadDropdown();
+
+// -------------------------
+// APPLY FILTER
+// -------------------------
+dropdown.addEventListener('change', function() {
+    if (!this.value) return;
+
+    // 🔹 always reload from localStorage in case new filters were added
+    const filters = JSON.parse(localStorage.getItem('desklogFilters') || '[]');
+    const filter = filters[this.value];
+
+    console.log('Selected filter index:', this.value, 'Filter:', filter);
+
+    if (!filter?.data) return;
+
+    Object.entries(filter.data).forEach(([key, value]) => {
+        const els = form.querySelectorAll(`[name="${key}"]`);
+        if (!els.length) {
+            console.warn(`Field not found for name="${key}"`);
+            return;
+        }
+        els.forEach(el => {
+            switch (el.type) {
+                case 'checkbox':
+                    el.checked = value === 'on' || value === '1' || value ===
+                        true;
+                    break;
+                case 'radio':
+                    el.checked = el.value == value;
+                    break;
+                default:
+                    el.value = value;
+                    break;
+            }
+
+            if (el.tomselect) {
+                el.tomselect.setValue(value, true);
+            }
         });
+    });
+
+    if (typeof fetchDesklog === 'function') {
+        fetchDesklog();
+    }
+});
+
+// -------------------------
+// SAVE FILTER
+// -------------------------
+saveBtn.addEventListener('click', function() {
+    const name = nameInput.value.trim();
+    if (!name) {
+        alert('Please enter filter name');
+        return;
+    }
+
+    const filters = JSON.parse(localStorage.getItem('desklogFilters') || '[]');
+
+    const data = {};
+    new FormData(form).forEach((v, k) => {
+        const field = form.querySelector(`[name="${k}"]`);
+        if (!field) return;
+
+        if (field.type === 'checkbox') {
+            data[k] = field.checked ? 'on' : 'off';
+        } else {
+            data[k] = v;
+        }
+    });
+
+    filters.push({
+        name,
+        data
+    });
+    localStorage.setItem('desklogFilters', JSON.stringify(filters));
+
+    // close modal
+    const modalEl = document.getElementById('saveFilterModal');
+    if (modalEl && window.bootstrap) {
+        bootstrap.Modal.getInstance(modalEl)?.hide();
+    }
+
+    loadDropdown();
+    nameInput.value = '';
+
+    alert('Filter saved successfully');
+    console.log('Saved filter data:', data);
+});
+
+});
     </script>
 
     <script>
