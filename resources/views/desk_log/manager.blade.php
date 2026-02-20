@@ -141,10 +141,12 @@
                             {{-- <a href="{{ route('desk-log.manager') }}" class="btn btn-light border">View All</a> --}}
                             <a href="{{ route('desk-log.export', $filters) }}" class="btn btn-outline-primary">Export</a>
                             <button type="button" class="btn btn-outline-dark" onclick="window.print()">Print</button>
-                            <button type="button" id="serviceApptBtn" class="btn btn-outline-primary d-flex align-items-center justify-content-center" title="Today's Service Appointments">
+                            <button type="button" id="serviceApptBtn"
+                                class="btn btn-outline-primary d-flex align-items-center justify-content-center"
+                                title="Today's Service Appointments">
                                 <i class="bi bi-tools"></i>
-                              </button>
-                        
+                            </button>
+
                         </div>
 
                         <div class="col-12" id="toggleFiltersBtn">
@@ -276,7 +278,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                           
+
                         </div>
                     </form>
                 </div>
@@ -504,8 +506,9 @@
                                             <div id="openVisitRow-{{ $deal->id }}" class="d-none"></div>
                                             <div id="activeVisitRow-{{ $deal->id }}"
                                                 class="align-items-center gap-2">
-                                                <a class="credit-link end-showroom-btn" href="#" data-deal-id="{{ $deal->id }}"
-                                                    data-bs-toggle="offcanvas" data-bs-target="#editShowroomVisitCanvas">
+                                                <a class="credit-link end-showroom-btn" href="#"
+                                                    data-deal-id="{{ $deal->id }}" data-bs-toggle="offcanvas"
+                                                    data-bs-target="#editShowroomVisitCanvas">
                                                     Edit Showroom Visit
                                                 </a>
                                                 <span class="fw-semibold text-muted ms-2">
@@ -535,39 +538,33 @@
 
                                             @php
                                                 $defs =
-                                                    $flagDefinitions ??
-                                                    collect([
-                                                        (object) ['key' => 'demo', 'label' => 'DE'],
-                                                        (object) ['key' => 'write_up', 'label' => 'WU'],
-                                                        (object) ['key' => 'touch_desk', 'label' => 'TD'],
-                                                        (object) ['key' => 'pending_fi', 'label' => 'PF'],
-                                                        (object) ['key' => 'trade_appraisal', 'label' => 'TA'],
-                                                        (object) ['key' => 'sold', 'label' => 'SO'],
-                                                        (object) ['key' => 'lost', 'label' => 'LO'],
-                                                    ]);
+                                                    $flagDefinitions && $flagDefinitions->count()
+                                                        ? $flagDefinitions
+                                                        : $fallback;
                                             @endphp
 
                                             {{-- Modern checkbox design --}}
                                             <div class="checkbox-container mt-1">
-                                                @foreach ($defs as $def)
+                                                @foreach ($flagDefinitions as $def)
                                                     @php
-                                                        $k = $def->key ?? $def['key'];
-                                                        $label = $def->label ?? ($def['label'] ?? strtoupper($k));
+                                                        $k = $def->key;
+                                                        $label = $def->label;
                                                         $checked = !empty($latestVisit->flags[$k])
                                                             ? (bool) $latestVisit->flags[$k]
                                                             : (bool) ($latestVisit->{$k} ?? false);
                                                     @endphp
-                                                    <div class="checkbox-item">
 
+                                                    <div class="checkbox-item">
                                                         <label
                                                             for="flag-{{ $deal->id }}-{{ $k }}">{{ $label }}</label>
+
                                                         <input type="checkbox"
                                                             id="flag-{{ $deal->id }}-{{ $k }}"
                                                             {{ $checked ? 'checked' : '' }} class="readonly-checkbox">
-
                                                     </div>
                                                 @endforeach
                                             </div>
+
 
                                             {{-- @if ($latestVisit->end_time)
                                                 <div class="small text-muted mt-1">
@@ -578,20 +575,20 @@
 
                                             <div class="custom-alert-box mt-1">
                                                 <div class="alert-text">
-                                                    @foreach($deal->showroomVisits as $visit)
+                                                    @foreach ($deal->showroomVisits as $visit)
                                                         <div>
                                                             @php
-                                                                $visitNote= $visit->related_notes->sortByDesc('created_at')->first();
+                                                                $visitNote = $visit->related_notes
+                                                                    ->sortByDesc('created_at')
+                                                                    ->first();
                                                             @endphp
-                                                                <div class="alert-text">
-                                                                    {{ $visitNote?->description }}
-                                                                </div>
+                                                            <div class="alert-text">
+                                                                {{ $visitNote?->description }}
+                                                            </div>
                                                         </div>
                                                     @endforeach
                                                 </div>
-                                                    <a href="#" data-bs-toggle="modal"
-                                                    data-bs-target="#editNoteModal"
-                                                    class="modify-link ms-3">modify</a>
+
                                             </div>
                                         @endif
                                     </div>
@@ -759,6 +756,7 @@
         @endforeach
     @endif
 
+
     <!-- Showroom Visit offcanvas (shared) -->
     <div class="offcanvas offcanvas-end" tabindex="-1" id="editShowroomVisitCanvas">
         <div class="offcanvas-header d-block pb-0">
@@ -846,7 +844,8 @@
                     </div>
                 </div>
 
-                @if (isset($flagDefinitions) && $flagDefinitions->count())
+                @if ($flagDefinitions && $flagDefinitions->count())
+
                     <div class="form-section checkboxes-area ps-4 pe-4 row">
                         @foreach ($flagDefinitions as $flag)
                             <div class="col-md-12 mb-2 d-flex justify-content-between align-items-center">
@@ -1140,122 +1139,122 @@
         // Saved Filters (localStorage only - minimal JS)
         document.addEventListener('DOMContentLoaded', function() {
 
-const dropdown = document.getElementById('savedFiltersDropdown');
-const saveBtn = document.getElementById('confirmSaveFilter');
-const nameInput = document.getElementById('filterName');
-const form = document.getElementById('filterForm');
+            const dropdown = document.getElementById('savedFiltersDropdown');
+            const saveBtn = document.getElementById('confirmSaveFilter');
+            const nameInput = document.getElementById('filterName');
+            const form = document.getElementById('filterForm');
 
-if (!saveBtn || !dropdown || !form) {
-    console.error('Desklog filter elements missing');
-    return;
-}
-
-// -------------------------
-// Load dropdown
-// -------------------------
-function loadDropdown() {
-    const filters = JSON.parse(localStorage.getItem('desklogFilters') || '[]');
-    dropdown.innerHTML = '<option value="">Select Saved Filter</option>';
-    filters.forEach((f, i) => {
-        const opt = document.createElement('option');
-        opt.value = i;
-        opt.textContent = f.name;
-        dropdown.appendChild(opt);
-    });
-    console.log('Dropdown loaded with filters:', filters);
-}
-
-loadDropdown();
-
-// -------------------------
-// APPLY FILTER
-// -------------------------
-dropdown.addEventListener('change', function() {
-    if (!this.value) return;
-
-    // 🔹 always reload from localStorage in case new filters were added
-    const filters = JSON.parse(localStorage.getItem('desklogFilters') || '[]');
-    const filter = filters[this.value];
-
-    console.log('Selected filter index:', this.value, 'Filter:', filter);
-
-    if (!filter?.data) return;
-
-    Object.entries(filter.data).forEach(([key, value]) => {
-        const els = form.querySelectorAll(`[name="${key}"]`);
-        if (!els.length) {
-            console.warn(`Field not found for name="${key}"`);
-            return;
-        }
-        els.forEach(el => {
-            switch (el.type) {
-                case 'checkbox':
-                    el.checked = value === 'on' || value === '1' || value ===
-                        true;
-                    break;
-                case 'radio':
-                    el.checked = el.value == value;
-                    break;
-                default:
-                    el.value = value;
-                    break;
+            if (!saveBtn || !dropdown || !form) {
+                console.error('Desklog filter elements missing');
+                return;
             }
 
-            if (el.tomselect) {
-                el.tomselect.setValue(value, true);
+            // -------------------------
+            // Load dropdown
+            // -------------------------
+            function loadDropdown() {
+                const filters = JSON.parse(localStorage.getItem('desklogFilters') || '[]');
+                dropdown.innerHTML = '<option value="">Select Saved Filter</option>';
+                filters.forEach((f, i) => {
+                    const opt = document.createElement('option');
+                    opt.value = i;
+                    opt.textContent = f.name;
+                    dropdown.appendChild(opt);
+                });
+                console.log('Dropdown loaded with filters:', filters);
             }
+
+            loadDropdown();
+
+            // -------------------------
+            // APPLY FILTER
+            // -------------------------
+            dropdown.addEventListener('change', function() {
+                if (!this.value) return;
+
+                // 🔹 always reload from localStorage in case new filters were added
+                const filters = JSON.parse(localStorage.getItem('desklogFilters') || '[]');
+                const filter = filters[this.value];
+
+                console.log('Selected filter index:', this.value, 'Filter:', filter);
+
+                if (!filter?.data) return;
+
+                Object.entries(filter.data).forEach(([key, value]) => {
+                    const els = form.querySelectorAll(`[name="${key}"]`);
+                    if (!els.length) {
+                        console.warn(`Field not found for name="${key}"`);
+                        return;
+                    }
+                    els.forEach(el => {
+                        switch (el.type) {
+                            case 'checkbox':
+                                el.checked = value === 'on' || value === '1' || value ===
+                                    true;
+                                break;
+                            case 'radio':
+                                el.checked = el.value == value;
+                                break;
+                            default:
+                                el.value = value;
+                                break;
+                        }
+
+                        if (el.tomselect) {
+                            el.tomselect.setValue(value, true);
+                        }
+                    });
+                });
+
+                if (typeof fetchDesklog === 'function') {
+                    fetchDesklog();
+                }
+            });
+
+            // -------------------------
+            // SAVE FILTER
+            // -------------------------
+            saveBtn.addEventListener('click', function() {
+                const name = nameInput.value.trim();
+                if (!name) {
+                    alert('Please enter filter name');
+                    return;
+                }
+
+                const filters = JSON.parse(localStorage.getItem('desklogFilters') || '[]');
+
+                const data = {};
+                new FormData(form).forEach((v, k) => {
+                    const field = form.querySelector(`[name="${k}"]`);
+                    if (!field) return;
+
+                    if (field.type === 'checkbox') {
+                        data[k] = field.checked ? 'on' : 'off';
+                    } else {
+                        data[k] = v;
+                    }
+                });
+
+                filters.push({
+                    name,
+                    data
+                });
+                localStorage.setItem('desklogFilters', JSON.stringify(filters));
+
+                // close modal
+                const modalEl = document.getElementById('saveFilterModal');
+                if (modalEl && window.bootstrap) {
+                    bootstrap.Modal.getInstance(modalEl)?.hide();
+                }
+
+                loadDropdown();
+                nameInput.value = '';
+
+                alert('Filter saved successfully');
+                console.log('Saved filter data:', data);
+            });
+
         });
-    });
-
-    if (typeof fetchDesklog === 'function') {
-        fetchDesklog();
-    }
-});
-
-// -------------------------
-// SAVE FILTER
-// -------------------------
-saveBtn.addEventListener('click', function() {
-    const name = nameInput.value.trim();
-    if (!name) {
-        alert('Please enter filter name');
-        return;
-    }
-
-    const filters = JSON.parse(localStorage.getItem('desklogFilters') || '[]');
-
-    const data = {};
-    new FormData(form).forEach((v, k) => {
-        const field = form.querySelector(`[name="${k}"]`);
-        if (!field) return;
-
-        if (field.type === 'checkbox') {
-            data[k] = field.checked ? 'on' : 'off';
-        } else {
-            data[k] = v;
-        }
-    });
-
-    filters.push({
-        name,
-        data
-    });
-    localStorage.setItem('desklogFilters', JSON.stringify(filters));
-
-    // close modal
-    const modalEl = document.getElementById('saveFilterModal');
-    if (modalEl && window.bootstrap) {
-        bootstrap.Modal.getInstance(modalEl)?.hide();
-    }
-
-    loadDropdown();
-    nameInput.value = '';
-
-    alert('Filter saved successfully');
-    console.log('Saved filter data:', data);
-});
-
-});
     </script>
 
     <script>
@@ -1896,7 +1895,8 @@ saveBtn.addEventListener('click', function() {
     <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-    <script>
+  {{-- SHowroom Visit Logics --}}
+  <script>
         document.addEventListener('DOMContentLoaded', function() {
             const intervals = new Map();
             const pendingStarts = new Set();

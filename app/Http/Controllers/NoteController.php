@@ -373,8 +373,14 @@ class NoteController extends Controller
                 'type'        => 'Note',
                 'description' => $validated['notes'],
                 'created_by'  => Auth::id(),
-                'metadata'    => ['visit_id' => $visit->id],
+                'metadata'    => [
+                    'visit_id' => $visit->id,
+                    'start_time' => $visit->start_time,
+                    'end_time'   => now(),
+                    'duration_seconds' => $visit->duration
+                ],
             ]);
+            
         }
         // else{
         //             // Create an automated note for the visit summary
