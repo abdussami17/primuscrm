@@ -155,6 +155,7 @@
 <td class="fw-semibold text-primary">
     <a href="javascript:void(0);" 
        class="addTaskBtn" 
+       data-deal-id="${deal.id}"
        data-customer-id="${deal.customer?.id || ''}" 
        data-customer-name="${deal.customer?.first_name || ''} ${deal.customer?.last_name || ''}">
         <i class="ti ti-copy-plus"></i>
@@ -182,13 +183,15 @@
 
         const customerId = btn.getAttribute('data-customer-id');
         const customerName = btn.getAttribute('data-customer-name');
+        const dealId = btn.getAttribute('data-deal-id');
+
         const addTaskModalEl = document.getElementById('addTaskModal');
 
         if (!addTaskModalEl) return;
 
         addTaskModalEl.querySelector('input[name="customer_search"]').value = customerName;
         addTaskModalEl.querySelector('input[name="customer_id"]').value = customerId;
-        addTaskModalEl.querySelector('input[name="deal_id"]').value = '';
+        addTaskModalEl.querySelector('input[name="deal_id"]').value = dealId;
 
         // Show Add Task modal above current modal without backdrop
         const addTaskInstance = bootstrap.Modal.getInstance(addTaskModalEl) 

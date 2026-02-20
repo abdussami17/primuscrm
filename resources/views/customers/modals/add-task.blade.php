@@ -26,8 +26,12 @@
                         <div class="col-md-6 mb-4 position-relative">
                             <label class="form-label">Customer</label>
                             @php
-                                $customerDisplay = isset($customer) ? trim(($customer->first_name ?? '') . ' ' . ($customer->last_name ?? '')) : (($customerId ?? '') ? 'Customer #' . $customerId : '');
-                                $customerIdValue = $customer->id ?? $customerId ?? '';
+                                $customerDisplay = isset($customer)
+                                    ? trim(($customer->first_name ?? '') . ' ' . ($customer->last_name ?? ''))
+                                    : ($customerId ?? ''
+                                        ? 'Customer #' . $customerId
+                                        : '');
+                                $customerIdValue = $customer->id ?? ($customerId ?? '');
                             @endphp
                             <input type="text" name="customer_search" class="form-control" id="customerSearchModal"
                                 placeholder="Customer" value="{{ $customerDisplay }}" readonly>
@@ -79,20 +83,20 @@
                             </select>
                         </div>
 
-                            <!-- Phone Scripts with Tom Select -->
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label">Phone Scripts</label>
-                                <select id="phoneScriptSelectModal" name="phoneScriptSelectModal"
-                                    placeholder="Search & select script..." class="form-select w-100">
-                                    @if(isset($phoneScripts) && $phoneScripts->isNotEmpty())
-                                        @foreach($phoneScripts as $script)
-                                            <option value="{{ $script->id }}">{{ $script->name }}</option>
-                                        @endforeach
-                                    @else
-                                        <option value="">No scripts found</option>
-                                    @endif
-                                </select>
-                            </div>
+                        <!-- Phone Scripts with Tom Select -->
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label">Phone Scripts</label>
+                            <select id="phoneScriptSelectModal" name="phoneScriptSelectModal"
+                                placeholder="Search & select script..." class="form-select w-100">
+                                @if (isset($phoneScripts) && $phoneScripts->isNotEmpty())
+                                    @foreach ($phoneScripts as $script)
+                                        <option value="{{ $script->id }}">{{ $script->name }}</option>
+                                    @endforeach
+                                @else
+                                    <option value="">No scripts found</option>
+                                @endif
+                            </select>
+                        </div>
 
                         <!-- Priority -->
                         <div class="col-md-6 mb-2">
@@ -132,66 +136,128 @@
 </div>
 
 <script>
-    // Remove stray backdrops
-    document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
-
-    // Hook into the existing tasks form handler (tasks.script expects #taskFormModal)
-    document.getElementById('taskFormModal')?.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-
-        try {
-            // Use web route (protected by session auth)
-            const payload = Object.fromEntries(formData.entries());
-            await api('/tasks', 'POST', payload);
-            showToast('Task created successfully');
-
-            // Close the modal (correct modal id)
-            const modalEl = document.getElementById('addTaskModal');
-            try { bootstrap.Modal.getInstance(modalEl)?.hide(); } catch (e) {}
-
-            // Reset form and clear deal section
-            this.reset();
-            const dealSection = document.getElementById('dealSectionModal');
-            const dealList = document.getElementById('dealListModal');
-            const dealInput = document.getElementById('dealIdModal');
-            if (dealSection) dealSection.classList.add('d-none');
-            if (dealList) dealList.innerHTML = '';
-            if (dealInput) dealInput.value = '';
-
-            if (typeof loadTasks === 'function') loadTasks();
-            if (typeof fetchTasks === 'function') fetchTasks();
-        } catch (error) {
-            showToast(error.message || 'Failed to create task', 'error');
-        }
-    });
-
-    // Fill only the hidden deal_id when a deal is selected elsewhere on the page
-    document.addEventListener('deal:selected', function(e) {
-        try {
-            const dealId = e?.detail?.dealId || '';
-            if (!dealId) return;
-            const dealInput = document.getElementById('dealIdModal') || document.querySelector('input[name="deal_id"]');
-            if (dealInput) dealInput.value = dealId;
-            // Keep the visible deal section hidden (we don't reveal it in this modal)
-        } catch (err) { console.warn('Failed to set selected deal in modal', err); }
-    });
-
-    // Ensure modal resets/hides deal section when closed
-    (function() {
-        const modalEl = document.getElementById('addTaskModal');
-        if (!modalEl || typeof bootstrap === 'undefined') return;
-        modalEl.addEventListener('hidden.bs.modal', function() {
+    document.addEventListener('DOMContentLoaded', function() {
+    
+        // Remove stray modal backdrops
+        document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+    
+        const taskForm = document.getElementById('taskFormModal');
+        if (!taskForm) return;
+    
+        // Prevent attaching multiple listeners
+        if (taskForm.dataset.listenerAttached === 'true') return;
+        taskForm.dataset.listenerAttached = 'true';
+    
+        let isProcessing = false;
+    
+        taskForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (isProcessing) return;
+            isProcessing = true;
+    
+            const submitButton = taskForm.querySelector('button[type="submit"]');
+            if (submitButton) submitButton.disabled = true;
+    
             try {
-                const form = document.getElementById('taskFormModal');
-                if (form) form.reset();
+                const formData = new FormData(taskForm);
+                const payload = Object.fromEntries(formData.entries());
+    
+                // Remove deal_id if empty
+                if (!payload.deal_id) delete payload.deal_id;
+    
+                // Client-side validation
+                const requiredFields = ['customer_id', 'assigned_to', 'due_date', 'task_type'];
+                for (let field of requiredFields) {
+                    if (!payload[field] || payload[field].trim() === '') {
+                        alert(`Please fill required field: ${field}`);
+                        isProcessing = false;
+                        if (submitButton) submitButton.disabled = false;
+                        return;
+                    }
+                }
+    
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    
+                const response = await fetch('/tasks', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+    
+                const data = await response.json();
+    
+                if (!response.ok) {
+                    let errMsg = (data.errors)
+                        ? Object.values(data.errors).flat().join('\n')
+                        : data.message || 'Failed to create task';
+                    alert(errMsg);
+                    return;
+                }
+    
+                // Success
+                if (typeof showToast === 'function') {
+                    showToast('Task created successfully', 'success');
+                } else {
+                    alert('Task created successfully');
+                }
+    
+                // Close modal
+                const modalEl = document.getElementById('addTaskModal');
+                try { bootstrap.Modal.getInstance(modalEl)?.hide(); } catch (err) {}
+    
+                // Reset form and hidden fields
+                taskForm.reset();
                 const dealSection = document.getElementById('dealSectionModal');
                 const dealList = document.getElementById('dealListModal');
                 const dealInput = document.getElementById('dealIdModal');
                 if (dealSection) dealSection.classList.add('d-none');
                 if (dealList) dealList.innerHTML = '';
                 if (dealInput) dealInput.value = '';
-            } catch (err) { console.warn('Error resetting modal on hide', err); }
+    
+                // Refresh tasks if functions exist
+                if (typeof loadTasks === 'function') loadTasks();
+                if (typeof fetchTasks === 'function') fetchTasks();
+    
+            } catch (error) {
+                alert(error.message || 'Unexpected error creating task');
+            } finally {
+                isProcessing = false;
+                if (submitButton) submitButton.disabled = false;
+            }
         });
-    })();
-</script>
+    
+        // Set hidden deal_id when a deal is selected
+        document.addEventListener('deal:selected', function(e) {
+            try {
+                const dealId = e?.detail?.dealId || '';
+                const dealInput = document.getElementById('dealIdModal') 
+                                  || document.querySelector('input[name="deal_id"]');
+                if (dealInput) dealInput.value = dealId;
+            } catch (err) {
+                // silently ignore
+            }
+        });
+    
+        // Reset modal on hide
+        const modalEl = document.getElementById('addTaskModal');
+        if (modalEl && typeof bootstrap !== 'undefined') {
+            modalEl.addEventListener('hidden.bs.modal', function() {
+                taskForm.reset();
+                const dealSection = document.getElementById('dealSectionModal');
+                const dealList = document.getElementById('dealListModal');
+                const dealInput = document.getElementById('dealIdModal');
+                if (dealSection) dealSection.classList.add('d-none');
+                if (dealList) dealList.innerHTML = '';
+                if (dealInput) dealInput.value = '';
+                isProcessing = false;
+                const submitButton = taskForm.querySelector('button[type="submit"]');
+                if (submitButton) submitButton.disabled = false;
+            });
+        }
+    
+    });
+    </script>
