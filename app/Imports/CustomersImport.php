@@ -10,6 +10,9 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\OnEachRow;
 use Maatwebsite\Excel\Row;
 
+
+
+
 class CustomersImport implements WithHeadingRow, OnEachRow
 {
     /**
@@ -20,6 +23,15 @@ class CustomersImport implements WithHeadingRow, OnEachRow
         'errors' => [],
         'imported' => 0,
     ];
+
+    private $updateExisting;
+    private $skipDuplicates;
+
+    public function __construct($updateExisting = false, $skipDuplicates = true)
+    {
+        $this->updateExisting = $updateExisting;
+        $this->skipDuplicates = $skipDuplicates;
+    }
 
     public function onRow(Row $row)
     {
@@ -70,8 +82,36 @@ class CustomersImport implements WithHeadingRow, OnEachRow
                 'updated_at' => $this->date($this->val($rowArray, ['lastupdatedutc', 'updated_at', 'last_updated'])),
             ];
 
-            Customer::create($data);
-            $this->report['imported']++;
+          // Layered matching
+$existing = Customer::where('email', $data['email'])
+->orWhere('phone', $data['phone'])
+->orWhere('cell_phone', $data['cell_phone'])
+->orWhere(function($q) use ($data) {
+    $q->where('first_name', $data['first_name'])
+      ->where('last_name', $data['last_name']);
+})
+->first();
+
+if ($existing) {
+if ($this->updateExisting) {
+    $existing->update($data);
+    $this->report['imported']++;
+} elseif ($this->skipDuplicates) {
+    $this->report['rows'][] = [
+        'row' => $rowIndex,
+        'issue' => 'Duplicate skipped',
+        'value' => $data['email'] ?? $data['phone'] ?? $data['cell_phone'],
+    ];
+} else {
+    // optional: create anyway if neither checkbox is checked
+    Customer::create($data);
+    $this->report['imported']++;
+}
+} else {
+Customer::create($data);
+$this->report['imported']++;
+}
+
 
         } catch (\Exception $e) {
             Log::error('Customer import row failed', ['row' => $rowIndex, 'error' => $e->getMessage()]);

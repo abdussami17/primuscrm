@@ -208,7 +208,12 @@ class EmployeeDeskLogController extends Controller
                 ['id' => 2, 'name' => 'Twin Motors Thompson'],
                 ['id' => 3, 'name' => '#19234 Bannister Ford'],
                 ['id' => 4, 'name' => '#19345 Bannister Nissan'],
+
+               
             ],
+            'salesTypes' => ['Sales','Service','Parts'],
+            'statusTypes' => ['Open','Completed','Missed','Cancelled','No Response','No Show'],
+            'taskTypes' => ['Inbound Call','Outbound Call','Inbound Text','Outbound Text','Inbound Email','Outbound Email','CSI','Appointments','Other'],
         ];
     }
 

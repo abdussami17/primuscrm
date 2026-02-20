@@ -592,8 +592,7 @@
                                                         </div>
                                                     @endforeach
                                                 </div>
-                                                <a href="#" data-bs-toggle="modal" data-bs-target="#editNoteModal"
-                                                    class="modify-link ms-3">modify</a>
+                                              
                                             </div>
                                         @endif
                                     </div>

@@ -20,177 +20,133 @@ use App\Models\Deal;
 
 class CustomerController extends Controller
 {
-
-    
     public function index(Request $request)
     {
         try {
-    
-            $query = Customer::with([
-                    'assignedUser',
-                    'assignedManagerUser',
-                    'secondaryAssignedUser',
-                    'bdcAgentUser'
-                ])
-                ->withCount('deals');
-    
+            $query = Customer::with(['assignedUser', 'assignedManagerUser', 'secondaryAssignedUser', 'bdcAgentUser'])->withCount('deals');
+
             /*
             |--------------------------------------------------------------------------
             | GLOBAL SEARCH (SAFE + NO CRASH)
             |--------------------------------------------------------------------------
             */
-    
+
             if ($request->filled('search')) {
-    
                 $search = trim($request->search);
-    
+
                 $query->where(function ($q) use ($search) {
-    
                     // Names
                     $q->where('first_name', 'like', "%{$search}%")
-                      ->orWhere('middle_name', 'like', "%{$search}%")
-                      ->orWhere('last_name', 'like', "%{$search}%")
-                      ->orWhere(DB::raw("CONCAT(first_name,' ',last_name)"), 'like', "%{$search}%");
-    
+                        ->orWhere('middle_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhere(DB::raw("CONCAT(first_name,' ',last_name)"), 'like', "%{$search}%");
+
                     // Contact
                     $q->orWhere('email', 'like', "%{$search}%")
-                      ->orWhere('phone', 'like', "%{$search}%")
-                      ->orWhere('cell_phone', 'like', "%{$search}%")
-                      ->orWhere('work_phone', 'like', "%{$search}%");
-    
-                  
-    
+                        ->orWhere('phone', 'like', "%{$search}%")
+                        ->orWhere('cell_phone', 'like', "%{$search}%")
+                        ->orWhere('work_phone', 'like', "%{$search}%");
+
                     // Extra emails (safe if relation exists)
                     $q->orWhereHas('emails', function ($emailQuery) use ($search) {
                         $emailQuery->where('email', 'like', "%{$search}%");
                     });
-    
-                    $q->orWhereHas('deals', function ($dealQuery) use ($search) {
 
+                    $q->orWhereHas('deals', function ($dealQuery) use ($search) {
                         // deal fields
-                        $dealQuery->where('deal_number', 'like', "%{$search}%")
-                                  ->orWhere('vehicle_description', 'like', "%{$search}%")
-                    
-                                  // inventory fields (stock + vin)
-                                  ->orWhereHas('inventory', function ($inventoryQuery) use ($search) {
-                                        $inventoryQuery->where('stock_number', 'like', "%{$search}%")
-                                                       ->orWhere('vin', 'like', "%{$search}%");
-                                  });
-                    
+                        $dealQuery
+                            ->where('deal_number', 'like', "%{$search}%")
+                            ->orWhere('vehicle_description', 'like', "%{$search}%")
+
+                            // inventory fields (stock + vin)
+                            ->orWhereHas('inventory', function ($inventoryQuery) use ($search) {
+                                $inventoryQuery->where('stock_number', 'like', "%{$search}%")->orWhere('vin', 'like', "%{$search}%");
+                            });
                     });
-    
                 });
             }
-    
+
             /*
             |--------------------------------------------------------------------------
             | DATE FILTER
             |--------------------------------------------------------------------------
             */
-    
-            if ($request->has(['date_field','from_date','to_date'])) {
-    
+
+            if ($request->has(['date_field', 'from_date', 'to_date'])) {
                 $fieldMap = [
-                    'Created Date'        => 'created_at',
-                    'Sold Date'           => 'sold_date',
-                    'Delivery Date'       => 'delivery_date',
-                    'Appointment Date'    => 'appointment_date',
+                    'Created Date' => 'created_at',
+                    'Sold Date' => 'sold_date',
+                    'Delivery Date' => 'delivery_date',
+                    'Appointment Date' => 'appointment_date',
                     'Last Contacted Date' => 'last_contacted_at',
                 ];
-    
+
                 $column = $fieldMap[$request->date_field] ?? 'created_at';
-    
-                $query->whereBetween($column, [
-                    $request->from_date,
-                    $request->to_date
-                ]);
+
+                $query->whereBetween($column, [$request->from_date, $request->to_date]);
             }
-    
+
             /*
             |--------------------------------------------------------------------------
             | GET DATA
             |--------------------------------------------------------------------------
             */
-    
-            $customers = $query
-                ->orderBy('created_at', 'desc')
-                ->get();
-    
-    
+
+            $customers = $query->orderBy('created_at', 'desc')->get();
+
             /*
             |--------------------------------------------------------------------------
             | AJAX
             |--------------------------------------------------------------------------
             */
-    
+
             if ($request->ajax()) {
                 return response()->json([
-                    'success'   => true,
+                    'success' => true,
                     'customers' => $customers,
-                    'html'      => view('partials.customers-table-rows', compact('customers'))->render()
+                    'html' => view('partials.customers-table-rows', compact('customers'))->render(),
                 ]);
             }
-    
-    
+
             /*
             |--------------------------------------------------------------------------
             | DROPDOWNS
             |--------------------------------------------------------------------------
             */
-    
+
             $users = User::where('is_active', true)->orderBy('name')->get();
-    
-            $salesManagers = User::where('is_active', true)
-                ->whereHas('roles', fn($q) => $q->where('name', 'Sales Manager'))
-                ->orderBy('name')
-                ->get();
-    
-            $financeManagers = User::where('is_active', true)
-                ->whereHas('roles', fn($q) => $q->where('name', 'Finance Director'))
-                ->orderBy('name')
-                ->get();
-    
-            $bdcAgents = User::where('is_active', true)
-                ->whereHas('roles', fn($q) => $q->where('name', 'BDC Agent'))
-                ->orderBy('name')
-                ->get();
-    
-    
-            return view('customers.index', compact(
-                'customers',
-                'users',
-                'salesManagers',
-                'financeManagers',
-                'bdcAgents'
-            ));
-    
+
+            $salesManagers = User::where('is_active', true)->whereHas('roles', fn($q) => $q->where('name', 'Sales Manager'))->orderBy('name')->get();
+
+            $financeManagers = User::where('is_active', true)->whereHas('roles', fn($q) => $q->where('name', 'Finance Director'))->orderBy('name')->get();
+
+            $bdcAgents = User::where('is_active', true)->whereHas('roles', fn($q) => $q->where('name', 'BDC Agent'))->orderBy('name')->get();
+
+            return view('customers.index', compact('customers', 'users', 'salesManagers', 'financeManagers', 'bdcAgents'));
         } catch (\Throwable $e) {
-    
             /*
             |--------------------------------------------------------------------------
             | SAFE FAIL (NO WHITE SCREEN)
             |--------------------------------------------------------------------------
             */
-    
-            Log::error('Customer index error: '.$e->getMessage());
-    
+
+            Log::error('Customer index error: ' . $e->getMessage());
+
             if ($request->ajax()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Something went wrong'
+                    'message' => 'Something went wrong',
                 ]);
             }
-    
-            return redirect()
-                ->back()
-                ->with('error', 'Something went wrong. Please try again.');
+
+            return redirect()->back()->with('error', 'Something went wrong. Please try again.');
         }
     }
-    
-public function create() {
 
-    return view('customers.create');
-}
+    public function create()
+    {
+        return view('customers.create');
+    }
 
     /**
      * Return server-rendered social modal fragment for a platform.
@@ -207,7 +163,7 @@ public function create() {
         ];
 
         $col = $map[strtolower($platform)] ?? null;
-        $url = $col ? ($customer->{$col} ?? '') : '';
+        $url = $col ? $customer->{$col} ?? '' : '';
 
         return view('customers.social_modal', compact('platform', 'customer', 'url'));
     }
@@ -232,7 +188,7 @@ public function create() {
         }
 
         $data = $request->validate([
-            'url' => 'nullable|url|max:2048'
+            'url' => 'nullable|url|max:2048',
         ]);
 
         $customer->{$col} = $data['url'] ?? null;
@@ -266,9 +222,7 @@ public function create() {
         return response()->json(['success' => true]);
     }
 
-
-
-public function store(Request $request)
+    public function store(Request $request)
     {
         // Validate request data
         $validated = $request->validate([
@@ -279,27 +233,27 @@ public function store(Request $request)
             'first_name' => 'required|string|max:255',
             'middleName' => 'nullable|string|max:255',
             'last_name' => 'required|string|max:255',
-            
+
             // Phone Numbers
             'homePhone' => 'nullable|string|max:20',
             'cellPhone' => 'nullable|string|max:20',
             'workPhone' => 'nullable|string|max:20',
-            
+
             // Emails (multiple)
             'emails' => 'required|array|min:1',
             'emails.*' => 'required|email|max:255',
             'defaultEmail' => 'nullable|integer|min:0',
-            
+
             // Address
             'streetAddress' => 'nullable|string|max:500',
             'city' => 'nullable|string|max:255',
             'state' => 'nullable|string|max:255',
             'zipCode' => 'nullable|string|max:20',
-            
+
             // Driver License
             'driver_license_front' => 'nullable|string',
             'driver_license_back' => 'nullable|string',
-            
+
             // Co-Buyer
             'co_buyer_first_name' => 'nullable|string|max:255',
             'co_buyer_middle_name' => 'nullable|string|max:255',
@@ -312,14 +266,14 @@ public function store(Request $request)
             'co_buyer_city' => 'nullable|string|max:255',
             'co_buyer_state' => 'nullable|string|max:255',
             'co_buyer_zip_code' => 'nullable|string|max:20',
-            
+
             // Assignment
             'assignedTo' => 'required|exists:users,id',
             'secondaryAssignedTo' => 'nullable|exists:users,id',
             'salesManager' => 'nullable|exists:users,id',
             'financeManager' => 'nullable|exists:users,id',
             'bdcAgent' => 'required|exists:users,id',
-            
+
             // Lead & Deal Info
             'leadType' => 'nullable|string|max:50',
             'leadSource' => 'nullable|string|max:50',
@@ -327,7 +281,7 @@ public function store(Request $request)
             'dealType' => 'nullable|string|max:50',
             'inventoryType' => 'nullable|string|max:50',
             'leadStatus' => 'required|string|in:Active,Duplicate,Invalid,Lost,Sold,Wishlist,Buy-In',
-            
+
             // Optional Deal-specific fields
             'inventory_id' => 'nullable|exists:inventories,id',
             'price' => 'nullable|numeric|min:0',
@@ -338,12 +292,12 @@ public function store(Request $request)
         ]);
 
         DB::beginTransaction();
-        
+
         try {
             // Clean and prepare emails
             $emails = $this->prepareEmails($validated['emails']);
             $defaultEmailIndex = (int) ($validated['defaultEmail'] ?? 0);
-            
+
             // Ensure default index is valid
             if ($defaultEmailIndex >= count($emails)) {
                 $defaultEmailIndex = 0;
@@ -351,10 +305,9 @@ public function store(Request $request)
 
             // Check for duplicate emails across all customers
             $existingEmails = $this->checkExistingEmails($emails);
-            
+
             if (!empty($existingEmails)) {
-                 return handleResponse($request, 'The following emails already exist: ' . implode(', ', $existingEmails), 'customers.index',500);
-               
+                return handleResponse($request, 'The following emails already exist: ' . implode(', ', $existingEmails), 'customers.index', 500);
             }
 
             // Get primary email (default one)
@@ -420,24 +373,26 @@ public function store(Request $request)
                     'success' => true,
                     'message' => 'Customer created successfully!',
                     'customer' => ['id' => $customer->id],
-                    'redirect_url' => url('customers/' . $customer->id . '/edit')
+                    'redirect_url' => url('customers/' . $customer->id . '/edit'),
                 ]);
             }
 
             // Fallback for non-AJAX requests
             return handleResponse($request, 'Customer created successfully!', 'customers');
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Customer creation error: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
-                'request' => $request->except(['profileImage'])
+                'request' => $request->except(['profileImage']),
             ]);
-            
-            return response()->json([
-                'success' => false,
-                'error' => 'An error occurred while creating the customer. Please try again.'
-            ], 500);
+
+            return response()->json(
+                [
+                    'success' => false,
+                    'error' => 'An error occurred while creating the customer. Please try again.',
+                ],
+                500,
+            );
         }
     }
 
@@ -461,10 +416,10 @@ public function store(Request $request)
     {
         // Check in customers table
         $existingInCustomers = Customer::whereIn('email', $emails)->pluck('email')->toArray();
-        
+
         // Check in customer_emails table
         $existingInCustomerEmails = CustomerEmail::whereIn('email', $emails)->pluck('email')->toArray();
-        
+
         return array_unique(array_merge($existingInCustomers, $existingInCustomerEmails));
     }
 
@@ -518,10 +473,7 @@ public function store(Request $request)
      */
     private function shouldCreateDeal(array $validated): bool
     {
-        return !empty($validated['dealType']) || 
-                !empty($validated['inventoryType']) || 
-                !empty($validated['inventory_id'])
-            ;
+        return !empty($validated['dealType']) || !empty($validated['inventoryType']) || !empty($validated['inventory_id']);
     }
 
     /**
@@ -530,7 +482,7 @@ public function store(Request $request)
     private function createDeal(Customer $customer, array $validated): Deal
     {
         $dealNumber = $this->generateDealNumber();
-        
+
         return Deal::create([
             'customer_id' => $customer->id,
             'inventory_id' => $validated['inventory_id'] ?? null,
@@ -558,19 +510,16 @@ public function store(Request $request)
         $prefix = 'DL';
         $year = date('Y');
         $month = date('m');
-        
+
         // Get the last deal number for this month
-        $lastDeal = Deal::whereYear('created_at', $year)
-            ->whereMonth('created_at', $month)
-            ->orderBy('id', 'desc')
-            ->first();
-        
+        $lastDeal = Deal::whereYear('created_at', $year)->whereMonth('created_at', $month)->orderBy('id', 'desc')->first();
+
         if ($lastDeal && preg_match('/(\d+)$/', $lastDeal->deal_number, $matches)) {
             $sequence = intval($matches[1]) + 1;
         } else {
             $sequence = 1;
         }
-        
+
         return sprintf('%s-%s%s-%04d', $prefix, $year, $month, $sequence);
     }
 
@@ -588,10 +537,9 @@ public function store(Request $request)
             'Wishlist' => 'pending',
             'Buy-In' => 'pending',
         ];
-        
+
         return $statusMap[$leadStatus] ?? 'pending';
     }
-
 
     /**
      * Display the specified customer.
@@ -602,24 +550,19 @@ public function store(Request $request)
 
         return response()->json([
             'success' => true,
-            'customer' => $customer
+            'customer' => $customer,
         ]);
     }
 
-    public function edit(Customer $customer){
+    public function edit(Customer $customer)
+    {
         $inventory = Inventory::get();
 
         $customer->load(['assignedUser', 'assignedManagerUser', 'secondaryAssignedUser', 'coBuyer']);
 
-        $phoneScripts = collect([
-            (object)[ 'id' => 's1', 'name' => 'Follow-up Call' ],
-            (object)[ 'id' => 's2', 'name' => 'Sales Introduction' ],
-            (object)[ 'id' => 's3', 'name' => 'Service Reminder' ],
-            (object)[ 'id' => 's4', 'name' => 'Feedback Request' ],
-            (object)[ 'id' => 's5', 'name' => 'Appointment Confirmation' ],
-        ]);
+        $phoneScripts = collect([(object) ['id' => 's1', 'name' => 'Follow-up Call'], (object) ['id' => 's2', 'name' => 'Sales Introduction'], (object) ['id' => 's3', 'name' => 'Service Reminder'], (object) ['id' => 's4', 'name' => 'Feedback Request'], (object) ['id' => 's5', 'name' => 'Appointment Confirmation']]);
 
-        return view('customers.edit', compact('customer','inventory','phoneScripts'));
+        return view('customers.edit', compact('customer', 'inventory', 'phoneScripts'));
     }
 
     /**
@@ -820,16 +763,16 @@ public function store(Request $request)
                     'city' => $request->co_buyer_city,
                     'state' => $request->co_buyer_state,
                     'zip_code' => $request->co_buyer_zip_code,
-                ]
+                ],
             );
         } else {
             // Delete co-buyer if fields are empty
             $customer->coBuyer()->delete();
         }
 
-        return back()->with('success','Customer has been updated successfully!');
+        return back()->with('success', 'Customer has been updated successfully!');
 
-      /*  return response()->json([
+        /*  return response()->json([
             'success' => true,
             'message' => 'Customer updated successfully',
             'customer' => $customer->load(['assignedUser', 'assignedManagerUser', 'secondaryAssignedUser', 'bdcAgentUser', 'coBuyer'])
@@ -845,7 +788,7 @@ public function store(Request $request)
 
         return response()->json([
             'success' => true,
-            'message' => 'Customer deleted successfully'
+            'message' => 'Customer deleted successfully',
         ]);
     }
 
@@ -860,7 +803,7 @@ public function store(Request $request)
         return response()->json([
             'success' => true,
             'message' => 'Customer restored successfully',
-            'customer' => $customer->load(['assignedUser', 'assignedManagerUser', 'secondaryAssignedUser'])
+            'customer' => $customer->load(['assignedUser', 'assignedManagerUser', 'secondaryAssignedUser']),
         ]);
     }
 
@@ -871,7 +814,7 @@ public function store(Request $request)
     {
         $validated = $request->validate([
             'ids' => 'required|array',
-            'ids.*' => 'exists:customers,id'
+            'ids.*' => 'exists:customers,id',
         ]);
 
         $count = Customer::whereIn('id', $validated['ids'])->delete();
@@ -879,7 +822,7 @@ public function store(Request $request)
         return response()->json([
             'success' => true,
             'message' => $count . ' customer(s) deleted successfully',
-            'count' => $count
+            'count' => $count,
         ]);
     }
 
@@ -923,7 +866,7 @@ public function store(Request $request)
         return response()->json([
             'success' => true,
             'message' => 'Customers merged successfully',
-            'customer' => $mainCustomer->load(['assignedUser', 'assignedManagerUser', 'secondaryAssignedUser'])
+            'customer' => $mainCustomer->load(['assignedUser', 'assignedManagerUser', 'secondaryAssignedUser']),
         ]);
     }
 
@@ -979,113 +922,112 @@ public function store(Request $request)
         $customer->coBuyer()->delete();
         return response()->json(['success' => true, 'message' => 'Co-buyer deleted']);
     }
-public function getAllCustomer()
-{
-    $customers = Customer::with('task_deals')->get();
+    public function getAllCustomer()
+    {
+        $customers = Customer::with('task_deals')->get();
 
-    $data = $customers->map(function ($customer) {
-        return [
-            'id'    => $customer->id,
-            'name'  => $customer->name,
-            'email' => $customer->email,
-            'phone' => $customer->phone,
-            'deals' => $customer->task_deals->map(function ($deal) {
-                return [
-                    'id'=>$deal->id,
-                    'year'       => $deal->vehicle_description,
-                    'dealNumber' => $deal->deal_number,
-                ];
-            })->values(),
-        ];
-    });
+        $data = $customers->map(function ($customer) {
+            return [
+                'id' => $customer->id,
+                'name' => $customer->name,
+                'email' => $customer->email,
+                'phone' => $customer->phone,
+                'deals' => $customer->task_deals
+                    ->map(function ($deal) {
+                        return [
+                            'id' => $deal->id,
+                            'year' => $deal->vehicle_description,
+                            'dealNumber' => $deal->deal_number,
+                        ];
+                    })
+                    ->values(),
+            ];
+        });
 
-    return response()->json([
-        'success'   => true,
-        'customers' => $data,
-    ]);
-}
-
-public function importCustomers(Request $request)
-{
-    // Log uploaded file details to help debug MIME/extension issues
-    if ($request->hasFile('file')) {
-        try {
-            $file = $request->file('file');
-            Log::info('Import upload info', [
-                'originalName' => $file->getClientOriginalName(),
-                'clientMimeType' => $file->getClientMimeType(),
-                'guessedExtension' => $file->guessExtension(),
-                'mimeType' => $file->getMimeType(),
-                'size' => $file->getSize(),
-            ]);
-        } catch (\Exception $e) {
-            Log::debug('Failed to log upload info: ' . $e->getMessage());
-        }
+        return response()->json([
+            'success' => true,
+            'customers' => $data,
+        ]);
     }
 
-    // Accept common CSV/XLSX file types — some browsers/OSes send text/plain or application/vnd.ms-excel
-    $request->validate([
-        'file' => [
-            'required',
-            'mimes:xlsx,csv,txt',
-            'mimetypes:text/csv,text/plain,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        ]
-    ]);
-
-    try {
-
-        $importer = new CustomersImport();
-        Excel::import($importer, $request->file('file'));
-
-        if ($request->ajax() || $request->wantsJson()) {
-            return response()->json([
+    public function importCustomers(Request $request)
+    {
+        // Log uploaded file details (debug purposes)
+        if ($request->hasFile('file')) {
+            try {
+                $file = $request->file('file');
+                Log::info('Customer import upload info', [
+                    'originalName' => $file->getClientOriginalName(),
+                    'clientMimeType' => $file->getClientMimeType(),
+                    'guessedExtension' => $file->guessExtension(),
+                    'mimeType' => $file->getMimeType(),
+                    'size' => $file->getSize(),
+                ]);
+            } catch (\Exception $e) {
+                Log::debug('Failed to log upload info: ' . $e->getMessage());
+            }
+        }
+    
+        // Validate file type
+        $request->validate([
+            'file' => [
+                'required',
+                'mimes:xlsx,csv,txt',
+                'mimetypes:text/csv,text/plain,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            ]
+        ]);
+    
+        try {
+            // Pass update_existing & skip_duplicates to importer
+            $importer = new CustomersImport(
+                $request->input('update_existing', false),
+                $request->input('skip_duplicates', true)
+            );
+    
+            Excel::import($importer, $request->file('file'));
+    
+            $response = [
                 'success' => true,
                 'message' => 'Customers imported successfully.',
                 'report' => $importer->report,
+            ];
+    
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json($response);
+            }
+    
+            return back()->with('success', $response['message'])
+                         ->with('import_report', $importer->report);
+    
+        } catch (ValidationException $e) {
+            $failures = $e->failures();
+            $messages = collect($failures)->map(function ($failure) {
+                return "Row {$failure->row()}: " . implode(', ', $failure->errors());
+            })->implode('<br>');
+    
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $messages], 422);
+            }
+    
+            return back()->withInput()->with('error', $messages);
+    
+        } catch (Throwable $e) {
+            Log::error('Customer import failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
+    
+            $message = 'Import failed. Please check the file format or data integrity.';
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $message], 500);
+            }
+    
+            return back()->withInput()->with('error', $message);
         }
-
-        // For non-AJAX, flash the report summary to session
-        return back()->with('success', 'Customers imported successfully.')->with('import_report', $importer->report);
-
-    } catch (ValidationException $e) {
-
-        // Laravel Excel row validation errors
-        $failures = $e->failures();
-
-        $messages = collect($failures)->map(function ($failure) {
-            return "Row {$failure->row()}: " . implode(', ', $failure->errors());
-        })->implode('<br>');
-
-        if ($request->ajax() || $request->wantsJson()) {
-            return response()->json(['success' => false, 'message' => $messages], 422);
-        }
-
-        return back()
-            ->withInput()
-            ->with('error', $messages);
-
-    } catch (Throwable $e) {
-
-        // Log real error for developers
-        Log::error('Customer import failed', [
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString()
-        ]);
-
-        if ($request->ajax() || $request->wantsJson()) {
-            return response()->json(['success' => false, 'message' => 'Import failed. Please check the file format or data integrity.'], 500);
-        }
-
-        return back()
-            ->withInput()
-            ->with('error', 'Import failed. Please check the file format or data integrity.');
     }
-
-    }
-
+    
     /**
-     * Download a sample import template (CSV).
+     * Download a sample CSV template with mandatory columns highlighted.
      */
     public function sample()
     {
@@ -1094,36 +1036,33 @@ public function importCustomers(Request $request)
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ];
-
-        // Use snake_case / common header names to maximize compatibility with import mapping
+    
+        // Columns based on your table (mandatory marked with *)
         $columns = [
-            'first_name','middle_name','last_name','email','dayphone','evephone','cellphone',
-            'address','city','state','postalcode','currentsalesrepuserid','bdagentuserid',
-            'donotcall','donotemail','donotmail','nickname','email_alt','birthday','wedding_anniversary',
-            'marital_status','created_at','last_updated'
+            'first_name*','middle_name','last_name*','email*','phone','cell_phone','work_phone',
+            'address','city','state','zip_code','country','status','lead_source','assigned_to','assigned_manager',
+            'secondary_assigned','bdc_agent','interested_make','interested_model','interested_year','budget',
+            'tradein_year','tradein_make','tradein_model','tradein_vin','tradein_kms','tradein_value','notes','tags',
+            'preferences','consent_marketing','consent_sms','consent_email','facebook_url','instagram_url','twitter_url',
+            'youtube_url','tiktok_url','reddit_url','dealership_franchises','inventory_type','finance_manager',
+            'driver_license_front','driver_license_back','last_contacted_at','next_follow_up_at','created_at','updated_at','deleted_at'
         ];
-
+    
         $sampleRow = [
             'John','A','Doe','john.doe@example.com','555-1234','555-5678','555-9012',
-            '123 Main St','Townsville','TX','12345','','',
-            '0','0','0','Johnny','j.doe+alt@example.com','1980-01-01','2005-06-15','Single',
-            now()->toIso8601String(), now()->toIso8601String()
+            '123 Main St','Townsville','TX','12345','USA','active','web','1','2','',
+            '3','Toyota','Corolla','2020','20000','2018','Honda','Civic','1HGCM82633A004352','50000','15000','First visit','VIP','Online','1','1','1',
+            'https://facebook.com/johndoe','https://instagram.com/johndoe','https://twitter.com/johndoe','https://youtube.com/johndoe','https://tiktok.com/johndoe','https://reddit.com/u/johndoe','Toyota','New','4','DLF123','DLB123','2026-02-01','2026-02-10', now()->toIso8601String(), now()->toIso8601String(), null
         ];
-
+    
         $callback = function() use ($columns, $sampleRow) {
             $out = fopen('php://output', 'w');
-            // Write BOM for Excel compatibility
-            fwrite($out, "\xEF\xBB\xBF");
+            fwrite($out, "\xEF\xBB\xBF"); // BOM for Excel
             fputcsv($out, $columns);
             fputcsv($out, $sampleRow);
             fclose($out);
         };
-
+    
         return response()->stream($callback, 200, $headers);
     }
 }
-
-
-
-
-

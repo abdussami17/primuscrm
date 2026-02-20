@@ -1,146 +1,128 @@
 <style>
-/* Ensure various toast libraries render above Bootstrap modals/backdrops */
-.toast, .toast-container, .toast-top-right, .toast-top-left, .toastr, .toastify, .bs-toast, #toast-container, .iziToast, .toastify__toast {
-    z-index: 20000 !important;
-}
-.swal2-container, .swal2-toast, .swal2-popup, .swal2-modal {
-    z-index: 20000 !important;
-}
+    /* Ensure various toast libraries render above Bootstrap modals/backdrops */
+    .toast,
+    .toast-container,
+    .toast-top-right,
+    .toast-top-left,
+    .toastr,
+    .toastify,
+    .bs-toast,
+    #toast-container,
+    .iziToast,
+    .toastify__toast {
+        z-index: 20000 !important;
+    }
 
-/* Ensure toast text is readable against background */
-.toast .toast-body, .toast-body, .alert.position-fixed, .toastify__toast, .toastr, .iziToast {
-    color: #000 !important;
-}
-.bg-success.text-white, .bg-danger.text-white {
-    color: #fff !important; /* leave explicit white classes alone */
-}
+    .swal2-container,
+    .swal2-toast,
+    .swal2-popup,
+    .swal2-modal {
+        z-index: 20000 !important;
+    }
+
+    /* Ensure toast text is readable against background */
+    .toast .toast-body,
+    .toast-body,
+    .alert.position-fixed,
+    .toastify__toast,
+    .toastr,
+    .iziToast {
+        color: #000 !important;
+    }
+
+    .bg-success.text-white,
+    .bg-danger.text-white {
+        color: #fff !important;
+        /* leave explicit white classes alone */
+    }
 </style>
 
 <script>
-
-// Helper: safely hide a bootstrap modal by id or element
-function safeHideModalById(modalId) {
-    try {
-        const modalEl = document.getElementById(modalId);
-        if (!modalEl) return;
-        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-            const inst = (bootstrap.Modal.getInstance ? bootstrap.Modal.getInstance(modalEl) : null)
-                || (bootstrap.Modal.getOrCreateInstance ? bootstrap.Modal.getOrCreateInstance(modalEl) : null);
-            if (inst && typeof inst.hide === 'function') inst.hide();
+    // Helper: safely hide a bootstrap modal by id or element
+    function safeHideModalById(modalId) {
+        try {
+            const modalEl = document.getElementById(modalId);
+            if (!modalEl) return;
+            const inst = bootstrap?.Modal?.getInstance(modalEl) || null;
+            if (inst?.hide) inst.hide();
+        } catch (e) {
+            // silently fail
         }
-    } catch (e) { console.warn('safeHideModalById error', e); }
-}
+    }
 
-// Helper: process a JSON API response object and show appropriate toast; optionally hide modal
-function processApiResponse(resObj, successMessage = 'Saved successfully', modalId = null) {
-    try {
-        if (!resObj) {
-            showToast('An unexpected error occurred', 'error');
+    // Helper: process a JSON API response object and show toast; optionally hide modal
+    function processApiResponse(resObj, successMessage = 'Saved successfully', modalId = null) {
+        try {
+            if (!resObj) {
+                showToast('An unexpected error occurred', 'error');
+                return false;
+            }
+
+            const ok = resObj.success === true || String(resObj.success) === 'true';
+            if (ok) {
+                showToast(successMessage, 'success');
+                if (modalId) safeHideModalById(modalId);
+                return true;
+            }
+
+            const msg = resObj.message || resObj.error || (resObj.errors && Object.values(resObj.errors).flat()[0]) || 'Request failed';
+            showToast(msg, 'error');
+            return false;
+        } catch {
+            showToast('Request failed', 'error');
             return false;
         }
-
-        const ok = (resObj.success === true || String(resObj.success) === 'true');
-        if (ok) {
-            showToast(successMessage, 'success');
-            if (modalId) safeHideModalById(modalId);
-            return true;
-        }
-
-        // prefer message, then error, then first validation error
-        const msg = resObj.message || resObj.error || (resObj.errors && Object.values(resObj.errors).flat()[0]) || 'Request failed';
-        showToast(msg, 'error');
-        return false;
-    } catch (e) {
-        console.error('processApiResponse error', e);
-        showToast('Request failed', 'error');
-        return false;
     }
-}
 
-
-    // Sample deals data for each customer
+    // Store current customer and deals
     let currentCustomerId = '';
     let currentDeals = [];
 
-    // Show deals modal
+    // Show Deals Modal
     function showDealsModal(customerName, customerId) {
         currentCustomerId = customerId;
-
-        // Extract numeric ID from customerId (e.g., 'customer-123' -> '123')
         const id = customerId.replace('customer-', '');
-
         const modalCustomerNameEl = document.getElementById('modalCustomerName');
         const totalDealsCountEl = document.getElementById('totalDealsCount');
         if (modalCustomerNameEl) modalCustomerNameEl.textContent = customerName;
         if (totalDealsCountEl) totalDealsCountEl.textContent = '...';
 
-        // Show loading state
         const tbody = document.getElementById('dealsTableBody');
         if (tbody) {
-            tbody.innerHTML =
-                '<tr><td colspan="11" class="text-center py-4"><div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></div> Loading deals...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="11" class="text-center py-4"><div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></div> Loading deals...</td></tr>';
         }
 
         const modalEl = document.getElementById('customerDealsModal');
-        if (modalEl) {
-            try {
-                const modal = new bootstrap.Modal(modalEl);
-                modal.show();
-            } catch (e) {
-                console.warn('Bootstrap modal init failed', e);
-            }
-        }
-
-        // Fetch deals from backend
-        // console.log('Fetching deals for customer ID:', id);
+        if (modalEl) new bootstrap.Modal(modalEl).show();
 
         fetch(`/customers/${id}/deals`, {
-                method: 'GET',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => {
-                console.log('Response status:', response.status);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Deals data received:', data);
-                if (data.success && data.deals) {
-                    currentDeals = data.deals;
-                    renderDeals(currentDeals);
-                    console.log('currentDeals:', currentDeals);
-                    if (totalDealsCountEl) totalDealsCountEl.textContent = currentDeals.length;
-
-                } else {
-                    console.error('Invalid data format:', data);
-                    if (tbody) tbody.innerHTML =
-                        '<tr><td colspan="11" class="text-center py-4 text-danger">Failed to load deals</td></tr>';
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching deals:', error);
-                if (tbody) tbody.innerHTML =
-                    `<tr><td colspan="11" class="text-center py-4 text-danger">Error loading deals: ${error.message}</td></tr>`;
-            });
+            method: 'GET',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success && data.deals) {
+                currentDeals = data.deals;
+                renderDeals(currentDeals);
+                if (totalDealsCountEl) totalDealsCountEl.textContent = currentDeals.length;
+            } else if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="11" class="text-center py-4 text-danger">Failed to load deals</td></tr>';
+            }
+        })
+        .catch(error => {
+            if (tbody) tbody.innerHTML = `<tr><td colspan="11" class="text-center py-4 text-danger">Error loading deals: ${error.message}</td></tr>`;
+        });
     }
 
-    // Render deals in table
+    // Render deals table
     function renderDeals(deals) {
-
-        console.log('renderDeals called with:', deals);
         const tbody = document.getElementById('dealsTableBody');
         const noDealsMsg = document.getElementById('noDealsMessage');
-
-        if (!tbody) {
-            console.error('dealsTableBody element not found!');
-            return;
-        }
+        if (!tbody) return;
 
         if (deals.length === 0) {
             tbody.innerHTML = '';
@@ -152,154 +134,145 @@ function processApiResponse(resObj, successMessage = 'Saved successfully', modal
         noDealsMsg.classList.add('d-none');
         document.getElementById('visibleDealsCount').textContent = deals.length;
 
-        try {
-            const rows = deals.map(deal => {
-                const statusBadge = {
-                    'sold': 'bg-success',
-                    'pending': 'bg-warning text-dark',
-                    'negotiation': 'bg-info',
-                    'lost': 'bg-danger',
-                    'cancelled': 'bg-secondary'
-                } [deal.status] || 'bg-secondary';
+        tbody.innerHTML = deals.map(deal => {
+            const statusBadge = {
+                'sold': 'bg-success',
+                'pending': 'bg-warning text-dark',
+                'negotiation': 'bg-info',
+                'lost': 'bg-danger',
+                'cancelled': 'bg-secondary'
+            }[deal.status] || 'bg-secondary';
 
-                const inventoryBadge = deal.inventory_type === 'new' ? 'bg-primary' : 'bg-secondary';
+            const inventoryBadge = deal.inventory_type === 'new' ? 'bg-primary' : 'bg-secondary';
+            const createdDate = deal.created_at ? new Date(deal.created_at).toLocaleDateString() : '-';
+            const soldDate = deal.sold_date ? new Date(deal.sold_date).toLocaleDateString() : '-';
+            const price = deal.price ? `$${parseFloat(deal.price).toLocaleString()}` : '-';
+            const customerEmail = deal.customer?.email || '-';
+            const customerCity = deal.customer?.city || '-';
 
-                // Format dates
-                const createdDate = deal.created_at ? new Date(deal.created_at).toLocaleDateString() : '-';
-                const soldDate = deal.sold_date ? new Date(deal.sold_date).toLocaleDateString() : '-';
-                const price = deal.price ? `$${parseFloat(deal.price).toLocaleString()}` : '-';
+            return `
+<tr>
+<td class="fw-semibold text-primary">
+    <a href="javascript:void(0);" 
+       class="addTaskBtn" 
+       data-customer-id="${deal.customer?.id || ''}" 
+       data-customer-name="${deal.customer?.first_name || ''} ${deal.customer?.last_name || ''}">
+        <i class="ti ti-copy-plus"></i>
+    </a>
+</td>
+<td>${customerEmail}</td>
+<td>${customerCity}</td>
+<td>${deal.deal_number || '-'}</td>
+<td><span class="badge bg-light border border-1 text-dark">${deal.lead_type ? deal.lead_type.charAt(0).toUpperCase() + deal.lead_type.slice(1) : '-'}</span></td>
+<td><span class="badge ${statusBadge}">${deal.status ? deal.status.charAt(0).toUpperCase() + deal.status.slice(1) : '-'}</span></td>
+<td><span class="badge ${inventoryBadge}">${deal.inventory_type ? deal.inventory_type.toUpperCase() : '-'}</span></td>
+<td>${deal.vehicle_description || '-'}</td>
+<td class="fw-semibold">${price}</td>
+<td>${createdDate}</td>
+<td>${soldDate}</td>
+</tr>
+            `;
+        }).join('');
+    }
 
-                // Get customer data
-                const customerEmail = deal.customer?.email || '-';
-                const customerCity = deal.customer?.city || '-';
+    // Add Task button click
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('.addTaskBtn');
+        if (!btn) return;
 
-                return `
-          <tr>
-            <td class="fw-semibold text-primary" data-bs-toggle="modal" data-bs-target="#add_modal">
-              <i data-bs-toggle="tooltip" data-bs-title="Add Task" class="ti ti-copy-plus"></i>
-            </td>
-            <td>${customerEmail}</td>
-            <td>${customerCity}</td>
-            <td>${deal.deal_number || '-'}</td>
-            <td><span class="badge bg-light border border-1 text-dark">${deal.lead_type ? deal.lead_type.charAt(0).toUpperCase() + deal.lead_type.slice(1) : '-'}</span></td>
-            <td><span class="badge ${statusBadge}">${deal.status ? deal.status.charAt(0).toUpperCase() + deal.status.slice(1) : '-'}</span></td>
-            <td><span class="badge ${inventoryBadge}">${deal.inventory_type ? deal.inventory_type.toUpperCase() : '-'}</span></td>
-            <td>${deal.vehicle_description || '-'}</td>
-            <td class="fw-semibold">${price}</td>
-            <td>${createdDate}</td>
-            <td>${soldDate}</td>
-          </tr>
-        `;
+        const customerId = btn.getAttribute('data-customer-id');
+        const customerName = btn.getAttribute('data-customer-name');
+        const addTaskModalEl = document.getElementById('addTaskModal');
+
+        if (!addTaskModalEl) return;
+
+        addTaskModalEl.querySelector('input[name="customer_search"]').value = customerName;
+        addTaskModalEl.querySelector('input[name="customer_id"]').value = customerId;
+        addTaskModalEl.querySelector('input[name="deal_id"]').value = '';
+
+        // Show Add Task modal above current modal without backdrop
+        const addTaskInstance = bootstrap.Modal.getInstance(addTaskModalEl) 
+                                || new bootstrap.Modal(addTaskModalEl, { backdrop: false, focus: true });
+        addTaskInstance.show();
+    });
+
+    // Phone scripts DB
+    const phoneScriptsDB = [
+        { id: "s1", name: "Follow-up Call", body: "Hi, I'm calling to follow up on your recent inquiry..." },
+        { id: "s2", name: "Sales Introduction", body: "Hello! I wanted to tell you about our latest offers..." },
+        { id: "s3", name: "Service Reminder", body: "Good morning! Your vehicle is due for maintenance..." },
+        { id: "s4", name: "Feedback Request", body: "Hi there! We'd love to hear about your experience..." },
+        { id: "s5", name: "Appointment Confirmation", body: "Thank you for scheduling with us. Your appointment is..." }
+    ];
+
+    // Initialize TomSelect for phone scripts
+    function initPhoneScriptTomSelect() {
+        const selectEl = document.querySelector('#phoneScriptSelectModal');
+        if (!selectEl) return;
+
+        selectEl.innerHTML = phoneScriptsDB.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+
+        if (typeof TomSelect !== 'undefined' && !selectEl.tomselect && !window.phoneScriptSelect) {
+            window.phoneScriptSelect = new TomSelect("#phoneScriptSelectModal", {
+                options: phoneScriptsDB.map(s => ({ value: s.id, text: s.name })),
+                items: [],
+                maxItems: 1,
+                placeholder: "Search & select script...",
+                searchField: 'text',
+                allowEmptyOption: true,
+                closeAfterSelect: true
             });
-
-            tbody.innerHTML = rows.join('');
-            console.log('Deals rendered successfully, rows:', rows.length);
-        } catch (error) {
-            console.error('Error rendering deals:', error);
-            tbody.innerHTML =
-                '<tr><td colspan="11" class="text-center py-4 text-danger">Error displaying deals</td></tr>';
         }
     }
-
-    // View deal details (optional future logic)
-    function viewDealDetails(dealNumber) {
-        //console.log('Viewing deal:', dealNumber);
-        alert('Opening deal details for ' + dealNumber);
-    }
-
-      const phoneScriptsDB = [
-    { id: "s1", name: "Follow-up Call", body: "Hi, I'm calling to follow up on your recent inquiry..." },
-    { id: "s2", name: "Sales Introduction", body: "Hello! I wanted to tell you about our latest offers..." },
-    { id: "s3", name: "Service Reminder", body: "Good morning! Your vehicle is due for maintenance..." },
-    { id: "s4", name: "Feedback Request", body: "Hi there! We'd love to hear about your experience..." },
-    { id: "s5", name: "Appointment Confirmation", body: "Thank you for scheduling with us. Your appointment is..." }
-  ];
-
-
-    // Initialize TomSelect for phone scripts only if not already initialized elsewhere
-    (function initPhoneScriptTomSelect() {
-        try {
-            const selectEl = document.querySelector('#phoneScriptSelectModal');
-            if (!selectEl) return;
-
-            // Always populate plain <option>s so normal dropdown works
-            selectEl.innerHTML = phoneScriptsDB.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-
-            // If TomSelect is available and no instance exists, initialize it (optional enhancement)
-            if (typeof TomSelect !== 'undefined' && !selectEl.tomselect && !window.phoneScriptSelect) {
-                window.phoneScriptSelect = new TomSelect("#phoneScriptSelectModal", {
-                    options: phoneScriptsDB.map(script => ({ value: script.id, text: script.name })),
-                    items: [],
-                    maxItems: 1,
-                    placeholder: "Search & select script...",
-                    searchField: 'text',
-                    allowEmptyOption: true,
-                    closeAfterSelect: true
-                });
-            }
-        } catch (e) {
-            console.warn('Failed to init phoneScript TomSelect', e);
-        }
-    })();
-
-    // Expose initializer and also initialize when modal is shown (in case DOM insertion timing differs)
-    window.initPhoneScriptTomSelect = function() {
-        try {
-            const selectEl = document.querySelector('#phoneScriptSelectModal');
-            if (!selectEl) return;
-
-            // Populate plain options so a simple <select> works immediately
-            selectEl.innerHTML = phoneScriptsDB.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-
-            // Optionally initialize TomSelect if available and not already initialized
-            if (typeof TomSelect !== 'undefined' && !selectEl.tomselect && !window.phoneScriptSelect) {
-                window.phoneScriptSelect = new TomSelect("#phoneScriptSelectModal", {
-                    options: phoneScriptsDB.map(script => ({ value: script.id, text: script.name })),
-                    items: [],
-                    maxItems: 1,
-                    placeholder: "Search & select script...",
-                    searchField: 'text',
-                    allowEmptyOption: true,
-                    closeAfterSelect: true
-                });
-            }
-        } catch (e) {
-            console.warn('Failed to init phoneScript TomSelect', e);
-        }
-    };
 
     document.addEventListener('DOMContentLoaded', () => {
-        try { window.initPhoneScriptTomSelect(); } catch(e){}
-        // If modal exists, initialize when it's shown
-        const modalEl = document.getElementById('addTaskModal') || document.getElementById('add_modal') || document.getElementById('customer_add_modal');
-        if (modalEl && typeof bootstrap !== 'undefined') {
-            modalEl.addEventListener('show.bs.modal', () => { try { window.initPhoneScriptTomSelect(); } catch(e){} });
+        initPhoneScriptTomSelect();
+        const addTaskModalEl = document.getElementById('addTaskModal');
+        if (addTaskModalEl) {
+            addTaskModalEl.addEventListener('show.bs.modal', initPhoneScriptTomSelect);
         }
     });
 </script>
+
 <script>
-// Delegated fallback: handle clicks on the "Not in Stock? Add Manually" button
-document.addEventListener('click', function(e) {
-    try {
-        const btn = e.target.closest && e.target.closest('#gotoinventoryModal button[onclick*="openManualVehicleFormFromInventory"]');
-        if (!btn) return;
-        e.preventDefault();
-        // If the function exists, call it
-        if (typeof window.openManualVehicleFormFromInventory === 'function') {
-            window.openManualVehicleFormFromInventory();
-            return;
-        }
-        // Fallback: show manual modal directly
-        const manual = document.getElementById('manualVehicleModal') || document.getElementById('addManuallyModal');
-        if (!manual) { alert('Manual vehicle form is not available on this page.'); return; }
-        try { document.querySelectorAll('.modal-backdrop').forEach(b => b.remove()); } catch(e){}
-        try { if (manual.parentNode !== document.body) document.body.appendChild(manual); } catch(e){}
+    // Delegated fallback: handle clicks on the "Not in Stock? Add Manually" button
+    document.addEventListener('click', function(e) {
         try {
-            if (typeof bootstrap.Modal.getOrCreateInstance === 'function') bootstrap.Modal.getOrCreateInstance(manual).show();
-            else new bootstrap.Modal(manual).show();
-        } catch (err) { try { bootstrap.Modal.getInstance(manual)?.show(); } catch(e){} }
-    } catch (err) { /* ignore */ }
-});
+            const btn = e.target.closest && e.target.closest(
+                '#gotoinventoryModal button[onclick*="openManualVehicleFormFromInventory"]');
+            if (!btn) return;
+            e.preventDefault();
+            // If the function exists, call it
+            if (typeof window.openManualVehicleFormFromInventory === 'function') {
+                window.openManualVehicleFormFromInventory();
+                return;
+            }
+            // Fallback: show manual modal directly
+            const manual = document.getElementById('manualVehicleModal') || document.getElementById(
+                'addManuallyModal');
+            if (!manual) {
+                alert('Manual vehicle form is not available on this page.');
+                return;
+            }
+            try {
+                document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+            } catch (e) {}
+            try {
+                if (manual.parentNode !== document.body) document.body.appendChild(manual);
+            } catch (e) {}
+            try {
+                if (typeof bootstrap.Modal.getOrCreateInstance === 'function') bootstrap.Modal
+                    .getOrCreateInstance(manual).show();
+                else new bootstrap.Modal(manual).show();
+            } catch (err) {
+                try {
+                    bootstrap.Modal.getInstance(manual)?.show();
+                } catch (e) {}
+            }
+        } catch (err) {
+            /* ignore */
+        }
+    });
 </script>
 
 
@@ -478,7 +451,8 @@ document.addEventListener('click', function(e) {
         const sigEditorWrapper = document.querySelector('.signature-editor-wrapper');
         let isSigHtmlMode = false;
 
-        if (!btnSigHtmlMode || !signatureEditor || !sigHtmlTextarea || !signaturePreview || !sigEditorWrapper) return;
+        if (!btnSigHtmlMode || !signatureEditor || !sigHtmlTextarea || !signaturePreview || !sigEditorWrapper)
+            return;
 
         btnSigHtmlMode.addEventListener('click', function(e) {
             e.preventDefault();
@@ -491,7 +465,8 @@ document.addEventListener('click', function(e) {
 
                 // Hide editor and preview, show textarea
                 sigEditorWrapper.style.display = 'none';
-                if (signaturePreview && signaturePreview.parentElement) signaturePreview.parentElement.style.display = 'none';
+                if (signaturePreview && signaturePreview.parentElement) signaturePreview.parentElement
+                    .style.display = 'none';
                 sigHtmlTextarea.classList.add('active');
                 sigHtmlTextarea.style.display = 'block';
 
@@ -505,7 +480,8 @@ document.addEventListener('click', function(e) {
 
                 // Show editor and preview, hide textarea
                 sigEditorWrapper.style.display = 'block';
-                if (signaturePreview && signaturePreview.parentElement) signaturePreview.parentElement.style.display = 'block';
+                if (signaturePreview && signaturePreview.parentElement) signaturePreview.parentElement
+                    .style.display = 'block';
                 sigHtmlTextarea.classList.remove('active');
                 sigHtmlTextarea.style.display = 'none';
 
@@ -2196,11 +2172,20 @@ document.addEventListener('click', function(e) {
                             if (templateSelect.tomselect) {
                                 templateSelect.tomselect.clearOptions();
                                 tmpl.forEach(t => {
-                                    templateSelect.tomselect.addOption({ value: t.id, text: t.name || (t.template_name || `Template ${t.id}`) });
-                                    campaignTemplatesMap[String(t.id)] = { subject: t.subject || '', body: t.body || '' };
+                                    templateSelect.tomselect.addOption({
+                                        value: t.id,
+                                        text: t.name || (t.template_name ||
+                                            `Template ${t.id}`)
+                                    });
+                                    campaignTemplatesMap[String(t.id)] = {
+                                        subject: t.subject || '',
+                                        body: t.body || ''
+                                    };
                                 });
                                 // refresh dropdown
-                                try { templateSelect.tomselect.refreshOptions(); } catch(e){}
+                                try {
+                                    templateSelect.tomselect.refreshOptions();
+                                } catch (e) {}
                             } else {
                                 // clear existing options (keep a first 'No selection')
                                 const firstOption = templateSelect.querySelector('option[hidden]');
@@ -2209,9 +2194,13 @@ document.addEventListener('click', function(e) {
                                 tmpl.forEach(t => {
                                     const opt = document.createElement('option');
                                     opt.value = t.id;
-                                    opt.text = t.name || (t.template_name || `Template ${t.id}`);
+                                    opt.text = t.name || (t.template_name ||
+                                        `Template ${t.id}`);
                                     templateSelect.appendChild(opt);
-                                    campaignTemplatesMap[String(t.id)] = { subject: t.subject || '', body: t.body || '' };
+                                    campaignTemplatesMap[String(t.id)] = {
+                                        subject: t.subject || '',
+                                        body: t.body || ''
+                                    };
                                 });
                             }
                         } catch (e) {
@@ -2220,9 +2209,13 @@ document.addEventListener('click', function(e) {
                             tmpl.forEach(t => {
                                 const opt = document.createElement('option');
                                 opt.value = t.id;
-                                opt.text = t.name || (t.template_name || `Template ${t.id}`);
+                                opt.text = t.name || (t.template_name ||
+                                    `Template ${t.id}`);
                                 templateSelect.appendChild(opt);
-                                campaignTemplatesMap[String(t.id)] = { subject: t.subject || '', body: t.body || '' };
+                                campaignTemplatesMap[String(t.id)] = {
+                                    subject: t.subject || '',
+                                    body: t.body || ''
+                                };
                             });
                         }
                     }
@@ -2239,7 +2232,8 @@ document.addEventListener('click', function(e) {
                                 if (senderEl) {
                                     senderEl.innerHTML = '';
                                     const emptyOpt = document.createElement('option');
-                                    emptyOpt.hidden = true; emptyOpt.value = '';
+                                    emptyOpt.hidden = true;
+                                    emptyOpt.value = '';
                                     emptyOpt.text = '--Select Sender--';
                                     senderEl.appendChild(emptyOpt);
                                     // Teams group
@@ -2272,7 +2266,8 @@ document.addEventListener('click', function(e) {
                                 if (backupEl) {
                                     backupEl.innerHTML = '';
                                     const emptyOpt2 = document.createElement('option');
-                                    emptyOpt2.hidden = true; emptyOpt2.value = '';
+                                    emptyOpt2.hidden = true;
+                                    emptyOpt2.value = '';
                                     emptyOpt2.text = '--Select Backup Sender--';
                                     backupEl.appendChild(emptyOpt2);
                                     individuals.forEach(u => {
@@ -2288,7 +2283,8 @@ document.addEventListener('click', function(e) {
                                 if (assignedEl) {
                                     assignedEl.innerHTML = '';
                                     const emptyOpt3 = document.createElement('option');
-                                    emptyOpt3.hidden = true; emptyOpt3.value = '';
+                                    emptyOpt3.hidden = true;
+                                    emptyOpt3.value = '';
                                     emptyOpt3.text = '--Select Member--';
                                     assignedEl.appendChild(emptyOpt3);
                                     individuals.forEach(u => {
@@ -2301,13 +2297,18 @@ document.addEventListener('click', function(e) {
                             }
 
                             // store teams map for later use when selecting a team
-                            window.__campaignTeams = (sd.teams || []).reduce((acc, t) => { acc[t.id] = t; return acc; }, {});
+                            window.__campaignTeams = (sd.teams || []).reduce((acc, t) => {
+                                acc[t.id] = t;
+                                return acc;
+                            }, {});
                         }
 
                         const lres = await fetch('/api/languages');
                         if (lres.ok) {
                             const langs = await lres.json().catch(() => null) || [];
-                            const langEl = document.querySelector('#account-2 select[aria-label]') || document.querySelector('#account-2 select');
+                            const langEl = document.querySelector(
+                                '#account-2 select[aria-label]') || document.querySelector(
+                                '#account-2 select');
                             if (langEl) {
                                 langEl.innerHTML = '';
                                 langs.forEach(l => {
@@ -2335,7 +2336,8 @@ document.addEventListener('click', function(e) {
                 const id = this.value;
                 if (campaignTemplatesMap && campaignTemplatesMap[id]) {
                     subjectField.value = campaignTemplatesMap[id].subject || '';
-                    if (window.froalaEditor) window.froalaEditor.html.set(campaignTemplatesMap[id].body || '');
+                    if (window.froalaEditor) window.froalaEditor.html.set(campaignTemplatesMap[id]
+                        .body || '');
                     return;
                 }
                 // fall back to existing templates object
@@ -2364,11 +2366,18 @@ document.addEventListener('click', function(e) {
                     const assignedEl = document.getElementById('assignedToSelect');
                     if (assignedEl) {
                         assignedEl.innerHTML = '';
-                        const emptyOpt = document.createElement('option'); emptyOpt.hidden = true; emptyOpt.value = ''; emptyOpt.text = '--Select Member--'; assignedEl.appendChild(emptyOpt);
+                        const emptyOpt = document.createElement('option');
+                        emptyOpt.hidden = true;
+                        emptyOpt.value = '';
+                        emptyOpt.text = '--Select Member--';
+                        assignedEl.appendChild(emptyOpt);
                         const team = window.__campaignTeams && window.__campaignTeams[roleId];
                         if (team && Array.isArray(team.members)) {
                             team.members.forEach(m => {
-                                const o = document.createElement('option'); o.value = m.id; o.text = m.name; assignedEl.appendChild(o);
+                                const o = document.createElement('option');
+                                o.value = m.id;
+                                o.text = m.name;
+                                assignedEl.appendChild(o);
                             });
                         }
                     }
@@ -2383,6 +2392,7 @@ document.addEventListener('click', function(e) {
         const dripRadio = document.getElementById('dripFunction');
         const massBox = document.getElementById('mass-box');
         const dripBox = document.getElementById('dripping-box');
+
         function updateSetTypeUI() {
             if (massRadio && massBox && dripBox && massRadio.checked) {
                 massBox.style.display = 'block';
@@ -2445,54 +2455,71 @@ document.addEventListener('click', function(e) {
                     try {
                         // collect selected recipients (checked rows)
                         const recipients = [];
-                        document.querySelectorAll('tbody tr td .form-check-input:checked').forEach(cb => {
-                            const tr = cb.closest('tr');
-                            const cid = tr?.dataset?.customerId || tr?.getAttribute('data-customer-id') || null;
-                            if (cid) {
-                                const n = Number(cid);
-                                recipients.push(Number.isNaN(n) ? cid : n);
-                            } else if (cb.value && cb.value.includes && cb.value.indexOf('@') !== -1) {
-                                recipients.push(cb.value);
-                            } else if (cb.value) {
-                                recipients.push(cb.value);
-                            }
-                        });
+                        document.querySelectorAll('tbody tr td .form-check-input:checked')
+                            .forEach(cb => {
+                                const tr = cb.closest('tr');
+                                const cid = tr?.dataset?.customerId || tr?.getAttribute(
+                                    'data-customer-id') || null;
+                                if (cid) {
+                                    const n = Number(cid);
+                                    recipients.push(Number.isNaN(n) ? cid : n);
+                                } else if (cb.value && cb.value.includes && cb.value
+                                    .indexOf('@') !== -1) {
+                                    recipients.push(cb.value);
+                                } else if (cb.value) {
+                                    recipients.push(cb.value);
+                                }
+                            });
 
                         const templateSelectEl = document.getElementById('templateSelect');
                         // If TomSelect is used, prefer its API to get the value
                         let selectedTemplateIdRaw = null;
                         if (templateSelectEl) {
-                            if (templateSelectEl.tomselect && typeof templateSelectEl.tomselect.getValue === 'function') {
+                            if (templateSelectEl.tomselect && typeof templateSelectEl.tomselect
+                                .getValue === 'function') {
                                 selectedTemplateIdRaw = templateSelectEl.tomselect.getValue();
                             } else {
-                                selectedTemplateIdRaw = templateSelectEl?.selectedOptions?.[0]?.value ?? templateSelectEl?.value ?? null;
+                                selectedTemplateIdRaw = templateSelectEl?.selectedOptions?.[0]
+                                    ?.value ?? templateSelectEl?.value ?? null;
                             }
                         }
-                        const selectedTemplateId = (selectedTemplateIdRaw && !isNaN(Number(selectedTemplateIdRaw))) ? Number(selectedTemplateIdRaw) : selectedTemplateIdRaw;
-                        let selectedTemplateName = templateSelectEl?.selectedOptions?.[0]?.text || null;
+                        const selectedTemplateId = (selectedTemplateIdRaw && !isNaN(Number(
+                                selectedTemplateIdRaw))) ? Number(selectedTemplateIdRaw) :
+                            selectedTemplateIdRaw;
+                        let selectedTemplateName = templateSelectEl?.selectedOptions?.[0]
+                            ?.text || null;
                         // If we loaded templates into campaignTemplatesMap, resolve name by id when missing
-                        if ((!selectedTemplateName || selectedTemplateName === '') && selectedTemplateIdRaw && campaignTemplatesMap) {
+                        if ((!selectedTemplateName || selectedTemplateName === '') &&
+                            selectedTemplateIdRaw && campaignTemplatesMap) {
                             const tm = campaignTemplatesMap[String(selectedTemplateIdRaw)];
                             if (tm && tm.subject !== undefined) {
                                 // tm holds subject/body map; try to find name if present
-                                selectedTemplateName = tm.name || tm.template_name || selectedTemplateName;
+                                selectedTemplateName = tm.name || tm.template_name ||
+                                    selectedTemplateName;
                             }
                         }
 
                         const payload = {
-                            name: document.getElementById('campaignNameField')?.value || null,
+                            name: document.getElementById('campaignNameField')?.value ||
+                                null,
                             template_id: selectedTemplateId,
                             template_name: selectedTemplateName,
-                            sender_type: document.getElementById('senderSelect')?.selectedOptions?.[0]?.dataset?.type || null,
+                            sender_type: document.getElementById('senderSelect')
+                                ?.selectedOptions?.[0]?.dataset?.type || null,
                             sender: document.getElementById('senderSelect')?.value || null,
-                            backup_sender: document.getElementById('backupSender')?.value || null,
-                            language: document.getElementById('languageSelect')?.value || null,
+                            backup_sender: document.getElementById('backupSender')?.value ||
+                                null,
+                            language: document.getElementById('languageSelect')?.value ||
+                                null,
                             subject: document.getElementById('subjectField')?.value || null,
-                            body: window.froalaEditor ? window.froalaEditor.html.get() : document.getElementById('summaryBody')?.innerText || null,
+                            body: window.froalaEditor ? window.froalaEditor.html.get() :
+                                document.getElementById('summaryBody')?.innerText || null,
                             start_at: document.getElementById('startDate')?.value || null,
                             end_at: document.getElementById('endDate')?.value || null,
-                            set_type: document.getElementById('massSend')?.checked ? 'mass' : 'drip',
-                            drip_initial_count: document.getElementById('dripInitialCount')?.value || null,
+                            set_type: document.getElementById('massSend')?.checked ?
+                                'mass' : 'drip',
+                            drip_initial_count: document.getElementById('dripInitialCount')
+                                ?.value || null,
                             drip_days: document.getElementById('dripDays')?.value || null,
                             recipients: recipients
                         };
@@ -2501,37 +2528,49 @@ document.addEventListener('click', function(e) {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                                'X-CSRF-TOKEN': document.querySelector(
+                                    'meta[name="csrf-token"]')?.content || ''
                             },
                             credentials: 'same-origin',
                             body: JSON.stringify(payload)
                         }).then(async res => {
                             let json = null;
-                            const contentType = res.headers.get('content-type') || '';
+                            const contentType = res.headers.get('content-type') ||
+                                '';
                             if (contentType.includes('application/json')) {
-                                try { json = await res.clone().json(); } catch(e) { json = null; }
+                                try {
+                                    json = await res.clone().json();
+                                } catch (e) {
+                                    json = null;
+                                }
                             }
 
                             if (!res.ok) {
                                 // Prefer server-provided message and validation errors
                                 if (json && json.errors) {
-                                    const errs = Object.values(json.errors).flat().join('\n');
-                                    const msg = (json.message ? json.message + '\n' : '') + errs;
+                                    const errs = Object.values(json.errors).flat()
+                                        .join('\n');
+                                    const msg = (json.message ? json.message +
+                                        '\n' : '') + errs;
                                     alert('Failed to save campaign: ' + msg);
                                 } else if (json && json.message) {
-                                    alert('Failed to save campaign: ' + json.message);
+                                    alert('Failed to save campaign: ' + json
+                                        .message);
                                 } else {
                                     const txt = await res.text().catch(() => null);
-                                    alert('Failed to save campaign: '+ (txt || res.status));
+                                    alert('Failed to save campaign: ' + (txt || res
+                                        .status));
                                 }
                                 return;
                             }
 
                             // Success: show server message if provided
                             if (!json) json = await res.json().catch(() => null);
-                            const successMsg = (json && json.message) ? json.message : 'Campaign saved';
+                            const successMsg = (json && json.message) ? json
+                                .message : 'Campaign saved';
                             $('#emailModal').modal('hide');
-                            if (typeof showToast === 'function') showToast(successMsg);
+                            if (typeof showToast === 'function') showToast(
+                                successMsg);
                             else alert(successMsg);
                         }).catch(err => {
                             console.error('Save campaign error', err);
@@ -2565,7 +2604,9 @@ document.addEventListener('click', function(e) {
                         if (currentTab === $tabs.length - 1) {
                             updateCampaignSummary();
                         }
-                    } catch (e) { console.warn('updateCampaignSummary failed', e); }
+                    } catch (e) {
+                        console.warn('updateCampaignSummary failed', e);
+                    }
                 }
 
                 // Update progress bar
@@ -2585,31 +2626,41 @@ document.addEventListener('click', function(e) {
                         const backupText = backupEl?.selectedOptions?.[0]?.text || '';
                         const assignedEl = document.getElementById('assignedToSelect');
                         const assignedText = assignedEl?.selectedOptions?.[0]?.text || '';
-                        const langEl = document.querySelector('#account-2 select[aria-label]') || document.querySelector('#account-2 select');
+                        const langEl = document.querySelector('#account-2 select[aria-label]') ||
+                            document.querySelector('#account-2 select');
                         const langText = langEl?.selectedOptions?.[0]?.text || '';
                         const campaignName = document.getElementById('campaignNameField')?.value || '';
                         const subject = document.getElementById('subjectField')?.value || '';
-                        const bodyHtml = window.froalaEditor ? window.froalaEditor.html.get() : (document.getElementById('editor')?.innerHTML || document.getElementById('summaryBody')?.innerHTML || '');
+                        const bodyHtml = window.froalaEditor ? window.froalaEditor.html.get() : (
+                            document.getElementById('editor')?.innerHTML || document.getElementById(
+                                'summaryBody')?.innerHTML || '');
                         const startAt = document.getElementById('startDate')?.value || '';
                         const endAt = document.getElementById('endDate')?.value || '';
-                        const setType = document.getElementById('massSend')?.checked ? 'One-time Mass Send' : 'Dripping Function';
+                        const setType = document.getElementById('massSend')?.checked ?
+                            'One-time Mass Send' : 'Dripping Function';
                         const recipients = [];
-                        document.querySelectorAll('tbody tr td .form-check-input:checked').forEach(cb => {
-                            const tr = cb.closest('tr');
-                            const cid = tr?.dataset?.customerId || tr?.getAttribute('data-customer-id') || null;
-                            if (cid) recipients.push(cid);
-                        });
+                        document.querySelectorAll('tbody tr td .form-check-input:checked').forEach(
+                            cb => {
+                                const tr = cb.closest('tr');
+                                const cid = tr?.dataset?.customerId || tr?.getAttribute(
+                                    'data-customer-id') || null;
+                                if (cid) recipients.push(cid);
+                            });
                         const recipientsCount = recipients.length;
                         const dripInitial = document.getElementById('dripInitialCount')?.value || '';
                         const dripDays = Number(document.getElementById('dripDays')?.value || 0) || 0;
 
                         // set summary fields
-                        const setText = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+                        const setText = (id, text) => {
+                            const el = document.getElementById(id);
+                            if (el) el.textContent = text;
+                        };
                         setText('summaryTemplate', templateName || '—');
                         setText('summarySender', senderText || '—');
                         setText('summaryFallbackSender', backupText || '—');
                         setText('summaryCampaignName', campaignName || '—');
-                        setText('summaryStartDate', startAt ? (new Date(startAt)).toLocaleString() : '—');
+                        setText('summaryStartDate', startAt ? (new Date(startAt)).toLocaleString() :
+                            '—');
                         setText('summaryEndDate', endAt ? (new Date(endAt)).toLocaleString() : '—');
                         setText('summarySetType', setType);
                         setText('summaryRecipients', `${recipientsCount} selected`);
@@ -2617,14 +2668,17 @@ document.addEventListener('click', function(e) {
                         if (setType === 'One-time Mass Send') {
                             setText('summaryDripSchedule', 'All at once');
                         } else {
-                            const perDay = dripDays > 0 ? Math.ceil((recipientsCount || 0) / dripDays) : (dripInitial ? dripInitial+' initial' : '—');
+                            const perDay = dripDays > 0 ? Math.ceil((recipientsCount || 0) / dripDays) :
+                                (dripInitial ? dripInitial + ' initial' : '—');
                             setText('summaryDripSchedule', perDay ? `${perDay} per day` : '—');
                         }
                         setText('summaryDripTotal', `${recipientsCount} messages`);
                         setText('summarySubject', subject || '—');
                         const summaryBodyEl = document.getElementById('summaryBody');
                         if (summaryBodyEl) summaryBodyEl.innerHTML = bodyHtml || '';
-                    } catch (e) { console.warn('Failed to populate campaign summary', e); }
+                    } catch (e) {
+                        console.warn('Failed to populate campaign summary', e);
+                    }
                 }
 
                 // Update button visibility
@@ -2876,95 +2930,97 @@ document.addEventListener('click', function(e) {
             });
         });
 
-// Global variable to store modal instance
-const deleteModalEl = document.getElementById('delete_modal');
-const deleteModal = new bootstrap.Modal(deleteModalEl);
+        // Global variable to store modal instance
+        const deleteModalEl = document.getElementById('delete_modal');
+        const deleteModal = new bootstrap.Modal(deleteModalEl);
 
-let deleteCustomerId = null;
+        let deleteCustomerId = null;
 
-// Open modal when delete button is clicked
-document.addEventListener('click', function(e) {
-    if (e.target.classList.contains('delete-customer') || e.target.closest('.delete-customer')) {
-        e.preventDefault();
+        // Open modal when delete button is clicked
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('delete-customer') || e.target.closest(
+                    '.delete-customer')) {
+                e.preventDefault();
 
-        const deleteBtn = e.target.classList.contains('delete-customer') 
-            ? e.target 
-            : e.target.closest('.delete-customer');
+                const deleteBtn = e.target.classList.contains('delete-customer') ?
+                    e.target :
+                    e.target.closest('.delete-customer');
 
-        deleteCustomerId = deleteBtn.getAttribute('data-id');
+                deleteCustomerId = deleteBtn.getAttribute('data-id');
 
-        // Dynamically update modal text
-        document.getElementById('delete_modal_text').textContent = "Are you sure you want to delete this customer?";
+                // Dynamically update modal text
+                document.getElementById('delete_modal_text').textContent =
+                    "Are you sure you want to delete this customer?";
 
-        // Show modal
-        deleteModal.show();
-    }
-});
-
-// Confirm Delete Button Click
-document.getElementById('confirm_delete_btn').addEventListener('click', function() {
-    if (!deleteCustomerId) return;
-
-    fetch(`/customers/${deleteCustomerId}`, {
-        method: 'DELETE',
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        // Hide modal
-        deleteModal.hide();
-
-        if (data.success) {
-            // Show success toast
-            Swal.fire({
-                icon: 'success',
-                title: 'Deleted!',
-                text: data.message || 'Customer has been deleted.',
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 3000,
-                timerProgressBar: true
-            });
-
-            // Reload page or remove row
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-        } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error!',
-                text: data.message || 'Failed to delete customer.',
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 3000
-            });
-        }
-
-        deleteCustomerId = null;
-    })
-    .catch(error => {
-        deleteModal.hide();
-        console.error('Delete error:', error);
-
-        Swal.fire({
-            icon: 'error',
-            title: 'Error!',
-            text: 'An error occurred while deleting the customer.',
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 3000
+                // Show modal
+                deleteModal.show();
+            }
         });
-        deleteCustomerId = null;
-    });
-});
+
+        // Confirm Delete Button Click
+        document.getElementById('confirm_delete_btn').addEventListener('click', function() {
+            if (!deleteCustomerId) return;
+
+            fetch(`/customers/${deleteCustomerId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Hide modal
+                    deleteModal.hide();
+
+                    if (data.success) {
+                        // Show success toast
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Deleted!',
+                            text: data.message || 'Customer has been deleted.',
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: false,
+                            timer: 3000,
+                            timerProgressBar: true
+                        });
+
+                        // Reload page or remove row
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error!',
+                            text: data.message || 'Failed to delete customer.',
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: false,
+                            timer: 3000
+                        });
+                    }
+
+                    deleteCustomerId = null;
+                })
+                .catch(error => {
+                    deleteModal.hide();
+                    console.error('Delete error:', error);
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: 'An error occurred while deleting the customer.',
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 3000
+                    });
+                    deleteCustomerId = null;
+                });
+        });
 
 
         // Bulk Delete Handler
@@ -3183,67 +3239,75 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
         }
 
         // Initialize filter dropdowns
-            // helper: create filter trigger + setup for a wrapper
-            function createFilterForWrapper(wrapper, colIndex) {
-                if (!wrapper) return;
-                if (wrapper.querySelector('.filter-dropdown-trigger')) return;
+        // helper: create filter trigger + setup for a wrapper
+        function createFilterForWrapper(wrapper, colIndex) {
+            if (!wrapper) return;
+            if (wrapper.querySelector('.filter-dropdown-trigger')) return;
 
-                const triggerBtn = document.createElement('button');
-                triggerBtn.className = 'btn btn-sm btn-light filter-dropdown-trigger w-100 text-start';
-                triggerBtn.type = 'button';
-                triggerBtn.innerHTML = `
+            const triggerBtn = document.createElement('button');
+            triggerBtn.className = 'btn btn-sm btn-light filter-dropdown-trigger w-100 text-start';
+            triggerBtn.type = 'button';
+            triggerBtn.innerHTML = `
                     <span class="filter-text">Filter</span>
                     <span class="filter-icon float-end"><i class="ti ti-caret-down-filled ms-1"></i></span>
                 `;
-                triggerBtn.setAttribute('data-col', colIndex);
+            triggerBtn.setAttribute('data-col', colIndex);
 
-                wrapper.appendChild(triggerBtn);
+            wrapper.appendChild(triggerBtn);
 
-                initializeFilterData(colIndex);
+            initializeFilterData(colIndex);
 
-                triggerBtn.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                    toggleFilterDropdown(colIndex, this);
-                });
-            }
-            // expose globally so other callers (outside this scope) can use it
-            try { window.createFilterForWrapper = createFilterForWrapper; } catch (e) {}
-
-            // initialize existing wrappers
-            filterWrappers.forEach((wrapper) => {
-                const colIndex = parseInt(wrapper.getAttribute('data-col'));
-                createFilterForWrapper(wrapper, colIndex);
+            triggerBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                toggleFilterDropdown(colIndex, this);
             });
+        }
+        // expose globally so other callers (outside this scope) can use it
+        try {
+            window.createFilterForWrapper = createFilterForWrapper;
+        } catch (e) {}
 
-            // Ensure any headers that were added server-side or restored have filter wrappers/triggers
-            try {
-                Array.from(mainHeaderRow.cells).forEach((th, idx) => {
-                    const addedName = th.dataset.addedCol;
-                    if (!addedName) return;
-                    // find corresponding wrapper cell in filterRow
-                    let wrapper = null;
-                    try {
-                        wrapper = filterRow.querySelector('[data-added-col="' + CSS.escape(addedName) + '"] .filter-wrapper');
-                    } catch (e) { wrapper = null; }
-                    // if no wrapper exists, create a filter cell at the right position
-                    if (!wrapper) {
-                        const thFilter = document.createElement('th');
-                        thFilter.dataset.addedCol = addedName;
-                        const w = document.createElement('div');
-                        w.className = 'filter-wrapper';
-                        w.setAttribute('data-col', idx);
-                        thFilter.appendChild(w);
-                        // insert before last cell
-                        filterRow.insertBefore(thFilter, filterRow.cells[filterRow.cells.length - 1]);
-                        wrapper = w;
-                    }
-                    // ensure wrapper has data-col and trigger
-                    wrapper.setAttribute('data-col', idx);
-                    if (!wrapper.querySelector('.filter-dropdown-trigger')) createFilterForWrapper(wrapper, idx);
-                });
-                // rebuild header map after modifications
-                rebuildHeaderMap();
-            } catch (e) { console.warn('ensure added column wrappers failed', e); }
+        // initialize existing wrappers
+        filterWrappers.forEach((wrapper) => {
+            const colIndex = parseInt(wrapper.getAttribute('data-col'));
+            createFilterForWrapper(wrapper, colIndex);
+        });
+
+        // Ensure any headers that were added server-side or restored have filter wrappers/triggers
+        try {
+            Array.from(mainHeaderRow.cells).forEach((th, idx) => {
+                const addedName = th.dataset.addedCol;
+                if (!addedName) return;
+                // find corresponding wrapper cell in filterRow
+                let wrapper = null;
+                try {
+                    wrapper = filterRow.querySelector('[data-added-col="' + CSS.escape(addedName) +
+                        '"] .filter-wrapper');
+                } catch (e) {
+                    wrapper = null;
+                }
+                // if no wrapper exists, create a filter cell at the right position
+                if (!wrapper) {
+                    const thFilter = document.createElement('th');
+                    thFilter.dataset.addedCol = addedName;
+                    const w = document.createElement('div');
+                    w.className = 'filter-wrapper';
+                    w.setAttribute('data-col', idx);
+                    thFilter.appendChild(w);
+                    // insert before last cell
+                    filterRow.insertBefore(thFilter, filterRow.cells[filterRow.cells.length - 1]);
+                    wrapper = w;
+                }
+                // ensure wrapper has data-col and trigger
+                wrapper.setAttribute('data-col', idx);
+                if (!wrapper.querySelector('.filter-dropdown-trigger')) createFilterForWrapper(wrapper,
+                    idx);
+            });
+            // rebuild header map after modifications
+            rebuildHeaderMap();
+        } catch (e) {
+            console.warn('ensure added column wrappers failed', e);
+        }
 
         // Initialize filter data for each column
         function initializeFilterData(colIndex) {
@@ -3258,7 +3322,9 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
                 // if cell text blank, try to use dataset fallback using header name
                 if (isBlankValue(text)) {
                     try {
-                        const headerText = (mainHeaderRow && mainHeaderRow.cells[colIndex]) ? (mainHeaderRow.cells[colIndex].innerText||mainHeaderRow.cells[colIndex].textContent||'') : '';
+                        const headerText = (mainHeaderRow && mainHeaderRow.cells[colIndex]) ? (
+                            mainHeaderRow.cells[colIndex].innerText || mainHeaderRow.cells[colIndex]
+                            .textContent || '') : '';
                         const dataKey = mapColumnToDataKeyShared(headerText);
                         if (dataKey && row.dataset && row.dataset[dataKey]) {
                             text = row.dataset[dataKey];
@@ -3303,12 +3369,14 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
                 const added = getAddedColumnsStorage();
                 added.forEach(name => {
                     // If headerMap already contains it, skip
-                    const key = (name || '').toString().replace(/\s+/g,' ').trim().toLowerCase();
+                    const key = (name || '').toString().replace(/\s+/g, ' ').trim().toLowerCase();
                     if (!headerMap.hasOwnProperty(key)) {
                         addColumn(name);
                     }
                 });
-            } catch (e) { console.warn('Failed to restore added columns', e); }
+            } catch (e) {
+                console.warn('Failed to restore added columns', e);
+            }
         }
 
         // Toggle filter dropdown
@@ -3642,7 +3710,9 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
                 reinitializeFilters();
                 applyAllFilters();
                 updateSelectAllCheckbox();
-                try { if (window.rebindCustomerHover) window.rebindCustomerHover(); } catch(e){}
+                try {
+                    if (window.rebindCustomerHover) window.rebindCustomerHover();
+                } catch (e) {}
             } catch (e) {
                 console.warn('refreshClientFilters failed', e);
             }
@@ -4250,16 +4320,28 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
 
             filterTableByDate();
             // Safely hide the filter modal if it exists
-            (function(){
+            (function() {
                 const modalEl = document.getElementById('filterModal');
                 if (!modalEl) return;
                 let modalInst = null;
-                try { modalInst = bootstrap.Modal.getInstance(modalEl); } catch(e) { modalInst = null; }
+                try {
+                    modalInst = bootstrap.Modal.getInstance(modalEl);
+                } catch (e) {
+                    modalInst = null;
+                }
                 if (!modalInst && typeof bootstrap.Modal === 'function') {
-                    try { modalInst = new bootstrap.Modal(modalEl); } catch(e) { modalInst = null; }
+                    try {
+                        modalInst = new bootstrap.Modal(modalEl);
+                    } catch (e) {
+                        modalInst = null;
+                    }
                 }
                 if (modalInst && typeof modalInst.hide === 'function') {
-                    try { modalInst.hide(); } catch(e) { console.warn('Failed to hide filter modal', e); }
+                    try {
+                        modalInst.hide();
+                    } catch (e) {
+                        console.warn('Failed to hide filter modal', e);
+                    }
                 }
             })();
         });
@@ -4285,7 +4367,11 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
                     if (data.success) {
                         document.querySelector('#customerTable tbody').innerHTML = data.html;
                         // Refresh client-side filters to reflect new rows
-                        try { if (window.refreshClientFilters) window.refreshClientFilters(); } catch(e){ console.warn('Failed to reinit filters after reset', e); }
+                        try {
+                            if (window.refreshClientFilters) window.refreshClientFilters();
+                        } catch (e) {
+                            console.warn('Failed to reinit filters after reset', e);
+                        }
                     }
                 });
         });
@@ -4325,7 +4411,10 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
             const payloadTo = toSQLDateTime(toDate, true);
 
             if (!payloadFrom || !payloadTo) {
-                console.warn('Invalid date parsing for', { fromDate, toDate });
+                console.warn('Invalid date parsing for', {
+                    fromDate,
+                    toDate
+                });
                 alert('Unable to parse selected dates. Please reselect the date range.');
                 return;
             }
@@ -4337,7 +4426,9 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
             };
 
             // Debug info
-            try { console.debug('Fetching /customers with', params); } catch (e) {}
+            try {
+                console.debug('Fetching /customers with', params);
+            } catch (e) {}
 
             fetch('/customers?' + new URLSearchParams(params), {
                     headers: {
@@ -4350,7 +4441,11 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
                     if (data.success) {
                         tbody.innerHTML = data.html;
                         // Refresh client-side filters after date-filter AJAX
-                        try { if (window.refreshClientFilters) window.refreshClientFilters(); } catch(e){ console.warn('Failed to reinit filters after date filter', e); }
+                        try {
+                            if (window.refreshClientFilters) window.refreshClientFilters();
+                        } catch (e) {
+                            console.warn('Failed to reinit filters after date filter', e);
+                        }
                     } else {
                         alert('Error filtering customers');
                     }
@@ -4422,7 +4517,10 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
                 if (index === 0 || index === total - 1) return;
                 const headerText = th.textContent.trim().replace(/\s+/g, ' ');
                 const dataKey = resolveDataKey(headerText);
-                cols.push({ header: headerText, dataKey });
+                cols.push({
+                    header: headerText,
+                    dataKey
+                });
             });
             return cols;
         }
@@ -4431,7 +4529,8 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
             // Clone then remove hover/tooling boxes to avoid exporting hidden details
             try {
                 const clone = cell.cloneNode(true);
-                clone.querySelectorAll('.custom-hover-box, .tooltip, .badge, button, a').forEach(n => n.remove());
+                clone.querySelectorAll('.custom-hover-box, .tooltip, .badge, button, a').forEach(n => n
+                    .remove());
                 return clone.textContent.replace(/\s+/g, ' ').trim();
             } catch (e) {
                 return cell.textContent.replace(/\s+/g, ' ').trim();
@@ -4449,7 +4548,8 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
                     const rowData = [];
                     cols.forEach((col, colIndex) => {
                         // Prefer dataset values when available
-                        if (col.dataKey && row.dataset && row.dataset[col.dataKey] !== undefined) {
+                        if (col.dataKey && row.dataset && row.dataset[col.dataKey] !==
+                            undefined) {
                             rowData.push((row.dataset[col.dataKey] || '').toString().trim());
                         } else {
                             // Fallback to the corresponding cell (offset by 1 because of checkbox column)
@@ -5087,7 +5187,10 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
         // Helper to show a bootstrap modal by id, resilient to different bootstrap bundles
         function showBootstrapModalById(id) {
             const el = document.getElementById(id);
-            if (!el) { console.error('Modal element not found:', id); return null; }
+            if (!el) {
+                console.error('Modal element not found:', id);
+                return null;
+            }
 
             // Ensure modal is a direct child of body so it stacks above offcanvas/offscreen elements
             try {
@@ -5103,22 +5206,29 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
                     document.querySelectorAll('.offcanvas.show').forEach(off => {
                         try {
                             if (typeof bootstrap.Offcanvas !== 'undefined') {
-                                const inst = (typeof bootstrap.Offcanvas.getInstance === 'function') ? bootstrap.Offcanvas.getInstance(off) || new bootstrap.Offcanvas(off) : new bootstrap.Offcanvas(off);
+                                const inst = (typeof bootstrap.Offcanvas.getInstance === 'function') ?
+                                    bootstrap.Offcanvas.getInstance(off) || new bootstrap.Offcanvas(
+                                        off) : new bootstrap.Offcanvas(off);
                                 if (inst && typeof inst.hide === 'function') inst.hide();
                             } else {
                                 off.classList.remove('show');
                             }
-                        } catch (e) { /* ignore individual offcanvas hide errors */ }
+                        } catch (e) {
+                            /* ignore individual offcanvas hide errors */
+                        }
                     });
                 }
-            } catch (e) { /* ignore */ }
+            } catch (e) {
+                /* ignore */
+            }
 
             try {
                 let modalInstance = null;
                 if (typeof bootstrap.Modal.getOrCreateInstance === 'function') {
                     modalInstance = bootstrap.Modal.getOrCreateInstance(el);
                     modalInstagotoinventoryModalgotoinventoryModalnce.show();
-                } else if (typeof bootstrap.Modal.getInstance === 'function' && bootstrap.Modal.getInstance(el)) {
+                } else if (typeof bootstrap.Modal.getInstance === 'function' && bootstrap.Modal.getInstance(
+                        el)) {
                     modalInstance = bootstrap.Modal.getInstance(el);
                     modalInstance.show();
                 } else {
@@ -5132,7 +5242,9 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
                     if (modalDialog) modalDialog.style.zIndex = 200050;
                     const backdrop = document.querySelector('.modal-backdrop');
                     if (backdrop) backdrop.style.zIndex = 200000;
-                } catch (e) { /* ignore styling errors */ }
+                } catch (e) {
+                    /* ignore styling errors */
+                }
 
                 return modalInstance;
             } catch (err) {
@@ -5150,11 +5262,12 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
                         back.style.zIndex = 200000;
                         document.body.appendChild(back);
                     }
-                } catch (e) { /* ignore */ }
+                } catch (e) {
+                    /* ignore */
+                }
 
                 return null;
-            }
-            finally {
+            } finally {
                 // Extra defensive adjustments after showing modal to ensure it is interactive
                 setTimeout(() => {
                     try {
@@ -5190,11 +5303,16 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
                         // Focus modal for keyboard/interaction
                         try {
                             if (el && typeof el.focus === 'function') el.focus();
-                            if (window.sendToDmsModalInstance && window.sendToDmsModalInstance._element) {
-                                try { window.sendToDmsModalInstance._element.focus(); } catch(e){}
+                            if (window.sendToDmsModalInstance && window.sendToDmsModalInstance
+                                ._element) {
+                                try {
+                                    window.sendToDmsModalInstance._element.focus();
+                                } catch (e) {}
                             }
                         } catch (e) {}
-                    } catch (err) { console.warn('Post-modal adjustments failed', err); }
+                    } catch (err) {
+                        console.warn('Post-modal adjustments failed', err);
+                    }
                 }, 50);
             }
         }
@@ -5227,7 +5345,9 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
                     }
                 }
             } catch (e) {}
-            try { if (documentsBtn) documentsBtn.disabled = !hasOpenDeal; } catch (e) {}
+            try {
+                if (documentsBtn) documentsBtn.disabled = !hasOpenDeal;
+            } catch (e) {}
         }
 
         // ✅ Toggle Deal Open/Close
@@ -5298,7 +5418,9 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
                 }
                 const inst = showBootstrapModalById('sendToDmsModal');
                 window.sendToDmsModalInstance = inst;
-            } catch (err) { console.warn('Delegated sendToDmsBtn handler error', err); }
+            } catch (err) {
+                console.warn('Delegated sendToDmsBtn handler error', err);
+            }
         });
 
         // ✅ Documents Button - show documents modal
@@ -5319,13 +5441,18 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
                 confirmBtn.addEventListener("click", async function() {
                     const noteEl = document.getElementById("dmsMessage");
                     const note = noteEl ? noteEl.value.trim() : '';
-                    console.debug('confirmSendToDms handler triggered', { note });
+                    console.debug('confirmSendToDms handler triggered', {
+                        note
+                    });
                     const inst = window.sendToDmsModalInstance;
 
                     // Determine current deal id
-                    const dealId = (window.AppState && window.AppState.currentDealId) ? window.AppState.currentDealId : (document.querySelector('[data-deal-id-input]') || {}).value;
+                    const dealId = (window.AppState && window.AppState.currentDealId) ? window
+                        .AppState.currentDealId : (document.querySelector(
+                            '[data-deal-id-input]') || {}).value;
                     if (!dealId) {
-                        (typeof showToast === 'function') ? showToast('No open deal selected', 'error') : alert('No open deal selected');
+                        (typeof showToast === 'function') ? showToast('No open deal selected',
+                            'error'): alert('No open deal selected');
                         return;
                     }
 
@@ -5334,13 +5461,18 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
                         inst.hide();
                     } else {
                         const el = document.getElementById('sendToDmsModal');
-                        if (el) { el.classList.remove('show'); el.style.display = 'none'; }
-                        const backdrop = document.querySelector('.modal-backdrop'); if (backdrop) backdrop.remove();
+                        if (el) {
+                            el.classList.remove('show');
+                            el.style.display = 'none';
+                        }
+                        const backdrop = document.querySelector('.modal-backdrop');
+                        if (backdrop) backdrop.remove();
                         document.body.classList.remove('modal-open');
                     }
 
                     try {
-                        const csrf = (window.AppState && window.AppState.csrfToken) || document.querySelector('meta[name="csrf-token"]')?.content || '';
+                        const csrf = (window.AppState && window.AppState.csrfToken) || document
+                            .querySelector('meta[name="csrf-token"]')?.content || '';
                         const res = await fetch(desklogAddNoteUrl, {
                             method: 'POST',
                             headers: {
@@ -5349,23 +5481,32 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
                                 'Accept': 'application/json'
                             },
                             credentials: 'same-origin',
-                            body: JSON.stringify({ deal_id: dealId, note: note })
+                            body: JSON.stringify({
+                                deal_id: dealId,
+                                note: note
+                            })
                         });
 
                         if (!res.ok) {
                             const errText = await res.text();
                             console.warn('Desklog add-note failed', res.status, errText);
-                            (typeof showToast === 'function') ? showToast('Failed to save note to Desklog', 'error') : alert('Failed to save note to Desklog');
+                            (typeof showToast === 'function') ? showToast(
+                                'Failed to save note to Desklog', 'error'): alert(
+                                'Failed to save note to Desklog');
                             return;
                         }
 
                         // Success — show toast then navigate to desklog manager
-                        (typeof showToast === 'function') ? showToast('Note saved to Desklog', 'success') : alert('Note saved to Desklog');
+                        (typeof showToast === 'function') ? showToast('Note saved to Desklog',
+                            'success'): alert('Note saved to Desklog');
                         // Small delay so user sees toast
-                        setTimeout(() => { window.location.href = desklogManagerUrl; }, 600);
+                        setTimeout(() => {
+                            window.location.href = desklogManagerUrl;
+                        }, 600);
                     } catch (err) {
                         console.error('Error saving desklog note', err);
-                        (typeof showToast === 'function') ? showToast('Error saving note', 'error') : alert('Error saving note');
+                        (typeof showToast === 'function') ? showToast('Error saving note',
+                            'error'): alert('Error saving note');
                     }
                 });
             }
@@ -5382,8 +5523,13 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
                 const inst = window.sendToDmsModalInstance;
                 if (inst && typeof inst.hide === 'function') inst.hide();
                 else {
-                    const el = document.getElementById('sendToDmsModal'); if (el) { el.classList.remove('show'); el.style.display = 'none'; }
-                    const backdrop = document.querySelector('.modal-backdrop'); if (backdrop) backdrop.remove();
+                    const el = document.getElementById('sendToDmsModal');
+                    if (el) {
+                        el.classList.remove('show');
+                        el.style.display = 'none';
+                    }
+                    const backdrop = document.querySelector('.modal-backdrop');
+                    if (backdrop) backdrop.remove();
                     document.body.classList.remove('modal-open');
                 }
 
@@ -5391,33 +5537,52 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
                 (async function() {
                     const desklogAddNoteUrl = "{{ route('desk-log.add-note') }}";
                     const desklogManagerUrl = "{{ route('desk-log.manager') }}";
-                    const dealId = (window.AppState && window.AppState.currentDealId) ? window.AppState.currentDealId : (document.querySelector('[data-deal-id-input]') || {}).value;
+                    const dealId = (window.AppState && window.AppState.currentDealId) ? window
+                        .AppState.currentDealId : (document.querySelector(
+                            '[data-deal-id-input]') || {}).value;
                     if (!dealId) {
-                        (typeof showToast === 'function') ? showToast('No open deal selected', 'error') : alert('No open deal selected');
+                        (typeof showToast === 'function') ? showToast('No open deal selected',
+                            'error'): alert('No open deal selected');
                         return;
                     }
                     try {
-                        const csrf = (window.AppState && window.AppState.csrfToken) || document.querySelector('meta[name="csrf-token"]')?.content || '';
+                        const csrf = (window.AppState && window.AppState.csrfToken) || document
+                            .querySelector('meta[name="csrf-token"]')?.content || '';
                         const res = await fetch(desklogAddNoteUrl, {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrf,
+                                'Accept': 'application/json'
+                            },
                             credentials: 'same-origin',
-                            body: JSON.stringify({ deal_id: dealId, note: note })
+                            body: JSON.stringify({
+                                deal_id: dealId,
+                                note: note
+                            })
                         });
                         if (!res.ok) {
                             console.warn('Desklog add-note failed', res.status);
-                            (typeof showToast === 'function') ? showToast('Failed to save note to Desklog', 'error') : alert('Failed to save note to Desklog');
+                            (typeof showToast === 'function') ? showToast(
+                                'Failed to save note to Desklog', 'error'): alert(
+                                'Failed to save note to Desklog');
                             return;
                         }
-                        (typeof showToast === 'function') ? showToast('Note saved to Desklog', 'success') : alert('Note saved to Desklog');
-                        setTimeout(() => { window.location.href = desklogManagerUrl; }, 600);
+                        (typeof showToast === 'function') ? showToast('Note saved to Desklog',
+                            'success'): alert('Note saved to Desklog');
+                        setTimeout(() => {
+                            window.location.href = desklogManagerUrl;
+                        }, 600);
                     } catch (err) {
                         console.error('Error saving desklog note', err);
-                        (typeof showToast === 'function') ? showToast('Error saving note', 'error') : alert('Error saving note');
+                        (typeof showToast === 'function') ? showToast('Error saving note',
+                            'error'): alert('Error saving note');
                     }
                 })();
 
-            } catch (err) { console.warn('Delegated confirmSendToDms handler error', err); }
+            } catch (err) {
+                console.warn('Delegated confirmSendToDms handler error', err);
+            }
         });
 
 
@@ -5463,137 +5628,135 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
     });
 </script>
 
-  <script>
+<script>
+    // VIN Decode functionality
+    document.getElementById('vinInput')?.addEventListener('blur', function() {
+        const vin = this.value.trim();
+        if (vin.length === 17) {
+            // Call VIN decode API here
+            // For now, mock data:
+            document.getElementById('vehicleYear').value = '2020';
+            document.getElementById('vehicleMake').value = 'Toyota';
+            document.getElementById('vehicleModel').value = 'Camry';
+        }
+    });
 
+    // Send to vAuto with Validation
+    document.getElementById('sendToVAuto')?.addEventListener('click', function() {
+        const userRole = 'manager'; // Get from session/auth
 
-                                // VIN Decode functionality
-                                document.getElementById('vinInput')?.addEventListener('blur', function() {
-                                    const vin = this.value.trim();
-                                    if (vin.length === 17) {
-                                        // Call VIN decode API here
-                                        // For now, mock data:
-                                        document.getElementById('vehicleYear').value = '2020';
-                                        document.getElementById('vehicleMake').value = 'Toyota';
-                                        document.getElementById('vehicleModel').value = 'Camry';
-                                    }
-                                });
+        // Permission check
+        if (!['manager', 'admin', 'owner'].includes(userRole.toLowerCase())) {
+            showMessage('error', 'Permission Denied: Only Manager or above can send to V-Auto');
+            return;
+        }
 
-                                // Send to vAuto with Validation
-                                document.getElementById('sendToVAuto')?.addEventListener('click', function() {
-                                    const userRole = 'manager'; // Get from session/auth
+        // Validation checks
+        const errors = [];
 
-                                    // Permission check
-                                    if (!['manager', 'admin', 'owner'].includes(userRole.toLowerCase())) {
-                                        showMessage('error', 'Permission Denied: Only Manager or above can send to V-Auto');
-                                        return;
-                                    }
+        // 1. VIN decoded check
+        if (!document.getElementById('vehicleYear').value ||
+            !document.getElementById('vehicleMake').value ||
+            !document.getElementById('vehicleModel').value) {
+            errors.push('VIN must be decoded successfully (Year/Make/Model required)');
+        }
 
-                                    // Validation checks
-                                    const errors = [];
+        // 2. Odometer check
+        if (!document.getElementById('odometerInput').value) {
+            errors.push('Odometer reading is required');
+        }
 
-                                    // 1. VIN decoded check
-                                    if (!document.getElementById('vehicleYear').value ||
-                                        !document.getElementById('vehicleMake').value ||
-                                        !document.getElementById('vehicleModel').value) {
-                                        errors.push('VIN must be decoded successfully (Year/Make/Model required)');
-                                    }
+        // 3. Photo check
+        if (!document.getElementById('vehiclePhotos').files.length) {
+            errors.push('At least 1 photo is required');
+        }
 
-                                    // 2. Odometer check
-                                    if (!document.getElementById('odometerInput').value) {
-                                        errors.push('Odometer reading is required');
-                                    }
+        // 4. Trade Allowance check
+        if (!document.getElementById('tradeAllowance').value) {
+            errors.push('Trade Allowance is required');
+        }
 
-                                    // 3. Photo check
-                                    if (!document.getElementById('vehiclePhotos').files.length) {
-                                        errors.push('At least 1 photo is required');
-                                    }
+        // 5. Appraised By check
+        if (!document.getElementById('appraisedBy').value) {
+            errors.push('Appraised By field is required');
+        }
 
-                                    // 4. Trade Allowance check
-                                    if (!document.getElementById('tradeAllowance').value) {
-                                        errors.push('Trade Allowance is required');
-                                    }
+        // 6. Appraisal Date/Time check
+        if (!document.getElementById('appraisalDateTime').value) {
+            errors.push('Appraisal Date/Time is required');
+        }
 
-                                    // 5. Appraised By check
-                                    if (!document.getElementById('appraisedBy').value) {
-                                        errors.push('Appraised By field is required');
-                                    }
+        if (errors.length > 0) {
+            showMessage('error', 'Please fix the following errors:<br>• ' + errors.join('<br>• '));
+            return;
+        }
 
-                                    // 6. Appraisal Date/Time check
-                                    if (!document.getElementById('appraisalDateTime').value) {
-                                        errors.push('Appraisal Date/Time is required');
-                                    }
+        // All validations passed - send to vAuto
+        const tradeData = {
+            customerId: 'CUST_12345', // Backend ID
+            dealId: 'DEAL_67890', // Backend ID
+            tradeId: 'TRADE_' + Date.now(), // Backend ID
+            vin: document.getElementById('vinInput').value,
+            year: document.getElementById('vehicleYear').value,
+            make: document.getElementById('vehicleMake').value,
+            model: document.getElementById('vehicleModel').value,
+            odometer: document.getElementById('odometerInput').value,
+            // ... other fields
+        };
 
-                                    if (errors.length > 0) {
-                                        showMessage('error', 'Please fix the following errors:<br>• ' + errors.join('<br>• '));
-                                        return;
-                                    }
+        // API call to vAuto
+        fetch('/api/vauto/send', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(tradeData)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage('success', 'Successfully sent to V-Auto! Trade ID: ' + data.tradeId);
+                } else {
+                    showMessage('error', 'Failed to send to V-Auto: ' + data.error);
+                }
+            })
+            .catch(err => {
+                showMessage('error', 'Network error: ' + err.message);
+            });
+    });
 
-                                    // All validations passed - send to vAuto
-                                    const tradeData = {
-                                        customerId: 'CUST_12345', // Backend ID
-                                        dealId: 'DEAL_67890', // Backend ID
-                                        tradeId: 'TRADE_' + Date.now(), // Backend ID
-                                        vin: document.getElementById('vinInput').value,
-                                        year: document.getElementById('vehicleYear').value,
-                                        make: document.getElementById('vehicleMake').value,
-                                        model: document.getElementById('vehicleModel').value,
-                                        odometer: document.getElementById('odometerInput').value,
-                                        // ... other fields
-                                    };
+    // Service Appointment Shortcut
+    document.getElementById('createServiceAppointment')?.addEventListener('click', function() {
+        const modal = new bootstrap.Modal(document.getElementById('serviceAppointmentModal'));
+        modal.show();
+    });
 
-                                    // API call to vAuto
-                                    fetch('/api/vauto/send', {
-                                            method: 'POST',
-                                            headers: {
-                                                'Content-Type': 'application/json'
-                                            },
-                                            body: JSON.stringify(tradeData)
-                                        })
-                                        .then(res => res.json())
-                                        .then(data => {
-                                            if (data.success) {
-                                                showMessage('success', 'Successfully sent to V-Auto! Trade ID: ' + data.tradeId);
-                                            } else {
-                                                showMessage('error', 'Failed to send to V-Auto: ' + data.error);
-                                            }
-                                        })
-                                        .catch(err => {
-                                            showMessage('error', 'Network error: ' + err.message);
-                                        });
-                                });
-
-                                // Service Appointment Shortcut
-                                document.getElementById('createServiceAppointment')?.addEventListener('click', function() {
-                                    const modal = new bootstrap.Modal(document.getElementById('serviceAppointmentModal'));
-                                    modal.show();
-                                });
-
-                                // Helper function for messages
-                                function showMessage(type, message) {
-                                    const msgDiv = document.getElementById('tradeInMessages');
-                                    const alertClass = type === 'error' ? 'alert-danger' : 'alert-success';
-                                    msgDiv.innerHTML = `<div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+    // Helper function for messages
+    function showMessage(type, message) {
+        const msgDiv = document.getElementById('tradeInMessages');
+        const alertClass = type === 'error' ? 'alert-danger' : 'alert-success';
+        msgDiv.innerHTML = `<div class="alert ${alertClass} alert-dismissible fade show" role="alert">
               ${message}
               <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>`;
-                                }
-                            </script>
+    }
+</script>
 
-                              <script>
-                    // Show More History click
-                    document.getElementById('showMoreHistory').addEventListener('click', function() {
-                        const fullHistory = document.getElementById('fullHistory');
+<script>
+    // Show More History click
+    document.getElementById('showMoreHistory').addEventListener('click', function() {
+        const fullHistory = document.getElementById('fullHistory');
 
-                        // Correct bootstrap.Tab usage
-                        const historyTab = new bootstrap.Tab(document.getElementById('history-tab'));
-                        const activityTimelineTab = new bootstrap.Tab(document.getElementById('activityTimelineSection'));
-                        const taskAndAppointmentsTab = new bootstrap.Tab(document.getElementById('taskandappointmentSection'));
+        // Correct bootstrap.Tab usage
+        const historyTab = new bootstrap.Tab(document.getElementById('history-tab'));
+        const activityTimelineTab = new bootstrap.Tab(document.getElementById('activityTimelineSection'));
+        const taskAndAppointmentsTab = new bootstrap.Tab(document.getElementById('taskandappointmentSection'));
 
-                        // Show the main history tab (you can switch to others as needed)
-                        historyTab.show();
+        // Show the main history tab (you can switch to others as needed)
+        historyTab.show();
 
-                        // Fill with extra history items
-                        fullHistory.innerHTML = `
+        // Fill with extra history items
+        fullHistory.innerHTML = `
           <div class="history-item border-bottom pb-3">
             <div class="d-flex justify-content-between align-items-start">
               <div>
@@ -5671,15 +5834,15 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
             <p class="mb-1 mt-1">Sent initial information package about available vehicles in their price range.</p>
           </div>
         `;
-                    });
+    });
 
-                    // Add Note click
-                    document.getElementById('addNote').addEventListener('click', function() {
-                        const noteText = document.getElementById('noteText').value.trim();
-                        if (noteText) {
-                            const newNote = document.createElement('div');
-                            newNote.className = 'history-item border-bottom pb-3';
-                            newNote.innerHTML = `
+    // Add Note click
+    document.getElementById('addNote').addEventListener('click', function() {
+        const noteText = document.getElementById('noteText').value.trim();
+        if (noteText) {
+            const newNote = document.createElement('div');
+            newNote.className = 'history-item border-bottom pb-3';
+            newNote.innerHTML = `
             <div class="d-flex justify-content-between align-items-start">
               <div>
                 <span class="fw-bold">You</span>
@@ -5689,102 +5852,110 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
             </div>
             <p class="mb-1 mt-1">${noteText}</p>
           `;
-                            const recentHistory = document.getElementById('recentHistory');
-                            recentHistory.insertBefore(newNote, recentHistory.firstChild);
-                            document.getElementById('noteText').value = '';
-                            alert('Note added successfully!');
-                        } else {
-                            alert('Please enter a note before adding.');
-                        }
-                    });
-                </script>
+            const recentHistory = document.getElementById('recentHistory');
+            recentHistory.insertBefore(newNote, recentHistory.firstChild);
+            document.getElementById('noteText').value = '';
+            alert('Note added successfully!');
+        } else {
+            alert('Please enter a note before adding.');
+        }
+    });
+</script>
 
 
-                <script>
-                    // Add click event listeners to all deal boxes
-                    document.querySelectorAll('.deal-box  .toggle-deal-details-icon').forEach(box => {
-                        box.addEventListener('click', function() {
-                            const vehicles = document.getElementById("vehiclesInterest");
-                            const notes = document.getElementById("notesHistory");
+<script>
+    // Add click event listeners to all deal boxes
+    document.querySelectorAll('.deal-box  .toggle-deal-details-icon').forEach(box => {
+        box.addEventListener('click', function() {
+            const vehicles = document.getElementById("vehiclesInterest");
+            const notes = document.getElementById("notesHistory");
 
-                            // Check if sections are currently hidden
-                            const isHidden = window.getComputedStyle(vehicles).display === "none";
+            // Check if sections are currently hidden
+            const isHidden = window.getComputedStyle(vehicles).display === "none";
 
-                            // Toggle display
-                            if (isHidden) {
-                                vehicles.style.display = "block";
-                                notes.style.display = "block";
-                            } else {
-                                vehicles.style.display = "none";
-                                notes.style.display = "none";
-                            }
-                        });
-                    });
-                </script>
-                   <script>
-                    document.addEventListener("DOMContentLoaded", function() {
-                        const toggleBtns = document.querySelectorAll(".toggle-deal-details-icon");
-                        const taskSection = document.getElementById("taskandappointmentSection");
-                        const activitySection = document.getElementById("activityTimelineSection");
+            // Toggle display
+            if (isHidden) {
+                vehicles.style.display = "block";
+                notes.style.display = "block";
+            } else {
+                vehicles.style.display = "none";
+                notes.style.display = "none";
+            }
+        });
+    });
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const toggleBtns = document.querySelectorAll(".toggle-deal-details-icon");
+        const taskSection = document.getElementById("taskandappointmentSection");
+        const activitySection = document.getElementById("activityTimelineSection");
 
-                        toggleBtns.forEach(function(btn) {
-                            btn.addEventListener("click", function() {
-                                const isVisible = taskSection.style.display === "block" || activitySection.style
-                                    .display === "block";
+        toggleBtns.forEach(function(btn) {
+            btn.addEventListener("click", function() {
+                const isVisible = taskSection.style.display === "block" || activitySection.style
+                    .display === "block";
 
-                                if (isVisible) {
-                                    // Hide both
-                                    taskSection.style.display = "none";
-                                    activitySection.style.display = "none";
-                                } else {
-                                    // Show both
-                                    taskSection.style.display = "block";
-                                    activitySection.style.display = "block";
-                                }
-                            });
-                        });
-                    });
-                </script>
+                if (isVisible) {
+                    // Hide both
+                    taskSection.style.display = "none";
+                    activitySection.style.display = "none";
+                } else {
+                    // Show both
+                    taskSection.style.display = "block";
+                    activitySection.style.display = "block";
+                }
+            });
+        });
+    });
+</script>
 
 
 
 
 <style>
     /* small styling for N/A cells */
-    .na-cell { color: #6c757d; font-style: italic; }
-  
-    /* optional: prevent tiny layout jump when hiding columns */
-    table td, table th { white-space: nowrap; }
-  </style>
-  
-  <script>
-  document.addEventListener('DOMContentLoaded', function () {
-    const table = document.getElementById('customerTable');
-    if (!table) return;
-  
-    const thead = table.tHead;
-    const mainHeaderRow = thead ? thead.rows[0] : null;
-    const filterRow = table.querySelector('#filtersRow');
-    const tbody = table.tBodies[0];
-    const checkboxSelector = '.dropdown-menu .form-check-input';
-  
-    // normalize text helper
-    const normalizeText = (s) => (s || '').replace(/\s+/g, ' ').replace(/\u00A0/g,' ').trim().toLowerCase();
-  
-    // build header map: normalized header text -> index
-    let headerMap = {};
-    function rebuildHeaderMap() {
-      headerMap = {};
-      if (!mainHeaderRow) return;
-      Array.from(mainHeaderRow.cells).forEach((th, idx) => {
-        const txt = th.innerText || th.textContent || '';
-        headerMap[normalizeText(txt)] = idx;
-      });
+    .na-cell {
+        color: #6c757d;
+        font-style: italic;
     }
-  
-    rebuildHeaderMap();
-  
-    // normalize existing cells to show "N/A" if missing or '-' and mark class
+
+    /* optional: prevent tiny layout jump when hiding columns */
+    table td,
+    table th {
+        white-space: nowrap;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const table = document.getElementById('customerTable');
+        if (!table) return;
+
+        const thead = table.tHead;
+        const mainHeaderRow = thead ? thead.rows[0] : null;
+        const filterRow = table.querySelector('#filtersRow');
+        const tbody = table.tBodies[0];
+        const checkboxSelector = '.dropdown-menu .form-check-input';
+
+        // normalize text helper
+        const normalizeText = (s) => (s || '').replace(/\s+/g, ' ').replace(/\u00A0/g, ' ').trim()
+            .toLowerCase();
+
+        // build header map: normalized header text -> index
+        let headerMap = {};
+
+        function rebuildHeaderMap() {
+            headerMap = {};
+            if (!mainHeaderRow) return;
+            Array.from(mainHeaderRow.cells).forEach((th, idx) => {
+                const txt = th.innerText || th.textContent || '';
+                headerMap[normalizeText(txt)] = idx;
+            });
+        }
+
+        rebuildHeaderMap();
+
+        // normalize existing cells to show "N/A" if missing or '-' and mark class
         function normalizeExistingCells() {
             Array.from(tbody.rows).forEach(row => {
                 Array.from(row.cells).forEach(td => {
@@ -5798,190 +5969,213 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
                 });
             });
         }
-    normalizeExistingCells();
-  
-    // show/hide existing column by index
-    function setColumnVisibility(idx, visible) {
-      // header rows (all)
-      Array.from(table.querySelectorAll('thead tr')).forEach(row => {
-        const cell = row.cells[idx];
-        if (cell) cell.style.display = visible ? '' : 'none';
-      });
-      // body rows
-      Array.from(tbody.rows).forEach(row => {
-        const cell = row.cells[idx];
-        if (cell) cell.style.display = visible ? '' : 'none';
-      });
-    }
-  
+        normalizeExistingCells();
+
+        // show/hide existing column by index
+        function setColumnVisibility(idx, visible) {
+            // header rows (all)
+            Array.from(table.querySelectorAll('thead tr')).forEach(row => {
+                const cell = row.cells[idx];
+                if (cell) cell.style.display = visible ? '' : 'none';
+            });
+            // body rows
+            Array.from(tbody.rows).forEach(row => {
+                const cell = row.cells[idx];
+                if (cell) cell.style.display = visible ? '' : 'none';
+            });
+        }
+
         // Utility: persist added columns to localStorage so they survive AJAX table refreshes
         function getAddedColumnsStorage() {
             try {
                 const raw = localStorage.getItem('customer_added_columns');
                 return raw ? JSON.parse(raw) : [];
-            } catch (e) { return []; }
+            } catch (e) {
+                return [];
+            }
         }
 
         function setAddedColumnsStorage(list) {
-            try { localStorage.setItem('customer_added_columns', JSON.stringify(list)); } catch (e) {}
+            try {
+                localStorage.setItem('customer_added_columns', JSON.stringify(list));
+            } catch (e) {}
         }
 
         // add a new client-side column before the last header cell (so "Action" stays last)
         function addColumn(colName) {
-      if (!mainHeaderRow) return;
-  
-      // compute insert position: before final header cell
-      const insertBeforeIndex = Math.max(0, mainHeaderRow.cells.length - 1);
-  
-      // create header <th>
-      const th = document.createElement('th');
-      th.dataset.addedCol = colName;
-      th.innerHTML = `<span class="header-text">${colName}</span>`;
-      mainHeaderRow.insertBefore(th, mainHeaderRow.cells[insertBeforeIndex]);
-  
-      // create matching cell in filter row (if exists)
-      if (filterRow) {
-        const thFilter = document.createElement('th');
-        thFilter.dataset.addedCol = colName;
-        const wrapper = document.createElement('div');
-        wrapper.className = 'filter-wrapper';
+            if (!mainHeaderRow) return;
+
+            // compute insert position: before final header cell
+            const insertBeforeIndex = Math.max(0, mainHeaderRow.cells.length - 1);
+
+            // create header <th>
+            const th = document.createElement('th');
+            th.dataset.addedCol = colName;
+            th.innerHTML = `<span class="header-text">${colName}</span>`;
+            mainHeaderRow.insertBefore(th, mainHeaderRow.cells[insertBeforeIndex]);
+
+            // create matching cell in filter row (if exists)
+            if (filterRow) {
+                const thFilter = document.createElement('th');
+                thFilter.dataset.addedCol = colName;
+                const wrapper = document.createElement('div');
+                wrapper.className = 'filter-wrapper';
                 wrapper.dataset.col = ''; // will set after rebuildHeaderMap
-        thFilter.appendChild(wrapper);
-        filterRow.insertBefore(thFilter, filterRow.cells[filterRow.cells.length - 1]);
-      }
-  
-      // add td "N/A" to each tbody row
-      Array.from(tbody.rows).forEach(row => {
-        const td = document.createElement('td');
-        td.dataset.addedCol = colName;
-        td.textContent = 'N/A';
-        td.classList.add('na-cell');
-        row.insertBefore(td, row.cells[row.cells.length - 1]);
-      });
-  
-      // header map changed
-      rebuildHeaderMap();
-      // find index of newly added header by locating the actual <th>
-      const key = normalizeText(colName);
-      let newIndex = null;
-      try {
-          const thAdded = mainHeaderRow.querySelector('[data-added-col="' + CSS.escape(colName) + '"]');
-          if (thAdded) {
-              newIndex = Array.from(mainHeaderRow.cells).indexOf(thAdded);
-          } else if (headerMap.hasOwnProperty(key)) {
-              newIndex = headerMap[key];
-          }
-      } catch (e) { newIndex = (headerMap.hasOwnProperty(key) ? headerMap[key] : null); }
+                thFilter.appendChild(wrapper);
+                filterRow.insertBefore(thFilter, filterRow.cells[filterRow.cells.length - 1]);
+            }
 
-      // populate values for each row using data-* attributes when available
-      if (newIndex !== null) {
-          // update wrapper data-col and initialize filter for it
-          try {
-              const wrapper = filterRow.querySelector('[data-added-col="' + CSS.escape(colName) + '"] .filter-wrapper');
-              if (wrapper) {
-                  wrapper.setAttribute('data-col', newIndex);
-                  createFilterForWrapper(wrapper, newIndex);
-              }
-          } catch (e) { console.warn('Failed to attach filter for added column', e); }
+            // add td "N/A" to each tbody row
+            Array.from(tbody.rows).forEach(row => {
+                const td = document.createElement('td');
+                td.dataset.addedCol = colName;
+                td.textContent = 'N/A';
+                td.classList.add('na-cell');
+                row.insertBefore(td, row.cells[row.cells.length - 1]);
+            });
 
-          // normalize key to dataset mapping: map common column names to data-* attributes
-          function mapColumnToDataKey(name) {
-              const k = normalizeText(name);
-              const map = {
-                  'customer name': 'fullName',
-                  'first name': 'fullName',
-                  'middle name': 'fullName',
-                  'last name': 'fullName',
-                  'email': 'email',
-                  'city': 'city',
-                  'postal code': 'zipCode',
-                  'province': 'state',
-                  'home phone': 'phone',
-                  'cell phone': 'cellPhone',
-                  'work phone': 'workPhone',
-                  'assigned to': 'assignedTo',
-                  'secondary assigned': 'secondaryAssignedTo',
-                  'assigned manager': 'assignedManager',
-                  'bdc agent': 'bdcAgent',
-                  'lead source': 'leadSource',
-                  'lead type': 'leadType',
-                  'status': 'status',
-                  'interested make': 'interestedMake',
-                  'dealership franchises': 'dealershipFranchises',
-                  'sales status': 'salesStatus',
-                  'sales type': 'salesType',
-                  'deal type': 'dealType',
-                  'assigned by': 'assignedBy',
-                  'assigned date': 'assignedDate',
-                  'sold by': 'soldBy',
-                  'created date': 'createdDate',
-                  'sold date': 'soldDate',
-                  'delivery date': 'deliveryDate',
-                  'appointment date': 'appointmentDate',
-                  'last contacted date': 'lastContactedDate'
-              };
-              return map[k] || null;
-          }
+            // header map changed
+            rebuildHeaderMap();
+            // find index of newly added header by locating the actual <th>
+            const key = normalizeText(colName);
+            let newIndex = null;
+            try {
+                const thAdded = mainHeaderRow.querySelector('[data-added-col="' + CSS.escape(colName) + '"]');
+                if (thAdded) {
+                    newIndex = Array.from(mainHeaderRow.cells).indexOf(thAdded);
+                } else if (headerMap.hasOwnProperty(key)) {
+                    newIndex = headerMap[key];
+                }
+            } catch (e) {
+                newIndex = (headerMap.hasOwnProperty(key) ? headerMap[key] : null);
+            }
 
-          const dataKey = mapColumnToDataKey(colName);
+            // populate values for each row using data-* attributes when available
+            if (newIndex !== null) {
+                // update wrapper data-col and initialize filter for it
+                try {
+                    const wrapper = filterRow.querySelector('[data-added-col="' + CSS.escape(colName) +
+                        '"] .filter-wrapper');
+                    if (wrapper) {
+                        wrapper.setAttribute('data-col', newIndex);
+                        createFilterForWrapper(wrapper, newIndex);
+                    }
+                } catch (e) {
+                    console.warn('Failed to attach filter for added column', e);
+                }
 
-          Array.from(tbody.rows).forEach(row => {
-              let value = null;
-              try {
-                  if (dataKey && row.dataset) {
-                      // dataset keys are camelCased in JS
-                      value = row.dataset[dataKey];
-                  }
-              } catch (e) { value = null; }
+                // normalize key to dataset mapping: map common column names to data-* attributes
+                function mapColumnToDataKey(name) {
+                    const k = normalizeText(name);
+                    const map = {
+                        'customer name': 'fullName',
+                        'first name': 'fullName',
+                        'middle name': 'fullName',
+                        'last name': 'fullName',
+                        'email': 'email',
+                        'city': 'city',
+                        'postal code': 'zipCode',
+                        'province': 'state',
+                        'home phone': 'phone',
+                        'cell phone': 'cellPhone',
+                        'work phone': 'workPhone',
+                        'assigned to': 'assignedTo',
+                        'secondary assigned': 'secondaryAssignedTo',
+                        'assigned manager': 'assignedManager',
+                        'bdc agent': 'bdcAgent',
+                        'lead source': 'leadSource',
+                        'lead type': 'leadType',
+                        'status': 'status',
+                        'interested make': 'interestedMake',
+                        'dealership franchises': 'dealershipFranchises',
+                        'sales status': 'salesStatus',
+                        'sales type': 'salesType',
+                        'deal type': 'dealType',
+                        'assigned by': 'assignedBy',
+                        'assigned date': 'assignedDate',
+                        'sold by': 'soldBy',
+                        'created date': 'createdDate',
+                        'sold date': 'soldDate',
+                        'delivery date': 'deliveryDate',
+                        'appointment date': 'appointmentDate',
+                        'last contacted date': 'lastContactedDate'
+                    };
+                    return map[k] || null;
+                }
 
-              // debug: if dataset is unexpectedly empty, log once
-              if (typeof window.__logRowDatasetsOnce === 'undefined') {
-                  try { console.debug('ROW dataset example', row.dataset); } catch(e){}
-                  window.__logRowDatasetsOnce = true;
-              }
+                const dataKey = mapColumnToDataKey(colName);
 
-              // If this added column is a name part (first/middle/last) and dataset provided fullName,
-              // always compute the correct part from fullName rather than using fullName as-is.
-              if (/first name|middle name|last name/i.test(colName)) {
-                  const full = (row.dataset && row.dataset.fullName) ? row.dataset.fullName : (row.cells[headerMap[normalizeText('customer name')]] ? (row.cells[headerMap[normalizeText('customer name')]].innerText||'') : '');
-                  let parts = (full || '').trim().split(/\s+/).filter(p => p && !/^\d+$/.test(p));
-                  parts = parts.filter(p => p.length > 0 && /[A-Za-z\-']/.test(p));
-                  let partVal = '';
-                  if (/first name/i.test(colName)) partVal = parts.length ? parts[0] : '';
-                  if (/last name/i.test(colName)) partVal = parts.length > 1 ? parts[parts.length-1] : (parts[0] || '');
-                  if (/middle name/i.test(colName)) partVal = parts.length > 2 ? parts.slice(1, -1).join(' ') : '';
-                  // prefer the computed part over raw dataset.fullName
-                  value = partVal;
-              }
+                Array.from(tbody.rows).forEach(row => {
+                    let value = null;
+                    try {
+                        if (dataKey && row.dataset) {
+                            // dataset keys are camelCased in JS
+                            value = row.dataset[dataKey];
+                        }
+                    } catch (e) {
+                        value = null;
+                    }
 
-              // write value into the added td
-              try {
-                  const td = row.querySelector('[data-added-col="' + CSS.escape(colName) + '"]');
-                  if (td) {
-                      if (value && value.length > 0 && value !== '-') {
-                          td.textContent = value;
-                          td.classList.remove('na-cell');
-                      } else {
-                          td.textContent = 'N/A';
-                          td.classList.add('na-cell');
-                      }
-                  }
-              } catch (e) {}
-          });
+                    // debug: if dataset is unexpectedly empty, log once
+                    if (typeof window.__logRowDatasetsOnce === 'undefined') {
+                        try {
+                            console.debug('ROW dataset example', row.dataset);
+                        } catch (e) {}
+                        window.__logRowDatasetsOnce = true;
+                    }
 
-          // refresh filter data for this new column
-          try { initializeFilterData(newIndex); } catch (e) {}
-      }
+                    // If this added column is a name part (first/middle/last) and dataset provided fullName,
+                    // always compute the correct part from fullName rather than using fullName as-is.
+                    if (/first name|middle name|last name/i.test(colName)) {
+                        const full = (row.dataset && row.dataset.fullName) ? row.dataset.fullName : (row
+                            .cells[headerMap[normalizeText('customer name')]] ? (row.cells[
+                                headerMap[normalizeText('customer name')]].innerText || '') : '');
+                        let parts = (full || '').trim().split(/\s+/).filter(p => p && !/^\d+$/.test(p));
+                        parts = parts.filter(p => p.length > 0 && /[A-Za-z\-']/.test(p));
+                        let partVal = '';
+                        if (/first name/i.test(colName)) partVal = parts.length ? parts[0] : '';
+                        if (/last name/i.test(colName)) partVal = parts.length > 1 ? parts[parts
+                            .length - 1] : (parts[0] || '');
+                        if (/middle name/i.test(colName)) partVal = parts.length > 2 ? parts.slice(1, -
+                            1).join(' ') : '';
+                        // prefer the computed part over raw dataset.fullName
+                        value = partVal;
+                    }
+
+                    // write value into the added td
+                    try {
+                        const td = row.querySelector('[data-added-col="' + CSS.escape(colName) + '"]');
+                        if (td) {
+                            if (value && value.length > 0 && value !== '-') {
+                                td.textContent = value;
+                                td.classList.remove('na-cell');
+                            } else {
+                                td.textContent = 'N/A';
+                                td.classList.add('na-cell');
+                            }
+                        }
+                    } catch (e) {}
+                });
+
+                // refresh filter data for this new column
+                try {
+                    initializeFilterData(newIndex);
+                } catch (e) {}
+            }
             // persist
             try {
                 const list = getAddedColumnsStorage();
-                if (!list.includes(colName)) { list.push(colName); setAddedColumnsStorage(list); }
+                if (!list.includes(colName)) {
+                    list.push(colName);
+                    setAddedColumnsStorage(list);
+                }
             } catch (e) {}
-    }
-  
-    // remove added client-side column by name
+        }
+
+        // remove added client-side column by name
         function removeAddedColumn(colName) {
-            Array.from(table.querySelectorAll('[data-added-col="' + CSS.escape(colName) + '"]')).forEach(el => el.remove());
+            Array.from(table.querySelectorAll('[data-added-col="' + CSS.escape(colName) + '"]')).forEach(el =>
+                el.remove());
             rebuildHeaderMap();
             // remove from storage
             try {
@@ -5990,67 +6184,69 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
                 setAddedColumnsStorage(list);
             } catch (e) {}
         }
-  
-    // attach handlers to dropdown checkboxes
-    const checkboxes = document.querySelectorAll(checkboxSelector);
-    checkboxes.forEach(cb => {
-      // determine label text (column name) next to the checkbox
-      let label = cb.closest('label');
-      let colName = '';
-      if (label) {
-        // text may include the checkbox, so remove input text by cloning
-        // easier: get label text content but remove input children's text
-        const clone = label.cloneNode(true);
-        // remove any input children
-        clone.querySelectorAll('input').forEach(n => n.remove());
-        colName = (clone.textContent || '').trim();
-      } else {
-        colName = (cb.getAttribute('data-col-name') || cb.getAttribute('data-name') || '').trim();
-      }
-      if (!colName) return;
-  
-      // store for later
-      cb.dataset.colName = colName;
-  
-      // initial checkbox state: checkable if header exists and visible
-      const key = normalizeText(colName);
-      if (headerMap.hasOwnProperty(key)) {
-        const idx = headerMap[key];
-        const th = mainHeaderRow.cells[idx];
-        cb.checked = !(th && th.style.display === 'none');
-      } else {
-        cb.checked = false;
-      }
-  
-      cb.addEventListener('change', function () {
-        const name = this.dataset.colName;
-        const k = normalizeText(name);
-        if (this.checked) {
-          // show existing column or create new
-          if (headerMap.hasOwnProperty(k)) {
-            setColumnVisibility(headerMap[k], true);
-          } else {
-            addColumn(name);
-          }
-        } else {
-          // hide existing or remove created
-          if (headerMap.hasOwnProperty(k)) {
-            setColumnVisibility(headerMap[k], false);
-          } else {
-            removeAddedColumn(name);
-          }
-        }
-      });
-    });
-  
-    // Keep N/A for any new rows inserted later
-    const observer = new MutationObserver((mutations) => {
-      for (const m of mutations) {
+
+        // attach handlers to dropdown checkboxes
+        const checkboxes = document.querySelectorAll(checkboxSelector);
+        checkboxes.forEach(cb => {
+            // determine label text (column name) next to the checkbox
+            let label = cb.closest('label');
+            let colName = '';
+            if (label) {
+                // text may include the checkbox, so remove input text by cloning
+                // easier: get label text content but remove input children's text
+                const clone = label.cloneNode(true);
+                // remove any input children
+                clone.querySelectorAll('input').forEach(n => n.remove());
+                colName = (clone.textContent || '').trim();
+            } else {
+                colName = (cb.getAttribute('data-col-name') || cb.getAttribute('data-name') || '')
+                    .trim();
+            }
+            if (!colName) return;
+
+            // store for later
+            cb.dataset.colName = colName;
+
+            // initial checkbox state: checkable if header exists and visible
+            const key = normalizeText(colName);
+            if (headerMap.hasOwnProperty(key)) {
+                const idx = headerMap[key];
+                const th = mainHeaderRow.cells[idx];
+                cb.checked = !(th && th.style.display === 'none');
+            } else {
+                cb.checked = false;
+            }
+
+            cb.addEventListener('change', function() {
+                const name = this.dataset.colName;
+                const k = normalizeText(name);
+                if (this.checked) {
+                    // show existing column or create new
+                    if (headerMap.hasOwnProperty(k)) {
+                        setColumnVisibility(headerMap[k], true);
+                    } else {
+                        addColumn(name);
+                    }
+                } else {
+                    // hide existing or remove created
+                    if (headerMap.hasOwnProperty(k)) {
+                        setColumnVisibility(headerMap[k], false);
+                    } else {
+                        removeAddedColumn(name);
+                    }
+                }
+            });
+        });
+
+        // Keep N/A for any new rows inserted later
+        const observer = new MutationObserver((mutations) => {
+            for (const m of mutations) {
                 m.addedNodes.forEach(node => {
                     if (node.nodeType === 1 && node.tagName === 'TR') {
                         Array.from(node.cells).forEach(td => {
                             // Skip cells that contain interactive elements
-                            if (td.querySelector('input, select, button, a, .form-check')) return;
+                            if (td.querySelector(
+                                    'input, select, button, a, .form-check')) return;
                             const txt = (td.textContent || '').trim();
                             if (!txt || txt === '-') {
                                 td.textContent = 'N/A';
@@ -6059,9 +6255,12 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
                         });
                     }
                 });
-      }
-    });
-    observer.observe(tbody, { childList: true, subtree: false });
+            }
+        });
+        observer.observe(tbody, {
+            childList: true,
+            subtree: false
+        });
     });
 
     // Hover fallback: ensure custom hover boxes show reliably across browsers
@@ -6074,7 +6273,10 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
                 let hideTimer = null;
 
                 const show = () => {
-                    if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+                    if (hideTimer) {
+                        clearTimeout(hideTimer);
+                        hideTimer = null;
+                    }
                     hover.style.display = 'block';
                     hover.style.zIndex = 3000;
                 };
@@ -6097,75 +6299,77 @@ document.getElementById('confirm_delete_btn').addEventListener('click', function
         // expose for manual reattach if table body is replaced via AJAX
         window.rebindCustomerHover = attachHoverHandlers;
     })();
-
-    </script>
+</script>
 
 <script>
-(function() {
-  let popup = null;
+    (function() {
+        let popup = null;
 
-  function createPopup() {
-    if (!popup) {
-      popup = document.createElement('div');
-      popup.id = 'customerHoverPopup';
-      document.body.appendChild(popup);
-    }
-  }
+        function createPopup() {
+            if (!popup) {
+                popup = document.createElement('div');
+                popup.id = 'customerHoverPopup';
+                document.body.appendChild(popup);
+            }
+        }
 
-  function showPopupFromCell(cell) {
-  if (!cell) return;
-  createPopup();
+        function showPopupFromCell(cell) {
+            if (!cell) return;
+            createPopup();
 
-  const hover = cell.querySelector('.custom-hover-box');
-  if (!hover) return;
+            const hover = cell.querySelector('.custom-hover-box');
+            if (!hover) return;
 
-  popup.innerHTML = hover.innerHTML;
+            popup.innerHTML = hover.innerHTML;
 
-  const rect = cell.getBoundingClientRect();
-  const scrollY = window.scrollY || window.pageYOffset;
-  const scrollX = window.scrollX || window.pageXOffset;
+            const rect = cell.getBoundingClientRect();
+            const scrollY = window.scrollY || window.pageYOffset;
+            const scrollX = window.scrollX || window.pageXOffset;
 
-  let left = rect.left + scrollX;
-  let top = rect.bottom + scrollY + 5;
+            let left = rect.left + scrollX;
+            let top = rect.bottom + scrollY + 5;
 
-  // Prevent overflow on right
-  const popupRect = popup.getBoundingClientRect();
-  const rightSpace = window.innerWidth - rect.left;
-  if (rightSpace < popupRect.width + 20) {
-    left = rect.right + scrollX - popupRect.width;
-  }
+            // Prevent overflow on right
+            const popupRect = popup.getBoundingClientRect();
+            const rightSpace = window.innerWidth - rect.left;
+            if (rightSpace < popupRect.width + 20) {
+                left = rect.right + scrollX - popupRect.width;
+            }
 
-  popup.style.left = left + 'px';
-  popup.style.top = top + 'px';
-  popup.classList.add('show');
-}
-
-
-  function hidePopup() {
-    if (popup) popup.classList.remove('show');
-  }
-
-  let hoverTarget = null;
-
-  document.addEventListener('mouseover', function(e) {
-    const cell = e.target.closest('.name-cell');
-    if (cell && cell.querySelector('.custom-hover-box')) {
-      hoverTarget = cell;
-      showPopupFromCell(cell);
-    }
-  });
-
-  document.addEventListener('mouseout', function(e) {
-    const related = e.relatedTarget;
-    if (!related) { hidePopup(); hoverTarget = null; return; }
-    if (hoverTarget && (related === hoverTarget || hoverTarget.contains(related))) return;
-    if (popup && (related === popup || popup.contains(related))) return;
-    hidePopup(); hoverTarget = null;
-  });
-
-  window.addEventListener('scroll', hidePopup);
-  window.addEventListener('resize', hidePopup);
-})();
+            popup.style.left = left + 'px';
+            popup.style.top = top + 'px';
+            popup.classList.add('show');
+        }
 
 
+        function hidePopup() {
+            if (popup) popup.classList.remove('show');
+        }
+
+        let hoverTarget = null;
+
+        document.addEventListener('mouseover', function(e) {
+            const cell = e.target.closest('.name-cell');
+            if (cell && cell.querySelector('.custom-hover-box')) {
+                hoverTarget = cell;
+                showPopupFromCell(cell);
+            }
+        });
+
+        document.addEventListener('mouseout', function(e) {
+            const related = e.relatedTarget;
+            if (!related) {
+                hidePopup();
+                hoverTarget = null;
+                return;
+            }
+            if (hoverTarget && (related === hoverTarget || hoverTarget.contains(related))) return;
+            if (popup && (related === popup || popup.contains(related))) return;
+            hidePopup();
+            hoverTarget = null;
+        });
+
+        window.addEventListener('scroll', hidePopup);
+        window.addEventListener('resize', hidePopup);
+    })();
 </script>

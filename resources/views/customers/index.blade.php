@@ -85,10 +85,13 @@
                         <i class="isax isax-trash me-1"></i>Delete Selected (<span id="selectedCount">0</span>)
                     </button>
 
-                    <a class="btn btn-outline-white fw-normal d-inline-flex align-items-center" href="javascript:void(0);"
-                        data-bs-toggle="modal" data-bs-target="#customerImport">
+                    @if(auth()->user()->email === 'admin@primuscrm.com')
+                    <a class="btn btn-outline-white fw-normal d-inline-flex align-items-center" 
+                       href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#customerImport">
                         <i class="ti ti-copy me-1"></i>Import
                     </a>
+                @endif
+                
                     <a class="btn btn-outline-white fw-normal d-inline-flex align-items-center" href="javascript:void(0);"
                         data-bs-toggle="modal" data-bs-target="#duplicateModal">
                         <i class="ti ti-copy me-1"></i>Merge Customers
@@ -768,6 +771,9 @@
                 </div>
             </div>
         </div>
+
+        {{-- Add Task Modal --}}
+        @include('customers.modals.add-task')
     </div>
 
 
