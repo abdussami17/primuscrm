@@ -515,122 +515,99 @@
     </div>
 </div>
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const form = document.getElementById('addCustomerForm');
-    if (!form) return;
-
-    // Base URL to customer profiles (will be appended with /{id})
-    const customerBase = "{{ url('customers') }}";
-
-    async function handleSubmit(e) {
-        e.preventDefault();
-        const submitBtn = form.querySelector('button[type="submit"]');
-        if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Saving...'; }
-
-        const formData = new FormData(form);
-
-        // Resolve CSRF token from meta or hidden input
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
-            form.querySelector('input[name="_token"]')?.value || '';
-
-        try {
-            const res = await fetch(form.action, {
-                method: form.method || 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                },
-                body: formData,
-                credentials: 'same-origin'
-            });
-
-            console.debug('Customer create response', res.status, res.redirected, res.headers.get('content-type'));
-
-            // If server performed a redirect (non-AJAX flow), follow it
-            if (res.redirected) {
-                window.location.href = res.url;
-                return;
-            }
-
-            const contentType = res.headers.get('content-type') || '';
-            if (contentType.indexOf('application/json') !== -1) {
-                    const data = await res.json();
-                    console.debug('Customer create JSON', data);
-
-                    // Surface server-side validation errors (common Laravel 422 structure)
-                    if (!res.ok) {
-                        const messages = [];
-                        if (data && data.errors) {
-                            Object.keys(data.errors).forEach(k => {
-                                if (Array.isArray(data.errors[k])) {
-                                    data.errors[k].forEach(m => messages.push(m));
-                                } else if (data.errors[k]) {
-                                    messages.push(data.errors[k]);
-                                }
-                            });
-                        } else if (data && data.message) {
-                            messages.push(data.message);
-                        }
-
-                        if (messages.length) {
-                            alert(messages.join('\n'));
-                            return;
-                        }
-                    }
-
-                    const id = data?.customer?.id || data?.id || data?.customer_id;
-                    if (id) {
-                        // Prefer opening the profile in the global offcanvas if available
-                        if (typeof window.openCustomerProfile === 'function') {
-                            try {
-                                // hide the add-customer offcanvas first if present
-                                const off = bootstrap.Offcanvas.getInstance(document.getElementById('addCustomerCanvas'));
-                                if (off) off.hide();
-                            } catch (e) {}
-                            try { window.openCustomerProfile(id); } catch (e) { window.location.assign(customerBase + '/' + id); }
-                        } else if (data && data.redirect_url) {
-                            // fallback to server-provided redirect when offcanvas is unavailable
-                            window.location.assign(data.redirect_url);
-                        } else {
-                            window.location.assign(customerBase + '/' + id);
-                        }
-                        return;
-                    }
-
-                    if (res.ok) {
-                        window.location.reload();
-                        return;
-                    }
-            }
-
-            // Non-JSON fallback
-            if (!res.ok) {
-                try {
-                    const text = await res.text();
-                    alert('Error creating customer: ' + (text || res.status));
-                } catch (e) {
-                    window.location.reload();
+    // Immediately-invoked function to avoid multiple listeners
+    (function() {
+        const form = document.getElementById('addCustomerForm');
+        if (!form) return;
+    
+        // Prevent multiple bindings
+        if (form.dataset.ajaxBound === 'true') return;
+        form.dataset.ajaxBound = 'true';
+    
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault(); // Stop normal form submission
+    
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (!submitBtn) return;
+    
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Saving...';
+    
+            const formData = new FormData(form);
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
+                              form.querySelector('input[name="_token"]')?.value || '';
+    
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    body: formData,
+                    credentials: 'same-origin'
+                });
+    
+                const data = await response.json();
+    
+                if (!response.ok || !data.success) {
+                    const messages = data.errors 
+                        ? Object.values(data.errors).flat() 
+                        : [data.message || 'Error adding customer'];
+                    
+                    // Show errors with SweetAlert2
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        html: messages.join('<br>'),
+                    });
+                    return;
                 }
-            } else {
-                window.location.reload();
+    
+                // Success with SweetAlert2
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: data.message || 'Customer added successfully!',
+                    timer: 2000,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
+                });
+    
+                // Close offcanvas by class
+                const offcanvasEl = document.querySelector('.customerProfileOffcanvas');
+                if (offcanvasEl) {
+                    let offcanvasInstance = bootstrap.Offcanvas.getInstance(offcanvasEl);
+                    if (!offcanvasInstance) offcanvasInstance = new bootstrap.Offcanvas(offcanvasEl);
+                    offcanvasInstance.hide();
+                }
+    
+                // Open customer profile
+                const customerId = data.customer?.id;
+                if (customerId && typeof window.openCustomerProfile === 'function') {
+                    window.openCustomerProfile(customerId);
+                } else if (customerId) {
+                    window.location.assign(`{{ url('customers') }}/${customerId}/edit`);
+                }
+    
+                form.reset();
+    
+            } catch (err) {
+                console.error('AJAX error', err);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops!',
+                    text: 'An unexpected error occurred. Customer not added.',
+                });
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Add Customer';
             }
-
-        } catch (err) {
-            console.error('Customer create error', err);
-            // If AJAX fails, remove this handler and submit normally
-            form.removeEventListener('submit', handleSubmit);
-            form.submit();
-        } finally {
-            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Add Customer'; }
-        }
-    }
-
-    form.addEventListener('submit', handleSubmit);
-});
-</script>
-
-<style>
+        });
+    })();
+    </script>
+    <style>
 .preview-box {
     background-color: #f8f9fa;
     transition: all 0.3s ease;
