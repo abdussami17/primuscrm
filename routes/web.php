@@ -300,6 +300,7 @@ Route::prefix('employee/desk-log')->name('employee-desk-log.')->middleware(['aut
     Route::get('/customers/{customer}/deals', [App\Http\Controllers\DealController::class, 'getCustomerDeals'])
         ->name('deals.customer')
         ->middleware('permission:View All Dealer Deals/Customer Info');#addCustomerCanvas
+        Route::get('/api/vin/decode/{vin}', [App\Http\Controllers\TradeInController::class, 'decodeManually']);
 
     // Global customer canvas (render fragment used by the common offcanvas)
     Route::get('/customers/{customer}/canvas', [App\Http\Controllers\CustomerController::class, 'edit'])

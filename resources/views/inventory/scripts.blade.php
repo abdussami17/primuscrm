@@ -375,3 +375,49 @@ function formatCurrency(value) {
 }
 
 </script>
+
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+    
+        const table = document.getElementById('inventoryTable');
+        if (!table) return;
+    
+        const tbody = table.querySelector('tbody');
+        if (!tbody) return;
+    
+        let rows = Array.from(tbody.querySelectorAll('tr'));
+        if (!rows.length) return;
+    
+        rows.reverse();
+    
+        const perPageSelect = document.getElementById('rows-per-page');
+        const startEl = document.getElementById('start-item');
+        const endEl = document.getElementById('end-item');
+        const totalEl = document.getElementById('total-items');
+    
+        if (!perPageSelect) return;
+    
+        let perPage = 25;
+    
+        totalEl.textContent = rows.length;
+    
+        function render() {
+            rows.forEach(r => r.style.display = 'none');
+    
+            rows.slice(0, perPage).forEach(r => r.style.display = '');
+    
+            startEl.textContent = rows.length ? 1 : 0;
+            endEl.textContent = Math.min(perPage, rows.length);
+        }
+    
+        perPageSelect.addEventListener('change', function () {
+            perPage = parseInt(this.value);
+            render();
+        });
+    
+        render();
+    
+    });
+    </script>

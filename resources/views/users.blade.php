@@ -18,6 +18,19 @@
         tr.user-inactive.show-inactive {
             display: table-row;
         }
+
+        .table-responsive {
+    max-height: 75vh;
+    overflow-y: auto;
+}
+
+.table-responsive thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgb(0,33,64);
+    color: white;
+}
     </style>
 @endpush
 
@@ -74,6 +87,7 @@
                 <div class="d-flex align-items-center flex-wrap gap-2">
                     <div class="table-search d-flex align-items-center mb-0">
                         <div class="search-input input-group">
+                        
                             <input type="text" id="usersSearchInput" class="form-control form-control-sm"
                                 placeholder="Search users...">
                             <button class="btn btn-light btn-searchset" id="usersSearchBtn" type="button"></button>
@@ -133,7 +147,7 @@
                                         data-user-id="{{ $user->id }}" data-user-name="{{ $user->name }}">
                                 </div>
                             </td>
-                            <td>{{ $user->name }}</td>
+                            <td><a class="text-dark fw-medium text-decoration-underline" href="{{ route('users.edit', $user->id) }}" >{{ $user->name }}</a></td>
                             <td>{{ $user->email }}</td>
                             <td>{{ $user->work_phone ?? 'N/A' }}</td>
                             <td>{{ $user->cell_phone ?? 'N/A' }}</td>
@@ -153,11 +167,7 @@
                                         <i class="isax isax-more"></i>
                                     </button>
                                     <ul class="dropdown-menu">
-                                        <li>
-                                            <a href="{{ route('users.edit', $user->id) }}" class="dropdown-item">
-                                                <i class="isax isax-edit me-2"></i>Edit
-                                            </a>
-                                        </li>
+                                   
                                         <li>
                                             <a href="#" class="dropdown-item toggle-status"
                                                 data-user-id="{{ $user->id }}">

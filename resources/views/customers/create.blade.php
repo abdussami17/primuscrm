@@ -86,7 +86,7 @@
 
         <!-- Name Fields -->
         <div class="col-md-4">
-            <label class="form-label">First Name <span class="text-danger">*</span></label>
+            <label class="form-label">First Name </label>
             <div class="input-group">
                 <input type="text" class="form-control" name="first_name" id="first_name" required>
                 <button data-bs-toggle="modal" data-bs-target="#licenseScannerModal"
@@ -100,7 +100,7 @@
             <input type="text" class="form-control" name="middleName" id="middleName">
         </div>
         <div class="col-md-4">
-            <label class="form-label">Last Name <span class="text-danger">*</span></label>
+            <label class="form-label">Last Name </label>
             <input type="text" class="form-control" name="last_name" id="last_name" >
         </div>
 
@@ -120,7 +120,7 @@
 
         <!-- Email Section -->
         <div class="col-12">
-            <label class="form-label">Email Address <span class="text-danger">*</span></label>
+            <label class="form-label">Email Address </label>
             <div id="email-container">
                 <div class="email-group mb-2">
                     <div class="input-group">
@@ -226,7 +226,7 @@
 
         <!-- Employee Dropdowns -->
         <div class="col-md-6">
-            <label class="form-label">Assigned To <span class="text-danger">*</span></label>
+            <label class="form-label">Assigned To </label>
             <select class="form-select" name="assignedTo" id="assignedTo" >
                 <option value="" hidden>Select</option>
                 @if (isset($users))
@@ -275,7 +275,7 @@
         </div>
 
         <div class="col-md-6">
-            <label class="form-label">BDC Agent <span class="text-danger">*</span></label>
+            <label class="form-label">BDC Agent </label>
             <select class="form-select" name="bdcAgent" >
                 <option value="">Select</option>
                 @if (isset($bdcAgents))
@@ -327,7 +327,7 @@
 
         <!-- Sales Type -->
         <div class="col-md-6">
-            <label class="form-label">Sales Type <span class="text-danger">*</span></label>
+            <label class="form-label">Sales Type</label>
             <select class="form-select" name="salesType" >
                 <option value="">Select</option>
                 <option value="Sales" selected>Sales Inquiry</option>
@@ -344,6 +344,8 @@
                 <option value="Finance">Finance</option>
                 <option value="Cash">Cash</option>
                 <option value="Lease">Lease</option>
+                <option value="Unknown">Unknown</option>
+
             </select>
         </div>
 
@@ -364,7 +366,7 @@
 
         <!-- Lead Status -->
         <div class="col-md-6">
-            <label class="form-label">Lead Status <span class="text-danger">*</span></label>
+            <label class="form-label">Lead Status</label>
             <select class="form-select" name="leadStatus" >
                 <option value="">Select</option>
                 <option value="Active" selected>Active</option>
@@ -407,7 +409,7 @@
                 <div class="row g-3">
                     <!-- FRONT -->
                     <div class="col-md-6">
-                        <h6 class="mb-2">Front Side <span class="text-danger">*</span></h6>
+                        <h6 class="mb-2">Front Side </h6>
                         <div class="preview-box position-relative" id="frontPreviewBox" style="min-height: 200px; border: 2px dashed #ddd; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
                             <div id="frontPlaceholder">
                                 <div class="text-center p-4">

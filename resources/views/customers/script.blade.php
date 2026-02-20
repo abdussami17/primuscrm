@@ -2629,6 +2629,9 @@
                         const langEl = document.querySelector('#account-2 select[aria-label]') ||
                             document.querySelector('#account-2 select');
                         const langText = langEl?.selectedOptions?.[0]?.text || '';
+                        const assignedtoSelect = document.getElementById('assignedToSelect');
+                        const assignedtoText = assignedtoSelect?.selectedOptions?.[0]?.text || '';
+
                         const campaignName = document.getElementById('campaignNameField')?.value || '';
                         const subject = document.getElementById('subjectField')?.value || '';
                         const bodyHtml = window.froalaEditor ? window.froalaEditor.html.get() : (
@@ -2657,6 +2660,7 @@
                         };
                         setText('summaryTemplate', templateName || '—');
                         setText('summarySender', senderText || '—');
+                        setText('summaryAssignedTo', assignedText || '—');
                         setText('summaryFallbackSender', backupText || '—');
                         setText('summaryCampaignName', campaignName || '—');
                         setText('summaryStartDate', startAt ? (new Date(startAt)).toLocaleString() :

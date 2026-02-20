@@ -41,6 +41,7 @@ Route::get('/deals/{deal}/vehicle-partial', [DealController::class, 'vehiclePart
 Route::get('/deals/{deal}/service-history-partial', [ServiceAppointmentController::class, 'serviceHistoryPartial']);
 Route::post('/service-appointment/create', [ServiceAppointmentController::class, 'store']);
 
+
 Route::middleware(['web'])->group(function () {
     // AI Generation Routes
     Route::post('/ai/generate-email', [AIController::class, 'generateEmail']);

@@ -127,7 +127,7 @@
     <div class="offcanvas offcanvas-end customerProfileOffcanvas" tabindex="-1" id="commonCanvas">
         <div class="offcanvas-header d-block pb-0">
             <div class="border-bottom d-flex align-items-center justify-content-between pb-3">
-                <h5 class="offcanvas-title">Add Customer</h5>
+                <h5 class="offcanvas-title" id="customerOffcanvasTitle">Add Customer</h5>
                 <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
                
             </div>

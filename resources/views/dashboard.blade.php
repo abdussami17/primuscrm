@@ -3901,7 +3901,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                             Showed Rate
                                             <i class="ti ti-info-circle ms-1 text-black" data-bs-toggle="tooltip"
                                                 data-bs-placement="top"
-                                                title="Showed Rate % = (Completed Appointments / Open Appointments) x 100"></i>
+                                                title="Appointment Showed % = (Completed Appointments/Total Appointments) x 100"></i>
 
                                         </p>
                                         <div class="d-flex gap-2">
@@ -4177,7 +4177,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                             Rate
                                             <i class="ti ti-info-circle ms-1 text-black" data-bs-toggle="tooltip"
                                                 data-bs-placement="top"
-                                                title="Percentage calculated as: (Completed Task / Open Task) x 100"></i>
+                                                title="Task Completion % = (Completed Tasks/Total Tasks) x 100"></i>
                                         </p>
                                         <div class="d-flex gap-2">
                                             <i class="ti ti-star star-toggle" data-widget-id="task-completion-rate"></i>

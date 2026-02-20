@@ -97,7 +97,6 @@
                         <i class="ti ti-copy me-1"></i>Merge Customers
                     </a>
                 </div>
-
                 <div class="d-flex align-items-center flex-wrap gap-2">
                     <div class="dropdown">
                         <a href="javascript:void(0);"
@@ -106,270 +105,100 @@
                             More Columns
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" style="max-height: 300px; overflow-y: auto;">
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>First Name</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Middle Name</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Last Name</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Customer Name</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Co-Buyer</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Email</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Alternative
-                                        Email</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Cell Phone</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Work Phone</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Home Phone</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Address</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Street
-                                        Address</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>City</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Province</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Postal Code</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Country</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Year</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Make</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Model</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>VIN</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Stock
-                                        Number</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Odometer</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>KMs</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Body Style</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Exterior
-                                        Color</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Interior
-                                        Color</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Fuel Type</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Engine</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Drive Type</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Doors</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2"
-                                        type="checkbox"><span>Transmission</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Franchise</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Lot
-                                        Location</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Sale Price</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Selling
-                                        Price</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Internet
-                                        Price</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Equity</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Dealership
-                                        Name</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Dealership
-                                        Phone</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Dealership
-                                        Address</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Dealership
-                                        Website</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Trade-in
-                                        Year</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Trade-in
-                                        Make</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Trade-in
-                                        Model</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Trade-in
-                                        VIN</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Trade-in
-                                        KMs</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Trade-in Selling
-                                        Price</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Assigned To</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Assigned By</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Assigned
-                                        Manager</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Secondary
-                                        Assigned</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Finance
-                                        Manager</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>BDC Agent</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>BDC Manager</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>General
-                                        Manager</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Sales
-                                        Manager</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Service
-                                        Advisor</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Inventory
-                                        Manager</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Created By</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Appointment
-                                        Date/Time</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Warranty Expiration
-                                        Date</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Due
-                                        Date/Time</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Created
-                                        Date</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Assigned
-                                        Date</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Date</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Birthday</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Delivery
-                                        Date</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Updated</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Lead Source</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Lead Type</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Sales
-                                        Status</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Status Type</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Task Type</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Deal Type</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Sales Type</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Priority</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Source</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Lost</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Sold</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Delivered</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Showroom
-                                        Visit</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>CSI</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Consent</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Consent End</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Opt-Out</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Language</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Business
-                                        Name</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Buyout</span></label></li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Be-Back</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Wishlist</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Updated By</span></label>
-                            </li>
-                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input
-                                        class="form-check-input m-0 me-2" type="checkbox"><span>Trim</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Address</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Alternative Email</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Appointment Date/Time</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Assigned By</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Assigned Date</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Assigned Manager</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Assigned To</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>BDC Agent</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>BDC Manager</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Be-Back</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Birthday</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Body Style</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Business Name</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Buyout</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>CSI</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Cell Phone</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>City</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Co-Buyer</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Consent</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Consent End</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Country</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Created By</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Created Date</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Customer Name</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Date</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Deal Type</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Dealership Address</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Dealership Name</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Dealership Phone</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Dealership Website</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Delivered</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Delivery Date</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Doors</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Drive Type</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Due Date/Time</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Email</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Engine</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Equity</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Exterior Color</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Finance Manager</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>First Name</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Franchise</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Fuel Type</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>General Manager</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Home Phone</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Interior Color</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Internet Price</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Inventory Manager</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>KMs</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Language</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Last Name</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Lead Source</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Lead Type</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Lost</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Lot Location</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Make</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Middle Name</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Model</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Odometer</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Opt-Out</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Postal Code</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Priority</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Province</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Sale Price</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Sales Manager</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Sales Status</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Sales Type</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Secondary Assigned</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Selling Price</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Service Advisor</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Showroom Visit</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Sold</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Source</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Status Type</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Stock Number</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Street Address</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Task Type</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Trade-in KMs</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Trade-in Make</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Trade-in Model</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Trade-in Selling Price</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Trade-in VIN</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Trade-in Year</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Transmission</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Trim</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Updated</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Updated By</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>VIN</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Warranty Expiration Date</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Wishlist</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Work Phone</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center form-check form-check-inline"><input class="form-check-input m-0 me-2" type="checkbox"><span>Year</span></label></li>
                         </ul>
-
                     </div>
-
                 </div>
             </div>
 
@@ -1507,7 +1336,7 @@
                                                             id="summaryFallbackSender">Sunny
                                                             Bonnard (me)</span></div>
                                                     <div class="col-md-6"><strong>Assigned To:</strong> <span
-                                                            id="summaryFallbackSender">Sunny
+                                                            id="summaryAssignedTo">Sunny
                                                             Bonnard (me)</span></div>
 
                                                     <div class="col-md-6"><strong>Language:</strong> <span
