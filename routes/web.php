@@ -503,6 +503,8 @@ Auth::routes();
 require __DIR__ . '/email.php';
 require __DIR__ . '/template.php';
 require __DIR__ . '/inventory.php';
+require __DIR__ . '/report.php';
+
 
             Route::get('/customers/all', [CustomerController::class, 'getAllCustomer'])->name('all');
 
