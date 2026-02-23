@@ -12,3 +12,5 @@ Route::get('/activity-report/data', [ActivityReportController::class, 'fetch'])
     ->name('activity.report.data');
            
 });
+Route::get('activity/export', [ActivityReportController::class,'export'])
+->name('activity.report.export');

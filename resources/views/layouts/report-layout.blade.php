@@ -120,7 +120,7 @@
 
     table th {
       font-weight: 500;
-      font-size: 14px !important;
+      font-size: 14px ;
       color: #fff;
       border-color: #fff;
       background-color: rgb(0, 33, 64);
@@ -142,6 +142,39 @@
     font-weight: 400;
     border-radius: 0.3rem;
     }
+
+  @media print {
+  
+      body * {
+          visibility: hidden;
+      }
+  
+      table, table * {
+          visibility: visible;
+      }
+
+      table {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100% !important;
+          white-space: normal !important;
+          font-size: 12px;
+      }
+  
+      .header-bar,
+      form,
+      .report-info,
+      button {
+          display: none !important;
+      }
+  
+      th, td {
+          padding: 3px !important;
+          word-break: break-word;
+          font-size: 6px !important;
+      }
+  }
   </style>
 </head>
 
