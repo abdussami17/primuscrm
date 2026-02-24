@@ -192,9 +192,10 @@
                     <div class="card shadow-none">
                         <div class="card-body">
                             <div>
+                               
                                 <h6 class="mb-3">Dear {{ $email->user->name ?? 'Recipient' }}</h6>
                                 <div class="text-dark email-content">
-                                    {!! nl2br(e($email->body)) !!}
+                                    {!! $preview !!}
                                 </div>
                             </div>
 
@@ -299,3 +300,17 @@
     });
 </script>
 @endpush
+
+
+<style>
+.email-content .token{
+    background: transparent;
+    color: unset;
+    padding: 0px;
+    border-radius:0px;
+    font-size: unset;
+    font-weight: inherit;
+    cursor:auto;
+}
+
+</style>
