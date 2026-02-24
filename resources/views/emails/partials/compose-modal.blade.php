@@ -58,7 +58,8 @@
 
                     <div class="p-3 border-bottom">
                         <div class="mb-3">
-                            <input type="text" class="form-control" name="subject" placeholder="Subject" required>
+                            <input type="text" class="form-control" id="subjectInput" name="subject"
+                                placeholder="Subject" required>
                         </div>
 
                         <button type="button" class="btn-primary btn" id="btnAIAssistant">
@@ -74,7 +75,7 @@
                                 <div class="col-12 col-lg-8">
 
 
-                                    <div class="card p-0 mb-4">
+                                    <div class="card p-0 mb-4" id="email-body-section">
                                         <div class="outlook-toolbar">
                                             <!-- Font Family -->
                                             <select class="toolbar-select" id="fontFamily" title="Font family">
@@ -374,7 +375,7 @@
                             </div>
                         </div>
 
-                        
+
                         <div class="ai-modal" id="aiModal">
                             <div class="ai-modal-content">
                                 <div class="ai-modal-header">
@@ -386,8 +387,7 @@
                                         <small class="opacity-75">Create professional content in
                                             seconds</small>
                                     </div>
-                                    <button class="btn-close btn-close-white"
-                                        id="closeAIModal"></button>
+                                    <button class="btn-close btn-close-white" id="closeAIModal"></button>
                                 </div>
 
                                 <div class="ai-modal-body">
@@ -430,8 +430,7 @@
                                     </div>
 
                                     <div class="ai-input-section" id="aiInputSection">
-                                        <button class="btn btn-sm btn-outline-secondary mb-3"
-                                            id="btnBackToOptions">
+                                        <button class="btn btn-sm btn-outline-secondary mb-3" id="btnBackToOptions">
                                             <i class="bi bi-arrow-left me-1"></i> Back
                                         </button>
 
@@ -451,11 +450,10 @@
                             <div class="image-control-section">
                                 <span class="image-control-label">Alignment</span>
                                 <div class="image-align-btns">
+                                    <button class="image-align-btn btn btn-light border-1 border" data-align="left"><i
+                                            class="bi bi-align-start"></i></button>
                                     <button class="image-align-btn btn btn-light border-1 border"
-                                        data-align="left"><i class="bi bi-align-start"></i></button>
-                                    <button class="image-align-btn btn btn-light border-1 border"
-                                        data-align="center"><i
-                                            class="bi bi-align-center"></i></button>
+                                        data-align="center"><i class="bi bi-align-center"></i></button>
                                     <button class="image-align-btn btn btn-light border-1 border"
                                         data-align="right"><i class="bi bi-align-end"></i></button>
                                 </div>
@@ -465,13 +463,13 @@
                                 <div class="image-size-inputs">
                                     <div class="image-size-group mb-2">
                                         <span class="image-size-label form-label">Width (px)</span>
-                                        <input type="number" class="image-size-input form-control"
-                                            id="imageWidth" min="50" step="10">
+                                        <input type="number" class="image-size-input form-control" id="imageWidth"
+                                            min="50" step="10">
                                     </div>
                                     <div class="image-size-group mb-2">
                                         <span class="image-size-label form-label">Height (px)</span>
-                                        <input type="number" class="image-size-input form-control"
-                                            id="imageHeight" min="50" step="10">
+                                        <input type="number" class="image-size-input form-control" id="imageHeight"
+                                            min="50" step="10">
                                     </div>
                                 </div>
                                 <label class="image-lock-aspect mb-2">
@@ -480,11 +478,10 @@
                                 </label>
                             </div>
                             <div class="image-control-actions mb-2">
-                                <button class="image-control-btn btn btn-light border border-1"
-                                    id="resetImageSize"><i
+                                <button class="image-control-btn btn btn-light border border-1" id="resetImageSize"><i
                                         class="bi bi-arrow-counterclockwise me-1"></i>Reset</button>
-                                <button class="image-control-btn danger btn btn-danger"
-                                    id="deleteImage"><i class="bi bi-trash me-1"></i>Delete</button>
+                                <button class="image-control-btn danger btn btn-danger" id="deleteImage"><i
+                                        class="bi bi-trash me-1"></i>Delete</button>
                             </div>
                         </div>
                         {{-- <div class="mb-0" id="email-body-section">
@@ -534,7 +531,7 @@
                                 class="btn btn-outline-secondary d-inline-flex align-items-center">
                                 <i class="ti ti-file me-2"></i>Save Draft
                             </button>
-                            <button type="submit" class="btn btn-primary d-inline-flex align-items-center ms-2">
+                            <button id="sendEmailBtn" type="submit" class="btn btn-primary d-inline-flex align-items-center ms-2">
                                 Send <i class="ti ti-arrow-right ms-2"></i>
                             </button>
                         </div>
@@ -2065,56 +2062,7 @@
             });
         }
 
-        insertToken(tokenName) {
-            const editor = document.getElementById('editor');
-
-            // Restore the last saved cursor position
-            if (this.savedSelection) {
-                editor.focus();
-                const selection = window.getSelection();
-                selection.removeAllRanges();
-                selection.addRange(this.savedSelection);
-            } else {
-                // If no saved position, focus at the end
-                editor.focus();
-                const range = document.createRange();
-                range.selectNodeContents(editor);
-                range.collapse(false);
-                const selection = window.getSelection();
-                selection.removeAllRanges();
-                selection.addRange(range);
-            }
-
-            // Create and insert token
-            const token = document.createElement('span');
-            token.className = 'token';
-            token.textContent = `@{{ $ {
-    tokenName }}}`;
-            token.contentEditable = 'false';
-
-            const selection = window.getSelection();
-            if (selection.rangeCount > 0) {
-                const range = selection.getRangeAt(0);
-                range.deleteContents();
-                range.insertNode(token);
-
-                // Add a space after the token
-                const space = document.createTextNode('\u00A0');
-                range.setStartAfter(token);
-                range.insertNode(space);
-
-                // Move cursor after the space
-                range.setStartAfter(space);
-                range.collapse(true);
-                selection.removeAllRanges();
-                selection.addRange(range);
-
-                // Save the new position
-                this.savedSelection = range.cloneRange();
-            }
-
-            this.renderPreview();
-        }
+     
         setupVoiceRecognition() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
@@ -2239,7 +2187,53 @@
 </script>
 <script>
     // Update hidden input before submit
-document.getElementById('composeEmailForm').addEventListener('submit', function(e) {
-    document.getElementById('email-body').value = document.getElementById('editor').innerHTML;
-});
+    document.getElementById('composeEmailForm').addEventListener('submit', function(e) {
+        document.getElementById('email-body').value = document.getElementById('editor').innerHTML;
+    });
+</script>
+<script>
+    function initMergeFields() {
+
+        document.querySelectorAll('.merge-fields-container').forEach(container => {
+
+            if (container.dataset.mergeInitialized) return;
+            container.dataset.mergeInitialized = '1';
+
+            // init heights
+            container.querySelectorAll('.category-body').forEach(body => {
+                body.style.overflow = 'hidden';
+
+                if (body.classList.contains('is-open')) {
+                    body.style.maxHeight = body.scrollHeight + 'px';
+                } else {
+                    body.style.maxHeight = '0px';
+                }
+            });
+
+            container.addEventListener('click', function(e) {
+
+                const header = e.target.closest('.category-header');
+                if (!header) return;
+
+                const body = header.parentElement.querySelector('.category-body');
+                if (!body) return;
+
+                const isOpen = body.classList.contains('is-open');
+
+                console.log('Before:', isOpen ? 'OPEN' : 'CLOSED');
+
+                if (isOpen) {
+                    body.classList.remove('is-open');
+                    body.style.maxHeight = '0px';
+                } else {
+                    body.classList.add('is-open');
+                    body.style.maxHeight = body.scrollHeight + 'px';
+                }
+
+                console.log('After:', !isOpen ? 'OPEN' : 'CLOSED');
+            });
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', initMergeFields);
 </script>

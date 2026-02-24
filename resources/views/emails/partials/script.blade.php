@@ -165,15 +165,25 @@ function initRestoreForms() {
 /**
  * Handle compose form submission via AJAX and process HTML/JSON responses.
  */
-function initComposeForm() {
+ function initComposeForm() {
     const form = document.getElementById('composeEmailForm');
     if (!form) return;
 
+    let isSubmitting = false;
+
     form.addEventListener('submit', function(e) {
         e.preventDefault();
+        if (isSubmitting) return;
 
-        if (pendingRequests.has('compose')) return;
-        pendingRequests.add('compose');
+        isSubmitting = true;
+
+        // Disable all submit buttons
+        const submitButtons = form.querySelectorAll('button[type="submit"]');
+        submitButtons.forEach(btn => {
+            btn.disabled = true;
+            btn.dataset.originalText = btn.innerHTML;
+            btn.innerHTML = 'Sending...';
+        });
 
         const action = this.action;
         const method = (this.method || 'POST').toUpperCase();
@@ -193,53 +203,53 @@ function initComposeForm() {
             return response.text().then(t => ({ type: 'html', data: t }));
         })
         .then(result => {
-            if (result.type === 'json') {
-                const data = result.data;
-                if (data.success) {
-                    if (data.html) {
-                        try {
-                            const parser = new DOMParser();
-                            const doc = parser.parseFromString(data.html, 'text/html');
-                            const newList = doc.querySelector('.mails-list');
-                            const currentList = document.querySelector('.mails-list');
-                            if (newList && currentList) {
-                                currentList.innerHTML = newList.innerHTML;
-                            }
-                        } catch (e) { console.error(e); }
-                    }
-                    // close modal and reset form
-                    try { const modalEl = document.getElementById('email-view'); const bs = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl); bs.hide(); } catch(e){}
-                    form.reset();
-                    const attachmentList = document.getElementById('attachmentList');
-                    if (attachmentList) attachmentList.innerHTML = '';
-                    refreshSidebarCounts();
-                } else {
-                    console.warn('Compose returned success=false', data);
-                }
+            if (result.type === 'json' && result.data.success) {
+                handleComposeSuccess(result.data.html);
+                alert('Email sent successfully!');
             } else if (result.type === 'html') {
-                // server returned full page HTML (redirect followed); try to extract .mails-list
-                try {
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(result.data, 'text/html');
-                    const newList = doc.querySelector('.mails-list');
-                    const currentList = document.querySelector('.mails-list');
-                    if (newList && currentList) {
-                        currentList.innerHTML = newList.innerHTML;
-                    }
-                    // close modal and reset form
-                    try { const modalEl = document.getElementById('email-view'); const bs = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl); bs.hide(); } catch(e){}
-                    form.reset();
-                    const attachmentList2 = document.getElementById('attachmentList');
-                    if (attachmentList2) attachmentList2.innerHTML = '';
-                    refreshSidebarCounts();
-                } catch (e) { console.error('Error processing compose HTML response', e); }
+                handleComposeSuccess(result.data);
+                alert('Email sent successfully!');
+            } else {
+                console.warn('Compose returned failure:', result);
+                alert('Failed to send email. Please try again.');
             }
         })
-        .catch(err => console.error('Compose submit error', err))
-        .finally(() => pendingRequests.delete('compose'));
+        .catch(err => {
+            console.error('Compose submit error', err);
+            alert('An error occurred while sending email.');
+        })
+        .finally(() => {
+            isSubmitting = false;
+            submitButtons.forEach(btn => {
+                btn.disabled = false;
+                btn.innerHTML = btn.dataset.originalText;
+            });
+        });
+
+        function handleComposeSuccess(html) {
+            if (!html) html = '';
+            try {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newList = doc.querySelector('.mails-list');
+                const currentList = document.querySelector('.mails-list');
+                if (newList && currentList) currentList.innerHTML = newList.innerHTML;
+            } catch (e) { console.error(e); }
+
+            // close modal and reset form
+            try {
+                const modalEl = document.getElementById('email-view');
+                const bs = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                bs.hide();
+            } catch(e){}
+
+            form.reset();
+            const attachmentList = document.getElementById('attachmentList');
+            if (attachmentList) attachmentList.innerHTML = '';
+            refreshSidebarCounts();
+        }
     });
 }
-
 /**
  * User Autocomplete for To field
  */
@@ -399,14 +409,14 @@ function initFavoriteToggle() {
 /**
  * Template Toggle in Compose Modal
  */
-function initTemplateToggle() {
+ function initTemplateToggle() {
     const insertBtn = document.getElementById('insertTemplateBtn');
-    const emailBody = document.getElementById('email-body-section');
+    const emailBody = document.getElementById('email-body-section'); 
     const templateSelector = document.getElementById('template-select-section');
     const backBtn = document.getElementById('backToBody');
     const templateSelect = document.getElementById('templateSelect');
-    const subjectInput = document.querySelector('input[name="subject"]');
-    const bodyTextarea = document.getElementById('email-body');
+    const subjectInput = document.getElementById('subjectInput');
+    const editor = document.getElementById('editor');
 
     if (!insertBtn || !emailBody || !templateSelector || !backBtn) return;
 
@@ -420,26 +430,36 @@ function initTemplateToggle() {
         templateSelector.classList.add('d-none');
     });
 
-    // Handle template selection
     if (templateSelect) {
-        templateSelect.addEventListener('change', function() {
+        templateSelect.addEventListener('change', function () {
             const selectedOption = this.options[this.selectedIndex];
             const subject = selectedOption.dataset.subject;
             const body = selectedOption.dataset.body;
 
-            if (subject && subjectInput) {
-                subjectInput.value = subject;
-            }
-            if (body && bodyTextarea) {
-                bodyTextarea.value = body;
+            if (subject && subjectInput) subjectInput.value = subject;
+
+            if (body && editor) {
+                editor.innerHTML = body;
+
+                // 🔥 Dispatch InputEvent so preview updates automatically
+                const ev = new InputEvent('input', {
+                    bubbles: true,
+                    cancelable: true,
+                    inputType: 'insertFromPaste',
+                    data: body
+                });
+                editor.dispatchEvent(ev);
             }
 
-            // Switch back to body view
             emailBody.classList.remove('d-none');
             templateSelector.classList.add('d-none');
         });
     }
 }
+
+
+// ✅ ALWAYS initialize after DOM
+document.addEventListener('DOMContentLoaded', initTemplateToggle);
 
 /**
  * CC/BCC Toggle
