@@ -373,12 +373,19 @@
 // selection handlers immediately so token insertion works on any page.
 
 function initMergeFields() {
+    console.group('Merge Fields Init');
+
     document.querySelectorAll('.merge-fields-container').forEach(container => {
+
         if (container.dataset.mergeInitialized) return;
         container.dataset.mergeInitialized = '1';
 
-        // initialize max-heights so already-open categories are visible
+        console.log('Container found:', container);
+
+        // Setup initial heights
         container.querySelectorAll('.category-body').forEach(body => {
+            body.style.overflow = 'hidden';
+
             if (body.classList.contains('show')) {
                 body.style.maxHeight = body.scrollHeight + 'px';
             } else {
@@ -386,16 +393,34 @@ function initMergeFields() {
             }
         });
 
-        container.addEventListener('click', function(e) {
-            const header = e.target.closest && e.target.closest('.category-header');
+        container.addEventListener('click', function (e) {
+
+            const header = e.target.closest('.category-header');
+
             if (!header) return;
 
-            const body = header.nextElementSibling;
+            console.group('Header Clicked');
+            console.log('Header:', header);
+
+            // ⭐ FIX: safer body lookup
+            const body =
+                header.parentElement.querySelector(':scope > .category-body') ||
+                header.nextElementSibling;
+
+            console.log('Body found:', body);
+
+            if (!body) {
+                console.error('❌ No .category-body found for this header');
+                console.groupEnd();
+                return;
+            }
+
             const icon = header.querySelector('i:last-child');
 
-            if (!body) return;
-
             const willShow = !body.classList.contains('show');
+
+            console.log('Toggle →', willShow ? 'OPEN' : 'CLOSE');
+
             if (willShow) {
                 body.classList.add('show');
                 body.style.maxHeight = body.scrollHeight + 'px';
@@ -408,17 +433,21 @@ function initMergeFields() {
                 icon.classList.toggle('bi-chevron-down', !willShow);
                 icon.classList.toggle('bi-chevron-up', willShow);
             }
+
+            console.groupEnd();
         });
 
-        // adjust heights on window resize (in case content wraps differently)
+        // resize fix
         const resizeHandler = () => {
             container.querySelectorAll('.category-body.show').forEach(body => {
                 body.style.maxHeight = body.scrollHeight + 'px';
             });
         };
+
         window.addEventListener('resize', resizeHandler);
-        container._mergeResizeHandler = resizeHandler;
     });
+
+    console.groupEnd();
 }
 
 // run now (for pages where DOMContentLoaded already fired) and on DOM ready
@@ -505,124 +534,101 @@ if (!window._mergeFieldsComponentBound) {
 // insertToken supports contenteditable elements and plain inputs/textareas
 function insertToken(tokenName) {
     if (!tokenName) return;
-    const tokenTextPlain = `@{{ ${tokenName} }}`;
-    const last = window._mergeFieldLastActive && window._mergeFieldLastActive.el ? window._mergeFieldLastActive : null;
 
-    function dispatchInputEvent(el) {
+    const tokenTextPlain = `@{{ ${tokenName} }}`;
+    const last = window._mergeFieldLastActive?.el ? window._mergeFieldLastActive : null;
+
+    function fireRealInput(el) {
         try {
-            const ev = new Event('input', { bubbles: true });
+            const ev = new InputEvent('input', {
+                bubbles: true,
+                cancelable: true,
+                inputType: 'insertText',
+                data: tokenTextPlain
+            });
             el.dispatchEvent(ev);
-        } catch (e) {}
+        } catch {
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+        }
     }
 
-    // Insert into last active editable
     if (last && last.el) {
-        try {
-            const el = last.el;
+        const el = last.el;
 
+        try {
             if (el.isContentEditable) {
+                el.focus();
                 const sel = window.getSelection();
                 if (last.range) {
-                    try { sel.removeAllRanges(); sel.addRange(last.range.cloneRange()); } catch {}
+                    sel.removeAllRanges();
+                    sel.addRange(last.range.cloneRange());
                 }
 
                 const tokenNode = document.createElement('span');
                 tokenNode.className = 'token';
                 tokenNode.textContent = tokenTextPlain;
                 tokenNode.contentEditable = 'false';
-                tokenNode.setAttribute('data-token', tokenName);
-                tokenNode.setAttribute('data-placeholder', tokenTextPlain);
+                tokenNode.dataset.token = tokenName;
 
-                if (sel && sel.rangeCount > 0) {
-                    const r = sel.getRangeAt(0);
-                    r.deleteContents();
-                    r.insertNode(tokenNode);
+                let range;
+
+                if (sel.rangeCount > 0) {
+                    range = sel.getRangeAt(0);
+                    range.deleteContents();
+                    range.insertNode(tokenNode);
+
                     const space = document.createTextNode(' ');
-                    tokenNode.parentNode.insertBefore(space, tokenNode.nextSibling);
+                    tokenNode.after(space);
 
-                    const newRange = document.createRange();
-                    newRange.setStartAfter(space);
-                    newRange.collapse(true);
+                    range = document.createRange();
+                    range.setStartAfter(space);
+                    range.collapse(true);
+
                     sel.removeAllRanges();
-                    sel.addRange(newRange);
-                    window._mergeFieldLastActive.range = newRange.cloneRange();
+                    sel.addRange(range);
                 } else {
-                    el.appendChild(tokenNode);
-                    el.appendChild(document.createTextNode(' '));
+                    el.append(tokenNode, document.createTextNode(' '));
                 }
 
-                try { el.focus(); } catch (err) {}
-                if (typeof updatePreview === 'function') updatePreview();
+                window._mergeFieldLastActive.range = range?.cloneRange();
+                fireRealInput(el);
                 return;
             }
 
-            const tag = el.tagName;
-            if (tag === 'INPUT' || tag === 'TEXTAREA') {
+            if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
                 const input = el;
                 const val = input.value || '';
-                let start = (window._mergeFieldLastActive.start != null) ? window._mergeFieldLastActive.start : (input.selectionStart != null ? input.selectionStart : val.length);
-                let end = (window._mergeFieldLastActive.end != null) ? window._mergeFieldLastActive.end : (input.selectionEnd != null ? input.selectionEnd : start);
-
-                start = typeof start === 'number' ? start : 0;
-                end = typeof end === 'number' ? end : start;
+                let start = input.selectionStart ?? val.length;
+                let end = input.selectionEnd ?? start;
 
                 const insertion = tokenTextPlain + ' ';
-                const newVal = val.slice(0, start) + insertion + val.slice(end);
-                input.value = newVal;
+                input.value = val.slice(0, start) + insertion + val.slice(end);
 
                 const caret = start + insertion.length;
-                try { input.setSelectionRange(caret, caret); } catch {}
-                try { input.focus(); } catch (err) {}
+                input.setSelectionRange(caret, caret);
 
-                window._mergeFieldLastActive.start = caret;
-                window._mergeFieldLastActive.end = caret;
-
-                dispatchInputEvent(input);
-                if (typeof updatePreview === 'function') updatePreview();
+                fireRealInput(input);
                 return;
             }
+
         } catch (err) {
-            console.error('Error inserting into last active element:', err);
+            console.error('Insert failed:', err);
         }
     }
 
-    // fallback to #editor
     const editor = document.getElementById('editor');
     if (editor) {
-        try {
-            editor.focus();
-            const token = document.createElement('span');
-            token.className = 'token';
-            token.textContent = tokenTextPlain;
-            token.contentEditable = 'false';
-            token.setAttribute('data-token', tokenName);
-            token.setAttribute('data-placeholder', tokenTextPlain);
-
-            const selection = window.getSelection();
-            if (selection.rangeCount > 0) {
-                const range = selection.getRangeAt(0);
-                range.deleteContents();
-                range.insertNode(token);
-                const space = document.createTextNode(' ');
-                range.setStartAfter(token);
-                range.insertNode(space);
-                range.setStartAfter(space);
-                range.collapse(true);
-                selection.removeAllRanges();
-                selection.addRange(range);
-            } else {
-                editor.appendChild(token);
-                editor.appendChild(document.createTextNode(' '));
-            }
-
-            if (typeof updatePreview === 'function') updatePreview();
-            return;
-        } catch (err) {
-            console.error('Editor fallback failed:', err);
-        }
+        editor.focus();
+        const token = document.createElement('span');
+        token.className = 'token';
+        token.textContent = tokenTextPlain;
+        token.contentEditable = 'false';
+        editor.append(token, document.createTextNode(' '));
+        fireRealInput(editor);
+        return;
     }
 
-    console.warn('No active editable element found to insert token into.');
+    console.warn('No editable element found.');
 }
 </script>
 @endpush

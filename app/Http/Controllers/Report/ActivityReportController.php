@@ -92,11 +92,15 @@ class ActivityReportController extends Controller
                         'source' => $activity->customer->lead_source ?? 'N/A',
                         'lead_type' => $activity->deal->lead_type ?? 'N/A',
                         'vehicle_interest' => $meta['vehicle_of_interest'] ?? ($activity->deal->vehicle_description ?? 'N/A'),
+<<<<<<< HEAD
                         'trade_in_vehicle' => $meta['trade_in_vehicle'] ?? trim(
                             ($activity->deal->tradeIn->year ?? '') . ' ' .
                             ($activity->deal->tradeIn->make ?? '') . ' ' .
                             ($activity->deal->tradeIn->model ?? '')
                         ) ?: 'N/A',
+=======
+                        'trade_in_vehicle' => $meta['trade_in_vehicle'] ?? ($activity->deal->trade_in ?? 'N/A'),
+>>>>>>> 2c2262bd2e44b91ac79d76b1f44bd9e5dba4bdb6
                         'activity_type' => $activity->type ?? 'N/A',
                         'activity_datetime' => optional($activity->created_at)->format('M d, Y h:i A') ?? 'N/A',
                         'status_type' => $activity->deal->status ?? 'N/A',

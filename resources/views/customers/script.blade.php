@@ -2694,8 +2694,18 @@
                             : '—';
                         const backupEl = document.getElementById('backupSender');
                         const backupText = backupEl?.selectedOptions?.[0]?.text || '';
+<<<<<<< HEAD
                         const langEl = document.getElementById('languageSelect');
                         const langText = langEl?.selectedOptions?.[0]?.text || langEl?.value || '';
+=======
+                        const assignedEl = document.getElementById('assignedToSelect');
+                        const assignedText = assignedEl?.selectedOptions?.[0]?.text || '';
+                        const langEl = document.querySelector('#account-2 select[aria-label]') ||
+                            document.querySelector('#account-2 select');
+                        const langText = langEl?.selectedOptions?.[0]?.text || '';
+                        const assignedtoSelect = document.getElementById('assignedToSelect');
+                        const assignedtoText = assignedtoSelect?.selectedOptions?.[0]?.text || '';
+>>>>>>> 2c2262bd2e44b91ac79d76b1f44bd9e5dba4bdb6
 
                         const campaignName = document.getElementById('campaignNameField')?.value || '';
                         const subject = document.getElementById('subjectField')?.value || '';
@@ -2726,8 +2736,13 @@
                         const setHTML = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
 
                         setText('summaryTemplate', templateName || '—');
+<<<<<<< HEAD
                         setText('summarySender', senderType === 'team' ? `${senderText} (team)` : (senderText || '—'));
                         setText('summaryAssignedTo', assignedText);
+=======
+                        setText('summarySender', senderText || '—');
+                        setText('summaryAssignedTo', assignedText || '—');
+>>>>>>> 2c2262bd2e44b91ac79d76b1f44bd9e5dba4bdb6
                         setText('summaryFallbackSender', backupText || '—');
                         setText('summaryLanguage', langText || '—');
                         setText('summaryCampaignName', campaignName || '—');

@@ -550,7 +550,11 @@
 
 {{-- Store customers data for JavaScript autocomplete --}}
 <script>
+<<<<<<< HEAD
     window.emailCustomers = @json($customers ?? []);
+=======
+    window.emailUsers = @json($users ?? []);
+>>>>>>> 2c2262bd2e44b91ac79d76b1f44bd9e5dba4bdb6
 </script>
 
 <script>
@@ -2186,6 +2190,15 @@
     new TemplateBuilder();
 </script>
 <script>
+<<<<<<< HEAD
+=======
+    // Update hidden input before submit
+    document.getElementById('composeEmailForm').addEventListener('submit', function(e) {
+        document.getElementById('email-body').value = document.getElementById('editor').innerHTML;
+    });
+</script>
+<script>
+>>>>>>> 2c2262bd2e44b91ac79d76b1f44bd9e5dba4bdb6
     function initMergeFields() {
 
         document.querySelectorAll('.merge-fields-container').forEach(container => {

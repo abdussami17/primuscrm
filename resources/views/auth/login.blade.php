@@ -40,6 +40,7 @@
         .login-header img {
             max-width: 120px;
             height: auto;
+            filter: invert(1);
             margin-bottom: 20px;
         }
         

@@ -18,6 +18,7 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+<<<<<<< HEAD
                     'X-CSRF-TOKEN': window.AppState?.csrfToken || document.querySelector('meta[name="csrf-token"]')?.content
                 },
                 credentials: 'same-origin',
@@ -25,6 +26,18 @@
             }).then(r => r.json()).then(data => {
                 if (data && data.success) showToast('Call initiated to ' + to, 'success');
                 else showToast(data?.message || 'Call failed', 'error');
+=======
+                    'X-CSRF-TOKEN': window.AppState.csrfToken || document.querySelector(
+                        'meta[name="csrf-token"]').content
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    to
+                })
+            }).then(r => r.json()).then(data => {
+                if (data && data.success) showToast('Call initiated', 'success');
+                else showToast(data.message || 'Call failed', 'error');
+>>>>>>> 2c2262bd2e44b91ac79d76b1f44bd9e5dba4bdb6
             }).catch(err => {
                 console.error('Call error', err);
                 showToast('Call error', 'error');
@@ -36,6 +49,7 @@
         if (smsBtn) {
             const to = smsBtn.dataset.phone || document.getElementById('cell_phone_input')?.value;
             if (!to) return showToast('No phone number available', 'error');
+<<<<<<< HEAD
             // Show SMS modal instead of prompt
             const firstName = document.getElementsByName('first_name')[0]?.value || '';
             const lastName  = document.getElementsByName('last_name')[0]?.value  || '';
@@ -52,6 +66,34 @@
             const modal = new bootstrap.Modal(document.getElementById('customerSmsModal'));
             modal.show();
             setTimeout(() => document.getElementById('csSmsBody').focus(), 300);
+=======
+            const message = prompt('Enter SMS message to send:', '');
+            if (message === null) return; // cancelled
+            smsBtn.disabled = true;
+            smsBtn.innerHTML = '<i class="ti ti-loader rotate"></i>';
+            fetch('/telnyx/sms', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': window.AppState.csrfToken || document.querySelector(
+                        'meta[name="csrf-token"]').content
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    to,
+                    message
+                })
+            }).then(r => r.json()).then(data => {
+                if (data && data.success) showToast('SMS sent', 'success');
+                else showToast(data.message || 'SMS failed', 'error');
+            }).catch(err => {
+                console.error('SMS error', err);
+                showToast('SMS error', 'error');
+            }).finally(() => {
+                smsBtn.disabled = false;
+                smsBtn.innerHTML = '<i class="ti ti-message-circle"></i>';
+            });
+>>>>>>> 2c2262bd2e44b91ac79d76b1f44bd9e5dba4bdb6
         }
         if (videoBtn) {
             const to = videoBtn.dataset.phone || document.getElementById('cell_phone_input')?.value;
@@ -359,10 +401,17 @@
                                             data-phone="{{ $customer->cell_phone ?? '' }}">
                                             <i class="ti ti-message-circle"></i>
                                         </button>
+<<<<<<< HEAD
                                         {{-- <button type="button" class="btn btn-outline-secondary telnyx-video-btn"
                                             data-phone="{{ $customer->cell_phone ?? '' }}" title="Video Call">
                                             <i class="ti ti-device-desktop"></i>
                                         </button> --}}
+=======
+                                        <button type="button" class="btn btn-outline-secondary telnyx-video-btn"
+                                            data-phone="{{ $customer->cell_phone ?? '' }}" title="Video Call">
+                                            <i class="ti ti-device-desktop"></i>
+                                        </button>
+>>>>>>> 2c2262bd2e44b91ac79d76b1f44bd9e5dba4bdb6
                                     </div>
                                 </div>
 
@@ -923,6 +972,7 @@
         if (typeof showToast === 'function') showToast('Co-Buyer address copied from main customer', 'success');
     }
 </script>
+<<<<<<< HEAD
 
 {{-- ============================================================
      SMS COMPOSE MODAL
@@ -1290,3 +1340,5 @@
     document.addEventListener('DOMContentLoaded',()=>setTimeout(initClient,3000));
 })();
 </script>
+=======
+>>>>>>> 2c2262bd2e44b91ac79d76b1f44bd9e5dba4bdb6

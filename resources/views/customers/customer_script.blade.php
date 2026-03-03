@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 
+=======
+>>>>>>> 2c2262bd2e44b91ac79d76b1f44bd9e5dba4bdb6
 
  {{-- Load Customer Profile Data --}}
  <script>

@@ -2,15 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Deal;
-use App\Models\Customer;
-use App\Models\Inventory;
 use App\Models\Activity;
-use App\Models\TradeIn;
+use App\Models\Customer;
+use App\Models\Deal;
+use App\Models\Inventory;
 use App\Models\ServiceHistory;
+use App\Models\TradeIn;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+
+
 
 class DealController extends Controller
 {
@@ -186,13 +188,15 @@ class DealController extends Controller
                 $changeDescriptions[] = "{$fieldName} changed from '{$change['from']}' to '{$change['to']}'";
             }
 
-            Activity::create([
+      Activity::create([
                 'deal_id' => $deal->id,
                 'customer_id' => $deal->customer_id,
                 'user_id' => Auth::id(),
                 'type' => 'status_change',
                 'description' => implode(', ', $changeDescriptions)
             ]);
+
+          
         }
 
         return response()->json([

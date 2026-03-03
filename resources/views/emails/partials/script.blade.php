@@ -193,15 +193,20 @@ function initRestoreForms() {
 
     let isSubmitting = false;
 
+    let isSubmitting = false;
+
     form.addEventListener('submit', function(e) {
         e.preventDefault();
         if (isSubmitting) return;
 
+<<<<<<< HEAD
         // Sync rich-text editor → hidden textarea before building FormData
         const editor = document.getElementById('editor');
         const emailBody = document.getElementById('email-body');
         if (editor && emailBody) emailBody.value = editor.innerHTML;
 
+=======
+>>>>>>> 2c2262bd2e44b91ac79d76b1f44bd9e5dba4bdb6
         isSubmitting = true;
 
         // Disable all submit buttons
@@ -233,6 +238,7 @@ function initRestoreForms() {
         .then(result => {
             if (result.type === 'json' && result.data.success) {
                 handleComposeSuccess(result.data.html);
+<<<<<<< HEAD
                 if (result.data.warning) {
                     showEmailToast(result.data.warning, 'warning');
                 } else {
@@ -244,11 +250,24 @@ function initRestoreForms() {
             } else {
                 console.warn('Compose returned failure:', result);
                 showEmailToast((result.data && result.data.message) || 'Failed to send email. Please try again.', 'error');
+=======
+                alert('Email sent successfully!');
+            } else if (result.type === 'html') {
+                handleComposeSuccess(result.data);
+                alert('Email sent successfully!');
+            } else {
+                console.warn('Compose returned failure:', result);
+                alert('Failed to send email. Please try again.');
+>>>>>>> 2c2262bd2e44b91ac79d76b1f44bd9e5dba4bdb6
             }
         })
         .catch(err => {
             console.error('Compose submit error', err);
+<<<<<<< HEAD
             showEmailToast('Something went wrong. Please try again.', 'error');
+=======
+            alert('An error occurred while sending email.');
+>>>>>>> 2c2262bd2e44b91ac79d76b1f44bd9e5dba4bdb6
         })
         .finally(() => {
             isSubmitting = false;

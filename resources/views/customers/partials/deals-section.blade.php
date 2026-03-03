@@ -240,7 +240,11 @@
 {{-- Sales Status --}}
                         <div class="col-md-4">
                             <label class="form-label form-label-sm mb-1">Sales Status</label>
+<<<<<<< HEAD
                             <select class="form-select form-select-sm sales-status-select"
+=======
+                            <select class="form-select form-select-sm"
+>>>>>>> 2c2262bd2e44b91ac79d76b1f44bd9e5dba4bdb6
                                 onchange="updateDealField({{ $deal->id }}, 'sales_status', this.value)">
                                 @foreach([
                                     'uncontacted'   => 'Uncontacted',
@@ -524,6 +528,7 @@
        UPDATE DEAL FIELD (API)
     ================================ */
     async function updateDealField(dealId, field, value) {
+<<<<<<< HEAD
         // Special handling when marking sold or delivered — ask for a date first
         if (field === 'sales_status' && ['sold', 'delivered'].includes(String(value).toLowerCase())) {
             // open modal to collect date
@@ -608,19 +613,26 @@
             return;
         }
 
+=======
+>>>>>>> 2c2262bd2e44b91ac79d76b1f44bd9e5dba4bdb6
         try {
             await api(`/api/deals/${dealId}/field`, 'PATCH', {
                 field,
                 value
             });
             showToast('Updated');
+<<<<<<< HEAD
         } catch (err) {
             console.error(err);
+=======
+        } catch {
+>>>>>>> 2c2262bd2e44b91ac79d76b1f44bd9e5dba4bdb6
             showToast('Update failed', 'error');
         }
     }
 
     /* ================================
+<<<<<<< HEAD
        INLINE DATE EDITING
     ================================ */
     function startEditDealDate(span, dealId, field, currentVal) {
@@ -689,4 +701,19 @@
             showToast('Delete failed', 'error');
         }
     }
+=======
+       DELETE DEAL
+    ================================ */
+    async function deleteDeal(dealId) {
+        if (!confirm('Delete this deal?')) return;
+
+        try {
+            await api(`/api/deals/${dealId}`, 'DELETE');
+            document.querySelector(`[data-deal-id="${dealId}"]`)?.remove();
+            showToast('Deal deleted');
+        } catch {
+            showToast('Delete failed', 'error');
+        }
+    }
+>>>>>>> 2c2262bd2e44b91ac79d76b1f44bd9e5dba4bdb6
 </script>

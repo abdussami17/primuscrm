@@ -171,6 +171,7 @@ class EmailController extends Controller
     public function show(Email $email)
     {
         $user = Auth::user();
+<<<<<<< HEAD
 
         // Ensure user owns this email (inbound replies have user_id = agent, from_user_id = null)
         if ($email->user_id !== $user->id && $email->from_user_id !== $user->id) {
@@ -198,6 +199,27 @@ class EmailController extends Controller
             ->update(['is_read' => true]);
 
         // Build participants list — handle inbound emails where from_user_id is null
+=======
+    
+        if ($email->user_id !== $user->id && $email->from_user_id !== $user->id) {
+            abort(403);
+        }
+    
+        if (!$email->is_read && $email->user_id === $user->id) {
+            $email->update(['is_read' => true]);
+        }
+    
+        $threadEmails = [];
+        if ($email->thread_id) {
+            $threadEmails = Email::where('thread_id', $email->thread_id)
+                ->with(['sender', 'user', 'attachments'])
+                ->orderBy('created_at', 'asc')
+                ->get();
+        } else {
+            $threadEmails = collect([$email->load(['sender', 'user', 'attachments'])]);
+        }
+    
+>>>>>>> 2c2262bd2e44b91ac79d76b1f44bd9e5dba4bdb6
         $peopleInThread = $threadEmails->map(function ($e) {
             if ($e->sender) {
                 return (object)['id' => $e->sender->id, 'name' => $e->sender->name, 'email' => $e->sender->email];
@@ -205,25 +227,152 @@ class EmailController extends Controller
             // Inbound customer email — no User record
             return (object)['id' => 'ext_' . $e->from_email, 'name' => $e->from_email, 'email' => $e->from_email];
         })->unique('id')->values();
-
+    
         $counts = $this->getEmailCounts($user->id);
         $templates = Template::get();
+<<<<<<< HEAD
         $customers = Customer::whereNotNull('email')->where('email', '!=', '')->select('id', 'first_name', 'last_name', 'email')->orderBy('first_name')->get()->map(fn($c) => ['id' => $c->id, 'name' => trim($c->first_name . ' ' . $c->last_name), 'email' => $c->email]);
 
         // Strip leftover <span class="token"> wrappers from the body before display
         $preview = preg_replace('/<span[^>]*class=["\']token["\'][^>]*>(.*?)<\/span>/is', '$1', $email->body ?? '');
+=======
+        $users = User::where('id', '!=', $user->id)
+            ->select('id', 'name', 'email')
+            ->get();
+    
+            $sampleData = $this->getSampleData();
+>>>>>>> 2c2262bd2e44b91ac79d76b1f44bd9e5dba4bdb6
 
+            $preview = str_replace(
+                array_map(fn($k) => "{{ {$k} }}", array_keys($sampleData)),
+                array_values($sampleData),
+                $email->body
+            );
+    
         return view('emails.reply', compact(
             'email',
             'threadEmails',
             'peopleInThread',
             'counts',
             'templates',
+<<<<<<< HEAD
             'customers',
+=======
+            'users',
+>>>>>>> 2c2262bd2e44b91ac79d76b1f44bd9e5dba4bdb6
             'preview'
         ));
     }
 
+    /**
+     * Get merge fields organized by category
+     */
+    private function getMergeFields(): array
+    {
+        return [
+            'customer' => [
+                ['name' => 'First Name', 'token' => 'first_name'],
+                ['name' => 'Last Name', 'token' => 'last_name'],
+                ['name' => 'Email', 'token' => 'email'],
+                ['name' => 'Alternative Email', 'token' => 'alt_email'],
+                ['name' => 'Cell Phone', 'token' => 'cell_phone'],
+                ['name' => 'Work Phone', 'token' => 'work_phone'],
+                ['name' => 'Home Phone', 'token' => 'home_phone'],
+                ['name' => 'Street Address', 'token' => 'street_address'],
+                ['name' => 'City', 'token' => 'city'],
+                ['name' => 'Province', 'token' => 'province'],
+                ['name' => 'Postal Code', 'token' => 'postal_code'],
+                ['name' => 'Country', 'token' => 'country'],
+            ],
+            'vehicle' => [
+                ['name' => 'Year', 'token' => 'year'],
+                ['name' => 'Make', 'token' => 'make'],
+                ['name' => 'Model', 'token' => 'model'],
+                ['name' => 'VIN', 'token' => 'vin'],
+                ['name' => 'Stock Number', 'token' => 'stock_number'],
+                ['name' => 'Selling Price', 'token' => 'selling_price'],
+                ['name' => 'Internet Price', 'token' => 'internet_price'],
+                ['name' => 'KMs', 'token' => 'kms'],
+            ],
+            'dealership' => [
+                ['name' => 'Dealership Name', 'token' => 'dealer_name'],
+                ['name' => 'Dealership Phone', 'token' => 'dealer_phone'],
+                ['name' => 'Dealership Address', 'token' => 'dealer_address'],
+                ['name' => 'Dealership Email', 'token' => 'dealer_email'],
+                ['name' => 'Dealership Website', 'token' => 'dealer_website'],
+            ],
+            'deal' => [
+                ['name' => 'Finance Manager', 'token' => 'finance_manager'],
+                ['name' => 'Assigned To', 'token' => 'assigned_to_full_name'],
+                ['name' => 'Assigned To Email', 'token' => 'assigned_to_email'],
+                ['name' => 'Service Advisor', 'token' => 'service_advisor'],
+                ['name' => 'Source', 'token' => 'source'],
+                ['name' => 'Appointment Date/Time', 'token' => 'appointment_datetime'],
+            ],
+        ];
+    }
+
+    /**
+     * Get sample data for preview
+     */
+    private function getSampleData(): array
+    {
+        return [
+            'first_name' => 'Michael',
+            'last_name' => 'Smith',
+            'email' => 'michael.smith@email.com',
+            'alt_email' => 'm.smith@work.com',
+            'cell_phone' => '(555) 123-4567',
+            'work_phone' => '(555) 890-1234',
+            'home_phone' => '(555) 567-8901',
+            'street_address' => '611 Padget Lane',
+            'city' => 'Saskatoon',
+            'province' => 'Saskatchewan',
+            'postal_code' => 'S7W 0H3',
+            'country' => 'Canada',
+        
+            'assigned_to' => 'MC Cerda',
+            'assigned_to_full_name' => 'John Williams',
+            'assigned_to_email' => 'johnwilliams@hotmail.com',
+            'assigned_manager' => 'Marie-Amy Mazuzu',
+            'secondary_assigned' => 'John Doe',
+        
+            'dealer_name' => 'Primus Motors',
+            'dealer_phone' => '222-333-4444',
+            'dealer_address' => '123 Main Street, Vancouver, BC, V5K 2X8',
+            'dealer_email' => 'dealer@dealer.com',
+            'dealer_website' => 'www.primusmotors.ca',
+        
+            'year' => '2025',
+            'make' => 'Ferrari',
+            'model' => 'F80',
+            'vin' => '12345678ABCDEFGHI',
+            'stock_number' => '10101',
+            'selling_price' => '$50,000',
+            'internet_price' => '$49,000',
+            'kms' => '35,000',
+        
+            'tradein_year' => '2011',
+            'tradein_make' => 'Dodge',
+            'tradein_model' => 'Calibre',
+            'tradein_vin' => 'ABCDEFGHI12345678',
+            'tradein_kms' => '100,000',
+            'tradein_price' => '$10,000',
+        
+            'finance_manager' => 'Robert Wilson',
+            'bdc_agent' => 'Emily Davis',
+            'bdc_manager' => 'David Brown',
+            'general_manager' => 'Jennifer Martinez',
+            'sales_manager' => 'Kevin Anderson',
+            'service_advisor' => 'Lisa Thompson',
+            'advisor_name' => 'Ben Dover',
+        
+            'source' => 'Website Inquiry',
+            'appointment_datetime' => 'Oct 14, 2025 10:00AM',
+            'inventory_manager' => 'Mark Robinson',
+            'warranty_expiration' => 'Oct 14, 2025',
+        ];
+    }
     /**
      * Store a new email (send or save as draft)
      */

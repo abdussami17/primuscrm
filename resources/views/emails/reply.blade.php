@@ -334,8 +334,11 @@
     font-weight: inherit;
     cursor:auto;
 }
+<<<<<<< HEAD
 .search-area form{
     margin: 0;
 }
+=======
+>>>>>>> 2c2262bd2e44b91ac79d76b1f44bd9e5dba4bdb6
 
 </style>
