@@ -450,6 +450,10 @@
                 <span class="badge bg-secondary ms-2">Read-Only</span>
               @endif
             </div>
+            <div class="alert alert-info mb-3">
+              <i class="isax isax-info-circle me-2"></i>
+              <strong>Permission Sources:</strong> Users inherit permissions from their assigned Team/Role. You can grant additional direct permissions here. Permissions marked with <span class="badge bg-success">From Role</span> are inherited from the selected team.
+            </div>
             
             @php
             // Define permission categories with their exact names from the database
@@ -499,6 +503,9 @@
                     'Reopen Deal',
                     'Add Showroom Visit',
                     'Delete Showroom Visit',
+                    'Edit Created Date',
+                    'Edit Sold Date',
+                    'Edit Delivery Date',
                 ],
                 'Reports & Analytics' => [
                     'Access Reports & Analytics',
@@ -549,16 +556,14 @@
                         @php
                           $permission = $permissions->firstWhere('name', $permissionName);
                           $safeId = 'perm_' . str_replace([' ', '/', '"', "'", '&'], ['_', '_', '', '', '_'], $permissionName);
-                          // Check if editing and user has this permission
-                          $isChecked = false;
+                          $hasPermission = false;
                           if (isset($user)) {
-                              // For editing: check if user has this permission directly
-                              $isChecked = $user->hasPermissionTo($permissionName);
+                              $hasPermission = $user->hasPermissionTo($permissionName);
                           }
                         @endphp
                         @if($permission)
                           <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permission->id }}" id="{{ $safeId }}" {{ $isChecked ? 'checked' : '' }} {{ $isReadOnly ? 'disabled' : '' }}>
+                            <input class="form-check-input permission-checkbox" type="checkbox" name="permissions[]" value="{{ $permission->id }}" id="{{ $safeId }}" {{ $hasPermission ? 'checked' : '' }} {{ $isReadOnly ? 'disabled' : '' }} data-permission-name="{{ $permissionName }}">
                             <label class="form-check-label {{ $isReadOnly ? 'text-muted' : '' }}" for="{{ $safeId }}">{{ $permission->name }}</label>
                           </div>
                         @endif
@@ -578,16 +583,14 @@
                         @php
                           $permission = $permissions->firstWhere('name', $permissionName);
                           $safeId = 'perm_' . str_replace([' ', '/', '"', "'", '&'], ['_', '_', '', '', '_'], $permissionName);
-                          // Check if editing and user has this permission
-                          $isChecked = false;
+                          $hasPermission = false;
                           if (isset($user)) {
-                              // For editing: check if user has this permission directly
-                              $isChecked = $user->hasPermissionTo($permissionName);
+                              $hasPermission = $user->hasPermissionTo($permissionName);
                           }
                         @endphp
                         @if($permission)
                           <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permission->id }}" id="{{ $safeId }}" {{ $isChecked ? 'checked' : '' }} {{ $isReadOnly ? 'disabled' : '' }}>
+                            <input class="form-check-input permission-checkbox" type="checkbox" name="permissions[]" value="{{ $permission->id }}" id="{{ $safeId }}" {{ $hasPermission ? 'checked' : '' }} {{ $isReadOnly ? 'disabled' : '' }} data-permission-name="{{ $permissionName }}">
                             <label class="form-check-label {{ $isReadOnly ? 'text-muted' : '' }}" for="{{ $safeId }}">{{ $permission->name }}</label>
                           </div>
                         @endif
@@ -607,16 +610,14 @@
                         @php
                           $permission = $permissions->firstWhere('name', $permissionName);
                           $safeId = 'perm_' . str_replace([' ', '/', '"', "'", '&'], ['_', '_', '', '', '_'], $permissionName);
-                          // Check if editing and user has this permission
-                          $isChecked = false;
+                          $hasPermission = false;
                           if (isset($user)) {
-                              // For editing: check if user has this permission directly
-                              $isChecked = $user->hasPermissionTo($permissionName);
+                              $hasPermission = $user->hasPermissionTo($permissionName);
                           }
                         @endphp
                         @if($permission)
                           <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permission->id }}" id="{{ $safeId }}" {{ $isChecked ? 'checked' : '' }} {{ $isReadOnly ? 'disabled' : '' }}>
+                            <input class="form-check-input permission-checkbox" type="checkbox" name="permissions[]" value="{{ $permission->id }}" id="{{ $safeId }}" {{ $hasPermission ? 'checked' : '' }} {{ $isReadOnly ? 'disabled' : '' }} data-permission-name="{{ $permissionName }}">
                             <label class="form-check-label {{ $isReadOnly ? 'text-muted' : '' }}" for="{{ $safeId }}">{{ $permission->name }}</label>
                           </div>
                         @endif

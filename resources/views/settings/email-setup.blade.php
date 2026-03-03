@@ -3,210 +3,229 @@
                                         aria-labelledby="email-account-tab">
                                         <div class="primus-crm-content-header">
                                             <h2 class="primus-crm-content-title">Email Account Configuration</h2>
-                                            <p class="primus-crm-content-description">Configure SMTP settings and
-                                                email delivery options.</p>
+                                            <p class="primus-crm-content-description">Configure outbound SMTP and inbound IMAP settings. Works with Gmail, Outlook, Yahoo, SendGrid, or any provider.</p>
                                         </div>
 
+                                        {{-- ── OUTBOUND SMTP ─────────────────────────────────────── --}}
+                                        <h5 class="fw-semibold mb-3 mt-2" style="color: rgb(0,33,64)"><i class="ti ti-mail-forward me-2"></i>Outbound (SMTP)</h5>
                                         <div class="primus-crm-form-grid">
+                                            <div class="primus-crm-form-group primus-crm-form-group-full-width">
+                                                <label class="primus-crm-form-label">Account Label <span class="text-muted">(optional)</span></label>
+                                                <input id="accountName" type="text" class="primus-crm-form-control" placeholder="e.g. Primus CRM — Sales">
+                                            </div>
                                             <div class="primus-crm-form-group">
                                                 <label class="primus-crm-form-label">SMTP Host</label>
-                                                <input id="smtpHost" type="text" class="primus-crm-form-control"
-                                                    value="smtp.gmail.com">
+                                                <input id="smtpHost" type="text" class="primus-crm-form-control" placeholder="smtp.gmail.com">
                                             </div>
                                             <div class="primus-crm-form-group">
                                                 <label class="primus-crm-form-label">SMTP Port</label>
-                                                <input id="smtpPort" type="number" class="primus-crm-form-control"
-                                                    value="587" min="1" max="65535">
-                                            </div>
-                                            <div class="primus-crm-form-group primus-crm-form-group-full-width">
-                                                <label class="primus-crm-form-label">SMTP Username</label>
-                                                <input id="smtpUser" type="email" class="primus-crm-form-control"
-                                                    value="crm@primusmotors.com">
-                                            </div>
-                                            <div class="primus-crm-form-group primus-crm-form-group-full-width">
-                                                <label class="primus-crm-form-label">SMTP Password</label>
-                                                <input id="smtpPass" type="password" class="primus-crm-form-control"
-                                                    value="••••••••">
+                                                <input id="smtpPort" type="number" class="primus-crm-form-control" placeholder="587" min="1" max="65535">
                                             </div>
                                             <div class="primus-crm-form-group">
-                                                <label class="primus-crm-form-label">Encryption Method</label>
+                                                <label class="primus-crm-form-label">SMTP Username</label>
+                                                <input id="smtpUser" type="text" class="primus-crm-form-control" placeholder="you@yourdomain.com">
+                                            </div>
+                                            <div class="primus-crm-form-group">
+                                                <label class="primus-crm-form-label">SMTP Password / App Password</label>
+                                                <input id="smtpPass" type="password" class="primus-crm-form-control" placeholder="Leave blank to keep existing">
+                                            </div>
+                                            <div class="primus-crm-form-group">
+                                                <label class="primus-crm-form-label">Encryption</label>
                                                 <select id="smtpEnc" class="primus-crm-form-control">
-                                                    <option value="tls" selected>TLS</option>
-                                                    <option value="ssl">SSL</option>
+                                                    <option value="tls">TLS (port 587 — recommended)</option>
+                                                    <option value="ssl">SSL (port 465)</option>
+                                                    <option value="none">None (port 25)</option>
+                                                </select>
+                                            </div>
+                                            <div class="primus-crm-form-group">
+                                                <label class="primus-crm-form-label">From Email Address</label>
+                                                <input id="smtpFrom" type="email" class="primus-crm-form-control" placeholder="crm@yourdomain.com">
+                                            </div>
+                                            <div class="primus-crm-form-group">
+                                                <label class="primus-crm-form-label">From Display Name</label>
+                                                <input id="smtpFromName" type="text" class="primus-crm-form-control" placeholder="Primus Motors CRM">
+                                            </div>
+                                        </div>
+
+                                        <div class="d-flex gap-2 mt-3 mb-4">
+                                            <button id="saveEmailSettingsBtn" class="btn btn-primary">Save Settings</button>
+                                            <button id="testSmtpBtn" type="button" class="btn btn-outline-secondary">
+                                                <i class="ti ti-send me-1"></i>Send Test Email
+                                            </button>
+                                            <span id="smtpTestResult" class="align-self-center ms-2 small"></span>
+                                        </div>
+
+                                        <hr class="my-4">
+
+                                        {{-- ── INBOUND IMAP ──────────────────────────────────────── --}}
+                                        <h5 class="fw-semibold mb-1" style="color: rgb(0,33,64)"><i class="ti ti-mail-down me-2"></i>Inbound (IMAP — for customer replies)</h5>
+                                        <p class="text-muted small mb-3">Primus CRM polls this mailbox every 2 minutes to import customer replies. Use the same credentials as above if they share a mailbox.</p>
+
+                                        <div class="primus-crm-form-grid">
+                                            <div class="primus-crm-form-group">
+                                                <label class="primus-crm-form-label">IMAP Host</label>
+                                                <input id="imapHost" type="text" class="primus-crm-form-control" placeholder="imap.gmail.com">
+                                            </div>
+                                            <div class="primus-crm-form-group">
+                                                <label class="primus-crm-form-label">IMAP Port</label>
+                                                <input id="imapPort" type="number" class="primus-crm-form-control" placeholder="993" min="1" max="65535">
+                                            </div>
+                                            <div class="primus-crm-form-group">
+                                                <label class="primus-crm-form-label">Encryption</label>
+                                                <select id="imapEncryption" class="primus-crm-form-control">
+                                                    <option value="ssl">SSL / TLS (port 993 — recommended)</option>
+                                                    <option value="tls">STARTTLS (port 143)</option>
                                                     <option value="none">None</option>
                                                 </select>
                                             </div>
                                             <div class="primus-crm-form-group">
-                                                <label class="primus-crm-form-label">From Name</label>
-                                                <input id="smtpFrom" type="text" class="primus-crm-form-control"
-                                                    value="Primus Motors">
+                                                <label class="primus-crm-form-label">IMAP Mailbox</label>
+                                                <input id="imapMailbox" type="text" class="primus-crm-form-control" value="INBOX" placeholder="INBOX">
+                                            </div>
+                                            <div class="primus-crm-form-group">
+                                                <label class="primus-crm-form-label">IMAP Username <span class="text-muted">(leave blank to reuse SMTP)</span></label>
+                                                <input id="imapUsername" type="text" class="primus-crm-form-control" placeholder="Same as SMTP username">
+                                            </div>
+                                            <div class="primus-crm-form-group">
+                                                <label class="primus-crm-form-label">IMAP Password <span class="text-muted">(leave blank to reuse SMTP)</span></label>
+                                                <input id="imapPassword" type="password" class="primus-crm-form-control" placeholder="Leave blank to keep existing">
                                             </div>
                                         </div>
-                                        
-                                        <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const emailTab = document.getElementById('email-account');
-    if (!emailTab) return;
 
-    // Insert Save button after the first form grid (reuse existing if present)
-    const grid = emailTab.querySelector('.primus-crm-form-grid');
-    let saveBtn = document.getElementById('saveEmailSettingsBtn');
-    if (!saveBtn) {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'text-end mt-3';
-        saveBtn = document.createElement('button');
-        saveBtn.id = 'saveEmailSettingsBtn';
-        saveBtn.className = 'btn btn-primary';
-        saveBtn.textContent = 'Save Email Settings';
-        wrapper.appendChild(saveBtn);
-        if (grid && grid.parentNode) grid.parentNode.insertBefore(wrapper, grid.nextSibling);
+                                        {{-- Quick-fill suggestions for common providers --}}
+                                        <div class="mt-2 mb-3">
+                                            <small class="text-muted me-2">Quick-fill:</small>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary me-1" onclick="prefillProvider('gmail')">Gmail</button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary me-1" onclick="prefillProvider('outlook')">Outlook / Office 365</button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary me-1" onclick="prefillProvider('yahoo')">Yahoo</button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="prefillProvider('sendgrid')">SendGrid</button>
+                                        </div>
+
+                                        <script>
+// Provider presets
+function prefillProvider(provider) {
+    const presets = {
+        gmail:     { smtpHost: 'smtp.gmail.com',                    smtpPort: 587, smtpEnc: 'tls', imapHost: 'imap.gmail.com',                port: 993, imapEnc: 'ssl' },
+        outlook:   { smtpHost: 'smtp.office365.com',                smtpPort: 587, smtpEnc: 'tls', imapHost: 'outlook.office365.com',          port: 993, imapEnc: 'ssl' },
+        yahoo:     { smtpHost: 'smtp.mail.yahoo.com',               smtpPort: 587, smtpEnc: 'tls', imapHost: 'imap.mail.yahoo.com',            port: 993, imapEnc: 'ssl' },
+        sendgrid:  { smtpHost: 'smtp.sendgrid.net',                 smtpPort: 587, smtpEnc: 'tls', imapHost: '',                               port: 993, imapEnc: 'ssl' },
+    };
+    const p = presets[provider];
+    if (!p) return;
+    document.getElementById('smtpHost').value      = p.smtpHost;
+    document.getElementById('smtpPort').value      = p.smtpPort;
+    document.getElementById('smtpEnc').value       = p.smtpEnc;
+    document.getElementById('imapHost').value      = p.imapHost;
+    document.getElementById('imapPort').value      = p.port;
+    document.getElementById('imapEncryption').value = p.imapEnc;
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const emailTab  = document.getElementById('email-account');
+    const saveBtn   = document.getElementById('saveEmailSettingsBtn');
+    const testBtn   = document.getElementById('testSmtpBtn');
+    const testLabel = document.getElementById('smtpTestResult');
+    if (!emailTab || !saveBtn) return;
+
+    function setVal(id, value) {
+        const el = document.getElementById(id);
+        if (el) el.value = value ?? '';
+    }
+    function setSelect(id, value) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        Array.from(el.options).forEach(o => { o.selected = o.value === value; });
     }
 
     async function loadEmailSettings() {
         try {
             const res = await fetch('/settings/email-account/data', { headers: { 'Accept': 'application/json' } });
             if (!res.ok) return;
-            const payload = await res.json();
-            const data = payload?.data || payload || {};
-            const set = (id, value) => { const el = document.getElementById(id); if (el) el.value = value ?? ''; };
-            set('smtpHost', data.smtp_host || data.host || '');
-            set('smtpPort', data.smtp_port || data.port || '');
-            set('smtpUser', data.smtp_user || data.username || '');
-            set('smtpPass', data.smtp_pass || data.password || '');
-            set('smtpEnc', data.encryption || data.smtp_enc || data.encryption_method || 'TLS');
-            set('smtpFrom', data.from_name || data.from || '');
+            const json = await res.json();
+            const d    = json?.data || json || {};
+            setVal('accountName',    d.name);
+            setVal('smtpHost',       d.smtp_host);
+            setVal('smtpPort',       d.smtp_port);
+            setVal('smtpUser',       d.smtp_user);
+            setVal('smtpPass',       d.smtp_pass);
+            setSelect('smtpEnc',     d.smtp_enc || 'tls');
+            setVal('smtpFrom',       d.smtp_from);
+            setVal('smtpFromName',   d.smtp_from_name);
+            setVal('imapHost',       d.imap_host);
+            setVal('imapPort',       d.imap_port || 993);
+            setSelect('imapEncryption', d.imap_encryption || 'ssl');
+            setVal('imapUsername',   d.imap_username);
+            setVal('imapPassword',   d.imap_password);
+            setVal('imapMailbox',    d.imap_mailbox || 'INBOX');
         } catch (e) {
             console.error('Failed to load email settings', e);
         }
     }
 
     loadEmailSettings();
-    // Load broader notification / lead-process settings and populate fields
-    async function loadNotificationSettings() {
-        try {
-            const res = await fetch('/settings/notifications', { headers: { 'Accept': 'application/json' } });
-            if (!res.ok) return;
-            const payload = await res.json();
-            const data = payload?.data || payload || {};
-
-            const setIf = (id, value) => {
-                const el = document.getElementById(id);
-                if (!el) return;
-                if (el.tagName === 'SELECT' || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-                    el.value = value ?? '';
-                    // for multiple select, mark options
-                    if (el.multiple && Array.isArray(value)) {
-                        Array.from(el.options).forEach(opt => { opt.selected = value.includes(opt.value) || value.includes(opt.text); });
-                    }
-                }
-            };
-
-            // Distribution
-            const dist = data.distribution || data.dist || data.lead_distribution || {};
-            if (dist.type) setIf('distType', dist.type);
-            if (dist.individual) setIf('individualSelect', dist.individual);
-            if (dist.team) setIf('teamSelect', dist.team);
-            if (data.round_robin !== undefined) setIf('roundRobin', data.round_robin ? 'yes' : 'no');
-
-            // Performance / AI
-            const perf = data.performance || data.ai || {};
-            if (perf.strategy) setIf('performanceStrategy', perf.strategy);
-            if (Array.isArray(perf.members) && perf.members.length) {
-                const el = document.getElementById('performanceTeamMembers');
-                if (el) {
-                    Array.from(el.options).forEach(opt => { opt.selected = perf.members.includes(opt.value) || perf.members.includes(opt.text); });
-                }
-            }
-            if (perf.threshold) setIf('performanceThreshold', perf.threshold);
-
-            // Hybrid weights
-            const weights = perf.weights || data.hybrid_weights || {};
-            if (weights.close_rate !== undefined) setIf('closeRateWeight', weights.close_rate);
-            if (weights.response_time !== undefined) setIf('responseTimeWeight', weights.response_time);
-            if (weights.workload !== undefined) setIf('workloadWeight', weights.workload);
-
-            // Timeouts & fallback
-            if (data.response_time !== undefined) setIf('responseTime', data.response_time);
-            if (data.reassignment_count !== undefined) setIf('reassignmentCount', data.reassignment_count);
-            if (data.fallback_manager) setIf('fallbackUser', data.fallback_manager);
-
-            // Alerts / manager toggles
-            const toggle = (id, truthy) => {
-                const el = document.getElementById(id);
-                if (!el) return;
-                if (truthy) el.classList.add('active'); else el.classList.remove('active');
-            };
-
-            toggle('manualOverrideToggle', data.manual_override ?? data.manualOverride ?? false);
-            toggle('showReasoningToggle', data.show_reasoning ?? data.showReasoning ?? false);
-            toggle('managerNotifToggle', data.manager_notifications ?? data.managerNotif ?? false);
-            toggle('alertsToggle', data.alerts_enabled ?? data.alertsEnabled ?? false);
-            toggle('afterHoursToggle', data.after_hours_enabled ?? data.afterHoursEnabled ?? false);
-
-            // Alert details
-            if (data.alert_frequency !== undefined) setIf('alertFrequency', data.alert_frequency);
-            if (data.alert_repeat !== undefined) setIf('alertRepeat', data.alert_repeat);
-
-            // After hours & stop rules
-            if (data.after_hours_sequence) setIf('afterHoursSequence', data.after_hours_sequence);
-            if (data.smart_sequence_stop_rule) setIf('smartSequenceStopRule', data.smart_sequence_stop_rule);
-
-            // Custom rules (populate UI list)
-            if (Array.isArray(data.custom_rules)) {
-                customRules = data.custom_rules;
-                displayRules();
-            }
-
-            // Ensure UI updates according to selected distribution
-            const distEl = document.getElementById('distType');
-            if (distEl) distEl.dispatchEvent(new Event('change'));
-
-        } catch (e) {
-            console.error('Failed to load notification settings', e);
-        }
-    }
-
-    loadNotificationSettings();
 
     saveBtn.addEventListener('click', async function () {
         saveBtn.disabled = true;
         const payload = {
-            smtp_host: document.getElementById('smtpHost').value,
-            smtp_port: document.getElementById('smtpPort').value,
-            smtp_user: document.getElementById('smtpUser').value,
-            smtp_pass: document.getElementById('smtpPass').value,
-            smtp_enc: document.getElementById('smtpEnc').value,
-            smtp_from: document.getElementById('smtpFrom').value
+            name:           document.getElementById('accountName').value,
+            smtp_host:      document.getElementById('smtpHost').value,
+            smtp_port:      document.getElementById('smtpPort').value,
+            smtp_user:      document.getElementById('smtpUser').value,
+            smtp_pass:      document.getElementById('smtpPass').value,
+            smtp_enc:       document.getElementById('smtpEnc').value,
+            smtp_from:      document.getElementById('smtpFrom').value,
+            smtp_from_name: document.getElementById('smtpFromName').value,
+            imap_host:      document.getElementById('imapHost').value,
+            imap_port:      document.getElementById('imapPort').value,
+            imap_encryption:document.getElementById('imapEncryption').value,
+            imap_username:  document.getElementById('imapUsername').value,
+            imap_password:  document.getElementById('imapPassword').value,
+            imap_mailbox:   document.getElementById('imapMailbox').value,
         };
-
         try {
             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-            const res = await fetch('/settings/email-account/update', {
+            const res   = await fetch('/settings/email-account/update', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token, 'Accept': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(payload),
             });
-            const text = await res.text();
-            let data = {};
-            try { data = JSON.parse(text); } catch (e) { data = { message: text }; }
-            if (!res.ok) {
-                const msg = data?.message || ('HTTP ' + res.status);
-                throw new Error(msg);
-            }
-            if (typeof showNotification === 'function') showNotification('Email settings saved', 'success'); else alert('Saved');
-            // reload displayed values
+            const data = await res.json();
+            if (!res.ok) throw new Error(data?.message || 'HTTP ' + res.status);
+            if (typeof showNotification === 'function') showNotification('Email account saved', 'success'); else alert('Saved');
             await loadEmailSettings();
         } catch (err) {
-            console.error('Save failed', err);
-            if (typeof showNotification === 'function') showNotification('Save failed: ' + (err.message || err), 'danger'); else alert('Save failed: ' + (err.message || err));
+            if (typeof showNotification === 'function') showNotification('Save failed: ' + err.message, 'danger'); else alert('Save failed: ' + err.message);
         } finally {
             saveBtn.disabled = false;
         }
     });
+
+    if (testBtn) {
+        testBtn.addEventListener('click', async function () {
+            testBtn.disabled = true;
+            testLabel.textContent = 'Sending…';
+            testLabel.className   = 'align-self-center ms-2 small text-muted';
+            try {
+                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                const res   = await fetch('/settings/email-account/test', { headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json' } });
+                const data  = await res.json();
+                if (data.success) {
+                    testLabel.textContent = '✓ ' + (data.message || 'Test email sent');
+                    testLabel.className   = 'align-self-center ms-2 small text-success';
+                } else {
+                    testLabel.textContent = '✗ ' + (data.message || 'Failed');
+                    testLabel.className   = 'align-self-center ms-2 small text-danger';
+                }
+            } catch (err) {
+                testLabel.textContent = '✗ Network error';
+                testLabel.className   = 'align-self-center ms-2 small text-danger';
+            } finally {
+                testBtn.disabled = false;
+            }
+        });
+    }
 });
 </script>
-
-                                        <!-- Save button injected and dynamic load/save handled by script -->
 
                                         <!-- Lead Process Configuration Section -->
                                         <div class="primus-crm-settings-section mt-5">

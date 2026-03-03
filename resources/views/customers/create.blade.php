@@ -86,7 +86,7 @@
 
         <!-- Name Fields -->
         <div class="col-md-4">
-            <label class="form-label">First Name <span class="text-danger">*</span></label>
+            <label class="form-label">First Name </label>
             <div class="input-group">
                 <input type="text" class="form-control" name="first_name" id="first_name" required>
                 <button data-bs-toggle="modal" data-bs-target="#licenseScannerModal"
@@ -100,7 +100,7 @@
             <input type="text" class="form-control" name="middleName" id="middleName">
         </div>
         <div class="col-md-4">
-            <label class="form-label">Last Name <span class="text-danger">*</span></label>
+            <label class="form-label">Last Name </label>
             <input type="text" class="form-control" name="last_name" id="last_name" >
         </div>
 
@@ -120,7 +120,7 @@
 
         <!-- Email Section -->
         <div class="col-12">
-            <label class="form-label">Email Address <span class="text-danger">*</span></label>
+            <label class="form-label">Email Address </label>
             <div id="email-container">
                 <div class="email-group mb-2">
                     <div class="input-group">
@@ -226,7 +226,7 @@
 
         <!-- Employee Dropdowns -->
         <div class="col-md-6">
-            <label class="form-label">Assigned To <span class="text-danger">*</span></label>
+            <label class="form-label">Assigned To </label>
             <select class="form-select" name="assignedTo" id="assignedTo" >
                 <option value="" hidden>Select</option>
                 @if (isset($users))
@@ -275,7 +275,7 @@
         </div>
 
         <div class="col-md-6">
-            <label class="form-label">BDC Agent <span class="text-danger">*</span></label>
+            <label class="form-label">BDC Agent </label>
             <select class="form-select" name="bdcAgent" >
                 <option value="">Select</option>
                 @if (isset($bdcAgents))
@@ -327,7 +327,7 @@
 
         <!-- Sales Type -->
         <div class="col-md-6">
-            <label class="form-label">Sales Type <span class="text-danger">*</span></label>
+            <label class="form-label">Sales Type</label>
             <select class="form-select" name="salesType" >
                 <option value="">Select</option>
                 <option value="Sales" selected>Sales Inquiry</option>
@@ -344,6 +344,8 @@
                 <option value="Finance">Finance</option>
                 <option value="Cash">Cash</option>
                 <option value="Lease">Lease</option>
+                <option value="Unknown">Unknown</option>
+
             </select>
         </div>
 
@@ -364,7 +366,7 @@
 
         <!-- Lead Status -->
         <div class="col-md-6">
-            <label class="form-label">Lead Status <span class="text-danger">*</span></label>
+            <label class="form-label">Lead Status</label>
             <select class="form-select" name="leadStatus" >
                 <option value="">Select</option>
                 <option value="Active" selected>Active</option>
@@ -407,7 +409,7 @@
                 <div class="row g-3">
                     <!-- FRONT -->
                     <div class="col-md-6">
-                        <h6 class="mb-2">Front Side <span class="text-danger">*</span></h6>
+                        <h6 class="mb-2">Front Side </h6>
                         <div class="preview-box position-relative" id="frontPreviewBox" style="min-height: 200px; border: 2px dashed #ddd; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
                             <div id="frontPlaceholder">
                                 <div class="text-center p-4">
@@ -513,122 +515,99 @@
     </div>
 </div>
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const form = document.getElementById('addCustomerForm');
-    if (!form) return;
-
-    // Base URL to customer profiles (will be appended with /{id})
-    const customerBase = "{{ url('customers') }}";
-
-    async function handleSubmit(e) {
-        e.preventDefault();
-        const submitBtn = form.querySelector('button[type="submit"]');
-        if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Saving...'; }
-
-        const formData = new FormData(form);
-
-        // Resolve CSRF token from meta or hidden input
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
-            form.querySelector('input[name="_token"]')?.value || '';
-
-        try {
-            const res = await fetch(form.action, {
-                method: form.method || 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                },
-                body: formData,
-                credentials: 'same-origin'
-            });
-
-            console.debug('Customer create response', res.status, res.redirected, res.headers.get('content-type'));
-
-            // If server performed a redirect (non-AJAX flow), follow it
-            if (res.redirected) {
-                window.location.href = res.url;
-                return;
-            }
-
-            const contentType = res.headers.get('content-type') || '';
-            if (contentType.indexOf('application/json') !== -1) {
-                    const data = await res.json();
-                    console.debug('Customer create JSON', data);
-
-                    // Surface server-side validation errors (common Laravel 422 structure)
-                    if (!res.ok) {
-                        const messages = [];
-                        if (data && data.errors) {
-                            Object.keys(data.errors).forEach(k => {
-                                if (Array.isArray(data.errors[k])) {
-                                    data.errors[k].forEach(m => messages.push(m));
-                                } else if (data.errors[k]) {
-                                    messages.push(data.errors[k]);
-                                }
-                            });
-                        } else if (data && data.message) {
-                            messages.push(data.message);
-                        }
-
-                        if (messages.length) {
-                            alert(messages.join('\n'));
-                            return;
-                        }
-                    }
-
-                    const id = data?.customer?.id || data?.id || data?.customer_id;
-                    if (id) {
-                        // Prefer opening the profile in the global offcanvas if available
-                        if (typeof window.openCustomerProfile === 'function') {
-                            try {
-                                // hide the add-customer offcanvas first if present
-                                const off = bootstrap.Offcanvas.getInstance(document.getElementById('addCustomerCanvas'));
-                                if (off) off.hide();
-                            } catch (e) {}
-                            try { window.openCustomerProfile(id); } catch (e) { window.location.assign(customerBase + '/' + id); }
-                        } else if (data && data.redirect_url) {
-                            // fallback to server-provided redirect when offcanvas is unavailable
-                            window.location.assign(data.redirect_url);
-                        } else {
-                            window.location.assign(customerBase + '/' + id);
-                        }
-                        return;
-                    }
-
-                    if (res.ok) {
-                        window.location.reload();
-                        return;
-                    }
-            }
-
-            // Non-JSON fallback
-            if (!res.ok) {
-                try {
-                    const text = await res.text();
-                    alert('Error creating customer: ' + (text || res.status));
-                } catch (e) {
-                    window.location.reload();
+    // Immediately-invoked function to avoid multiple listeners
+    (function() {
+        const form = document.getElementById('addCustomerForm');
+        if (!form) return;
+    
+        // Prevent multiple bindings
+        if (form.dataset.ajaxBound === 'true') return;
+        form.dataset.ajaxBound = 'true';
+    
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault(); // Stop normal form submission
+    
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (!submitBtn) return;
+    
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Saving...';
+    
+            const formData = new FormData(form);
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
+                              form.querySelector('input[name="_token"]')?.value || '';
+    
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    body: formData,
+                    credentials: 'same-origin'
+                });
+    
+                const data = await response.json();
+    
+                if (!response.ok || !data.success) {
+                    const messages = data.errors 
+                        ? Object.values(data.errors).flat() 
+                        : [data.message || 'Error adding customer'];
+                    
+                    // Show errors with SweetAlert2
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        html: messages.join('<br>'),
+                    });
+                    return;
                 }
-            } else {
-                window.location.reload();
+    
+                // Success with SweetAlert2
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: data.message || 'Customer added successfully!',
+                    timer: 2000,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
+                });
+    
+                // Close offcanvas by class
+                const offcanvasEl = document.querySelector('.customerProfileOffcanvas');
+                if (offcanvasEl) {
+                    let offcanvasInstance = bootstrap.Offcanvas.getInstance(offcanvasEl);
+                    if (!offcanvasInstance) offcanvasInstance = new bootstrap.Offcanvas(offcanvasEl);
+                    offcanvasInstance.hide();
+                }
+    
+                // Open customer profile
+                const customerId = data.customer?.id;
+                if (customerId && typeof window.openCustomerProfile === 'function') {
+                    window.openCustomerProfile(customerId);
+                } else if (customerId) {
+                    window.location.assign(`{{ url('customers') }}/${customerId}/edit`);
+                }
+    
+                form.reset();
+    
+            } catch (err) {
+                console.error('AJAX error', err);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops!',
+                    text: 'An unexpected error occurred. Customer not added.',
+                });
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Add Customer';
             }
-
-        } catch (err) {
-            console.error('Customer create error', err);
-            // If AJAX fails, remove this handler and submit normally
-            form.removeEventListener('submit', handleSubmit);
-            form.submit();
-        } finally {
-            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Add Customer'; }
-        }
-    }
-
-    form.addEventListener('submit', handleSubmit);
-});
-</script>
-
-<style>
+        });
+    })();
+    </script>
+    <style>
 .preview-box {
     background-color: #f8f9fa;
     transition: all 0.3s ease;

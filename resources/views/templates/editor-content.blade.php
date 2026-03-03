@@ -19,7 +19,7 @@
                     </ul>
                 </div>
 
-                <button class="btn-primary btn" id="btnAIAssistant">
+                <button class="btn-primary btn" type="button" id="btnAIAssistant">
                     <i class="bi bi-stars"></i>
                     <span>AI Assistant</span>
                 </button>
@@ -563,9 +563,138 @@ document.addEventListener('DOMContentLoaded', function () {
 p { margin-bottom: 0.5rem !important; }
 
 /* AI Modal styles (kept minimal) */
-.ai-modal { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; z-index:9999; padding:20px; }
-.ai-modal.show { display:flex; }
-.ai-modal-content { background:white; border-radius:12px; max-width:700px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.3); }
-.ai-modal-header { background: rgb(0,33,64); color:white; padding:20px; border-radius:12px 12px 0 0; display:flex; align-items:center; justify-content:space-between; }
+
+.ai-modal {
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        background: rgba(0, 0, 0, 0.5);
+                        display: none;
+                        align-items: center;
+                        justify-content: center;
+                        z-index: 9999;
+                        padding: 20px;
+                      }
+                  
+                      .ai-modal.show {
+                        display: flex;
+                      }
+                  
+                      .ai-modal-content {
+                        background: white;
+                        border-radius: 12px;
+                        max-width: 700px;
+                        width: 100%;
+                        max-height: 90vh;
+                        overflow-y: auto;
+                        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                      }
+                  
+                      .ai-modal-header {
+                        background: rgb(0, 33, 64);
+                        color: white;
+                        padding: 20px;
+                        border-radius: 12px 12px 0 0;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                      }
+                  
+                      .ai-modal-body {
+                        padding: 24px;
+                      }
+                  
+                      /* .preview-content .token {
+                        background: transparent;
+                        color: #000;
+                        padding: 0 !important;
+                        border-radius: 0;
+                        font-size: inherit !important;
+                        border: none !important;
+                        display: inline-block;
+                        margin: 0 0px;
+                        cursor: text;
+                      }
+                   */
+                      .ai-option-card {
+                        border: 2px solid #e5e7eb;
+                        border-radius: 8px;
+                        padding: 16px;
+                        margin-bottom: 16px;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                      }
+                  
+                      .ai-option-card:hover {
+                        border-color: rgb(0, 33, 64);
+                        background: #f5f5f5;
+                        transform: translateY(-2px);
+                      }
+                  
+                      .ai-option-icon {
+                        width: 48px;
+                        height: 48px;
+                        background: rgb(0, 33, 64);
+                        border-radius: 12px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        color: white;
+                        font-size: 24px;
+                        margin-bottom: 12px;
+                      }
+                  
+                      .ai-input-section {
+                        display: none;
+                      }
+                  
+                      .ai-input-section.show {
+                        display: block;
+                      }
+                  
+                      .ai-textarea {
+                        width: 100%;
+                        min-height: 120px;
+                        border: 2px solid #e5e7eb;
+                        border-radius: 8px;
+                        padding: 12px;
+                        font-size: 14px;
+                        resize: vertical;
+                        transition: all 0.2s ease;
+                      }
+                  
+                      .ai-textarea:focus {
+                        outline: none;
+                        border-color: rgb(0, 33, 64);
+                        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+                      }
+                  
+                      .ai-generating {
+                        text-align: center;
+                        padding: 40px 20px;
+                        display: none;
+                      }
+                  
+                      .ai-generating.show {
+                        display: block;
+                      }
+                  
+                      .ai-spinner {
+                        width: 60px;
+                        height: 60px;
+                        border: 4px solid #ede9fe;
+                        border-top-color: rgb(0, 33, 64);
+                        border-radius: 50%;
+                        animation: spin 1s linear infinite;
+                        margin: 0 auto 20px;
+                      }
+                  
+                      @keyframes spin {
+                        to {
+                          transform: rotate(360deg);
+                        }
+                      }
 </style>
 @endpush

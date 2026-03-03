@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Customer;
 
 class SequenceExecutionLog extends Model
 {
@@ -46,7 +47,15 @@ class SequenceExecutionLog extends Model
 
     public function lead(): BelongsTo
     {
-        return $this->belongsTo(Lead::class, 'lead_id');
+        return $this->belongsTo(Customer::class, 'lead_id');
+    }
+
+    /**
+     * Alias for lead() — the lead_id column references customers.
+     */
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class, 'lead_id');
     }
 
     // Scopes

@@ -330,4 +330,32 @@ class SmartSequenceController extends Controller
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ]);
     }
+
+    /**
+     * Manually trigger processing for a specific sequence.
+     */
+    public function runNow(SmartSequence $smartSequence): JsonResponse
+    {
+        if (!$smartSequence->is_active) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot run an inactive sequence. Please activate it first.',
+            ], 422);
+        }
+
+        try {
+            $result = $this->sequenceService->processNow($smartSequence);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Sequence processed successfully.',
+                'output' => $result['output'] ?? '',
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error processing sequence: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }

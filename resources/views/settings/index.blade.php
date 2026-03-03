@@ -387,56 +387,6 @@
                                             };
                                         });
 
-                                        // Leads Delete
-                                        setupTableSelection('leadsTableBody', 'selectAllLeads', 'leadsSelectionInfo', 'deleteLeadsBtn');
-
-                                        document.getElementById('deleteLeadsBtn').addEventListener('click', function() {
-                                            const checkedCount = document.querySelectorAll('#leadsTableBody .row-checkbox:checked')
-                                                .length;
-                                            document.getElementById('confirmationModalBody').innerHTML =
-                                                `Are you sure you want to <strong>delete</strong> ${checkedCount} selected lead(s)/deal(s)?`;
-                                            document.getElementById('confirmActionBtn').className = 'btn btn-danger';
-                                            confirmationModal.show();
-
-                                            document.getElementById('confirmActionBtn').onclick = function() {
-                                                document.querySelectorAll('#leadsTableBody .row-checkbox:checked').forEach(cb => {
-                                                    cb.closest('tr').remove();
-                                                });
-                                                confirmationModal.hide();
-                                                successModal.show();
-                                                setupTableSelection('leadsTableBody', 'selectAllLeads', 'leadsSelectionInfo',
-                                                    'deleteLeadsBtn');
-                                                document.getElementById('leadsCount').textContent =
-                                                    `Showing ${document.querySelectorAll('#leadsTableBody tr').length} leads`;
-                                            };
-                                        });
-
-                                        // Leads Undelete
-                                        setupTableSelection('deletedLeadsTableBody', 'selectAllDeletedLeads', 'deletedLeadsSelectionInfo',
-                                            'undeleteLeadsBtn');
-
-                                        document.getElementById('undeleteLeadsBtn').addEventListener('click', function() {
-                                            const checkedCount = document.querySelectorAll(
-                                                '#deletedLeadsTableBody .row-checkbox:checked').length;
-                                            document.getElementById('confirmationModalBody').innerHTML =
-                                                `Are you sure you want to <strong>restore</strong> ${checkedCount} selected lead(s)/deal(s)?`;
-                                            document.getElementById('confirmActionBtn').className = 'btn btn-success';
-                                            confirmationModal.show();
-
-                                            document.getElementById('confirmActionBtn').onclick = function() {
-                                                document.querySelectorAll('#deletedLeadsTableBody .row-checkbox:checked').forEach(
-                                                    cb => {
-                                                        cb.closest('tr').remove();
-                                                    });
-                                                confirmationModal.hide();
-                                                successModal.show();
-                                                setupTableSelection('deletedLeadsTableBody', 'selectAllDeletedLeads',
-                                                    'deletedLeadsSelectionInfo', 'undeleteLeadsBtn');
-                                                document.getElementById('deletedLeadsCount').textContent =
-                                                    `Showing ${document.querySelectorAll('#deletedLeadsTableBody tr').length} deleted leads`;
-                                            };
-                                        });
-
                                         // Customer Reassignment
                                         setupTableSelection('customersTableBody', 'selectAllCustomers', 'customersSelectionInfo',
                                             'reassignCustomersBtn');

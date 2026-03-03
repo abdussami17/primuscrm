@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Customer extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -63,7 +63,8 @@ class Customer extends Model
         'tiktok_url',
         'reddit_url',
         'inventory_type',
-        'finance_manager'
+        'finance_manager',
+        'deleted_by'
     ];
 
     /**
@@ -123,6 +124,14 @@ class Customer extends Model
     public function bdcAgentUser()
     {
         return $this->belongsTo(User::class, 'bdc_agent');
+    }
+
+    /**
+     * Get the user who deleted this customer.
+     */
+    public function deletedByUser()
+    {
+        return $this->belongsTo(User::class, 'deleted_by');
     }
 
     /**
@@ -205,11 +214,9 @@ public function getPrimaryEmailAttribute(): ?string
             $this->update(['email' => $defaultEmail]);
         }
     }
-
-    public function emails()
+        public function emails()
 {
     return $this->hasMany(CustomerEmail::class);
 }
-
 
 }

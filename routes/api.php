@@ -1,17 +1,18 @@
 <?php
 
 use App\Http\Controllers\Api\AIController;
-use App\Http\Controllers\Api\TemplateApiController;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\DealController;
-use App\Http\Controllers\TaskController;
-use App\Http\Controllers\NoteController;
-use App\Http\Controllers\InventoryController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\Api\ServiceAppointmentController;
+use App\Http\Controllers\Api\TemplateApiController;
 use App\Http\Controllers\CustomerDocumentController;
+use App\Http\Controllers\DealController;
 use App\Http\Controllers\DriverLicenseController;
+use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\NoteController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\TaskController;
+use App\Http\Controllers\TelnyxController;
+use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -51,6 +52,16 @@ Route::middleware(['web'])->group(function () {
     Route::post('templates/{template}/preview', [TemplateApiController::class, 'preview']);
     Route::post('templates/{template}/toggle-status', [TemplateApiController::class, 'toggleStatus']);
     Route::get('templates/merge-fields', [TemplateApiController::class, 'mergeFields']);
+
+    // Campaigns (need web middleware for session auth + CSRF)
+    Route::prefix('campaigns')->group(function () {
+        Route::get('/', [App\Http\Controllers\Api\CampaignController::class, 'index']);
+        Route::get('/{campaign}/recipients', [App\Http\Controllers\Api\CampaignController::class, 'recipients']);
+        Route::post('/', [App\Http\Controllers\Api\CampaignController::class, 'store']);
+        Route::get('/{campaign}', [App\Http\Controllers\Api\CampaignController::class, 'show']);
+        Route::put('/{campaign}', [App\Http\Controllers\Api\CampaignController::class, 'update']);
+        Route::delete('/{campaign}', [App\Http\Controllers\Api\CampaignController::class, 'destroy']);
+    });
 });
 
 
@@ -85,6 +96,9 @@ Route::middleware(['web'])->group(function () {
 Route::get('/templates', function () {
     return \App\Models\Template::all();
 });
+
+
+Route::post('/telnyx/webhook', [TelnyxController::class, 'webhook']);
 
 // Return senders (teams and individuals) for campaign modal
 Route::get('/senders', function () {
@@ -137,15 +151,7 @@ Route::get('/languages', function () {
     // Customer deals
     Route::get('/customers/{customerId}/deals', [DealController::class, 'getCustomerDeals']);
 
-    // Campaigns
-    Route::prefix('campaigns')->group(function () {
-        Route::get('/', [App\Http\Controllers\Api\CampaignController::class, 'index']);
-        Route::get('/{campaign}/recipients', [App\Http\Controllers\Api\CampaignController::class, 'recipients']);
-        Route::post('/', [App\Http\Controllers\Api\CampaignController::class, 'store']);
-        Route::get('/{campaign}', [App\Http\Controllers\Api\CampaignController::class, 'show']);
-        Route::put('/{campaign}', [App\Http\Controllers\Api\CampaignController::class, 'update']);
-        Route::delete('/{campaign}', [App\Http\Controllers\Api\CampaignController::class, 'destroy']);
-    });
+    // Campaigns block moved into web middleware group above
 
     // ==================== TASKS ====================
     Route::prefix('tasks')->group(function () {

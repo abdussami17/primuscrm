@@ -603,148 +603,148 @@ const seriesData = [{
 }];
 
 // Function to toggle Sub-Lost Reason column visibility
-function toggleSubLostReasonColumn(show) {
-  const subLostReasonHeader = document.querySelector('.sub-lost-reason-col');
-  const subLostReasonCells = document.querySelectorAll('.sub-lost-reason-cell');
-  
-  if (subLostReasonHeader) {
-    subLostReasonHeader.style.display = show ? 'table-cell' : 'none';
-  }
-  
-  subLostReasonCells.forEach(cell => {
-    cell.style.display = show ? 'table-cell' : 'none';
-  });
-}
+  // function toggleSubLostReasonColumn(show) {
+  //   const subLostReasonHeader = document.querySelector('.sub-lost-reason-col');
+  //   const subLostReasonCells = document.querySelectorAll('.sub-lost-reason-cell');
+    
+  //   if (subLostReasonHeader) {
+  //     subLostReasonHeader.style.display = show ? 'table-cell' : 'none';
+  //   }
+    
+  //   subLostReasonCells.forEach(cell => {
+  //     cell.style.display = show ? 'table-cell' : 'none';
+  //   });
+  // }
 
 // Function to generate table rows based on status
-function generateTableRows(status) {
-  // Different data for Lost status vs other statuses
-  let sampleData;
+// function generateTableRows(status) {
+//   // Different data for Lost status vs other statuses
+//   let sampleData;
   
-  if (status === 'Lost') {
-    // Data for Lost status with Sub-Lost Reason
-    sampleData = [
-      ["2025-09-17T10:17:00", "Ali Khan", "John", "2022 Toyota Corolla", "Hot", "Cash", "Price too high", "Facebook", "New"],
-      ["2025-09-17T14:45:00", "Sara Malik", "Ahmed", "2021 Honda Civic", "Warm", "Finance", "Found better deal elsewhere", "Website", "Used"],
-      ["2025-09-17T09:30:00", "Imran", "Bilal", "2020 Kia Sportage", "Cold", "Lease", "Not interested anymore", "Walk-in", "New"]
-    ];
+//   if (status === 'Lost') {
+//     // Data for Lost status with Sub-Lost Reason
+//     sampleData = [
+//       ["2025-09-17T10:17:00", "Ali Khan", "John", "2022 Toyota Corolla", "Hot", "Cash", "Price too high", "Facebook", "New"],
+//       ["2025-09-17T14:45:00", "Sara Malik", "Ahmed", "2021 Honda Civic", "Warm", "Finance", "Found better deal elsewhere", "Website", "Used"],
+//       ["2025-09-17T09:30:00", "Imran", "Bilal", "2020 Kia Sportage", "Cold", "Lease", "Not interested anymore", "Walk-in", "New"]
+//     ];
     
-    return sampleData.map(row => `
-      <tr>
-        <td>${formatDateTime(row[0])}</td>
-        <td style="text-decoration:underline;cursor:pointer;color:#000" data-bs-toggle="offcanvas" data-bs-target="#editVisitCanvas">${row[1]}</td>
-        <td>${row[2]}</td>
-        <td>Primus CRM</td>
-        <td style="text-decoration:underline;cursor:pointer;color:#000" data-bs-toggle="offcanvas" data-bs-target="#editvehicleinfo">${row[3]}</td>
-        <td>${row[4]}</td>
-        <td>${row[5]}</td>
-        <td class="sub-lost-reason-cell" style="display: table-cell;">${row[6]}</td>
-        <td>${row[7]}</td>
-        <td>${row[8]}</td>
-      </tr>`).join("");
-  } else {
-    // Data for other statuses without Sub-Lost Reason
-    sampleData = [
-      ["2025-09-17T10:17:00", "Ali Khan", "John", "2022 Toyota Corolla", "Hot", "Cash", "Facebook", "New"],
-      ["2025-09-17T14:45:00", "Sara Malik", "Ahmed", "2021 Honda Civic", "Warm", "Finance", "Website", "Used"],
-      ["2025-09-17T09:30:00", "Imran", "Bilal", "2020 Kia Sportage", "Cold", "Lease", "Walk-in", "New"]
-    ];
+//     return sampleData.map(row => `
+//       <tr>
+//         <td>${formatDateTime(row[0])}</td>
+//         <td style="text-decoration:underline;cursor:pointer;color:#000" data-bs-toggle="offcanvas" data-bs-target="#editVisitCanvas">${row[1]}</td>
+//         <td>${row[2]}</td>
+//         <td>Primus CRM</td>
+//         <td style="text-decoration:underline;cursor:pointer;color:#000" data-bs-toggle="offcanvas" data-bs-target="#editvehicleinfo">${row[3]}</td>
+//         <td>${row[4]}</td>
+//         <td>${row[5]}</td>
+//         <td class="sub-lost-reason-cell" style="display: table-cell;">${row[6]}</td>
+//         <td>${row[7]}</td>
+//         <td>${row[8]}</td>
+//       </tr>`).join("");
+//   } else {
+//     // Data for other statuses without Sub-Lost Reason
+//     sampleData = [
+//       ["2025-09-17T10:17:00", "Ali Khan", "John", "2022 Toyota Corolla", "Hot", "Cash", "Facebook", "New"],
+//       ["2025-09-17T14:45:00", "Sara Malik", "Ahmed", "2021 Honda Civic", "Warm", "Finance", "Website", "Used"],
+//       ["2025-09-17T09:30:00", "Imran", "Bilal", "2020 Kia Sportage", "Cold", "Lease", "Walk-in", "New"]
+//     ];
     
-    return sampleData.map(row => `
-      <tr>
-        <td>${formatDateTime(row[0])}</td>
-        <td style="text-decoration:underline;cursor:pointer;color:#000" data-bs-toggle="offcanvas" data-bs-target="#editVisitCanvas">${row[1]}</td>
-        <td>${row[2]}</td>
-        <td>Primus CRM</td>
-        <td style="text-decoration:underline;cursor:pointer;color:#000" data-bs-toggle="offcanvas" data-bs-target="#editvehicleinfo">${row[3]}</td>
-        <td>${row[4]}</td>
-        <td>${row[5]}</td>
-        <td class="sub-lost-reason-cell" style="display: none;">-</td>
-        <td>${row[6]}</td>
-        <td>${row[7]}</td>
-      </tr>`).join("");
-  }
-}
+//     return sampleData.map(row => `
+//       <tr>
+//         <td>${formatDateTime(row[0])}</td>
+//         <td style="text-decoration:underline;cursor:pointer;color:#000" data-bs-toggle="offcanvas" data-bs-target="#editVisitCanvas">${row[1]}</td>
+//         <td>${row[2]}</td>
+//         <td>Primus CRM</td>
+//         <td style="text-decoration:underline;cursor:pointer;color:#000" data-bs-toggle="offcanvas" data-bs-target="#editvehicleinfo">${row[3]}</td>
+//         <td>${row[4]}</td>
+//         <td>${row[5]}</td>
+//         <td class="sub-lost-reason-cell" style="display: none;">-</td>
+//         <td>${row[6]}</td>
+//         <td>${row[7]}</td>
+//       </tr>`).join("");
+//   }
+// }
 
 // Chart Options
-const options = {
-  series: seriesData,
-  chart: {
-    type: 'bar',
-    height: 420,
-    toolbar: { show: false },
-    foreColor: '#333',
-    events: {
-      dataPointSelection: function(event, chartContext, config) {
-        currentSelectedStatus = statuses[config.dataPointIndex];
-        const isLostStatus = currentSelectedStatus === 'Lost';
+// const options = {
+//   series: seriesData,
+//   chart: {
+//     type: 'bar',
+//     height: 420,
+//     toolbar: { show: false },
+//     foreColor: '#333',
+//     events: {
+//       dataPointSelection: function(event, chartContext, config) {
+//         currentSelectedStatus = statuses[config.dataPointIndex];
+//         const isLostStatus = currentSelectedStatus === 'Lost';
 
-        // Show modal and table
-        const modalElement = document.getElementById("dealflowModal");
-        const tableContainer = document.getElementById("dealflowTableContainer");
+//         // Show modal and table
+//         const modalElement = document.getElementById("dealflowModal");
+//         const tableContainer = document.getElementById("dealflowTableContainer");
 
-        if (modalElement && tableContainer) {
-          modalElement.classList.add('modal-backdrop-darken');
-          tableContainer.style.display = 'block';
-          tableContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+//         if (modalElement && tableContainer) {
+//           modalElement.classList.add('modal-backdrop-darken');
+//           tableContainer.style.display = 'block';
+//           tableContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+//         }
 
-        // Toggle Sub-Lost Reason column based on status
-        toggleSubLostReasonColumn(isLostStatus);
+//         // Toggle Sub-Lost Reason column based on status
+//         toggleSubLostReasonColumn(isLostStatus);
 
-        // Generate table rows based on status
-        const tbody = document.getElementById("dealflowDetailsBody");
-        if (tbody) {
-          tbody.innerHTML = generateTableRows(currentSelectedStatus);
-        }
+//         // Generate table rows based on status
+//         const tbody = document.getElementById("dealflowDetailsBody");
+//         if (tbody) {
+//           tbody.innerHTML = generateTableRows(currentSelectedStatus);
+//         }
 
-        // Open modal
-        if (modalElement && window.bootstrap && !modalElement.classList.contains('show')) {
-          const modal = new bootstrap.Modal(modalElement);
-          modal.show();
-        }
-      }
-    }
-  },
-  plotOptions: {
-    bar: {
-      horizontal: false,
-      columnWidth: '55%',
-      borderRadius: 4
-    }
-  },
-  colors: ['rgb(0, 33, 64)'],
-  fill: { type: 'solid', opacity: 1 },
-  dataLabels: { enabled: true },
-  legend: { show: false },
-  xaxis: {
-    categories: statuses,
-    title: { text: 'Status', style: { fontWeight: 600 } }
-  },
-  yaxis: {
-    title: {
-      text: "Leads\nCount",
-      rotate: 0,
-      offsetY: 0,
-      offsetX: -30,
-      style: {
-        fontSize: '14px',
-        fontWeight: 'bold',
-        color: '#000',
-        lineHeight: 1.2
-      }
-    }
-  },
-  grid: {
-    borderColor: '#e0e0e0',
-    strokeDashArray: 4
-  },
-  tooltip: { 
-    enabled: false
+//         // Open modal
+//         if (modalElement && window.bootstrap && !modalElement.classList.contains('show')) {
+//           const modal = new bootstrap.Modal(modalElement);
+//           modal.show();
+//         }
+//       }
+//     }
+//   },
+//   plotOptions: {
+//     bar: {
+//       horizontal: false,
+//       columnWidth: '55%',
+//       borderRadius: 4
+//     }
+//   },
+//   colors: ['rgb(0, 33, 64)'],
+//   fill: { type: 'solid', opacity: 1 },
+//   dataLabels: { enabled: true },
+//   legend: { show: false },
+//   xaxis: {
+//     categories: statuses,
+//     title: { text: 'Status', style: { fontWeight: 600 } }
+//   },
+//   yaxis: {
+//     title: {
+//       text: "Leads\nCount",
+//       rotate: 0,
+//       offsetY: 0,
+//       offsetX: -30,
+//       style: {
+//         fontSize: '14px',
+//         fontWeight: 'bold',
+//         color: '#000',
+//         lineHeight: 1.2
+//       }
+//     }
+//   },
+//   grid: {
+//     borderColor: '#e0e0e0',
+//     strokeDashArray: 4
+//   },
+//   tooltip: { 
+//     enabled: false
     
 
-  }
-};
+//   }
+// };
 
 // Initialize Deal Flow Chart
 function initDealFlowChart() {
@@ -774,7 +774,7 @@ function initDealFlowChart() {
   }
   
   // Reset column visibility for next time
-    if (typeof toggleSubLostReasonColumn === 'function') toggleSubLostReasonColumn(false);
+    // if (typeof toggleSubLostReasonColumn === 'function') toggleSubLostReasonColumn(false);
 });
 })();
 function formatDateTime(dateString) {

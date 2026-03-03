@@ -155,6 +155,7 @@
 <td class="fw-semibold text-primary">
     <a href="javascript:void(0);" 
        class="addTaskBtn" 
+       data-deal-id="${deal.id}"
        data-customer-id="${deal.customer?.id || ''}" 
        data-customer-name="${deal.customer?.first_name || ''} ${deal.customer?.last_name || ''}">
         <i class="ti ti-copy-plus"></i>
@@ -182,13 +183,15 @@
 
         const customerId = btn.getAttribute('data-customer-id');
         const customerName = btn.getAttribute('data-customer-name');
+        const dealId = btn.getAttribute('data-deal-id');
+
         const addTaskModalEl = document.getElementById('addTaskModal');
 
         if (!addTaskModalEl) return;
 
         addTaskModalEl.querySelector('input[name="customer_search"]').value = customerName;
         addTaskModalEl.querySelector('input[name="customer_id"]').value = customerId;
-        addTaskModalEl.querySelector('input[name="deal_id"]').value = '';
+        addTaskModalEl.querySelector('input[name="deal_id"]').value = dealId;
 
         // Show Add Task modal above current modal without backdrop
         const addTaskInstance = bootstrap.Modal.getInstance(addTaskModalEl) 
@@ -2050,14 +2053,30 @@
             endDateInput.value = "";
         }
 
-        massSendRadio.addEventListener("change", updateDateFields);
+        massSendRadio.addEventListener("change", function() { updateDateFields(); updateMassSendSummary(); });
         dripFunctionRadio.addEventListener("change", updateDateFields);
         massSendRadio.checked = true;
         updateDateFields();
 
-        startDateInput.addEventListener("click", () => startDateInput.showPicker && startDateInput
-            .showPicker());
-        endDateInput.addEventListener("click", () => endDateInput.showPicker && endDateInput.showPicker());
+        startDateInput.addEventListener("click", () => startDateInput._flatpickr ? startDateInput._flatpickr.open() : (startDateInput.showPicker && startDateInput.showPicker()));
+        endDateInput.addEventListener("click", () => endDateInput._flatpickr ? endDateInput._flatpickr.open() : (endDateInput.showPicker && endDateInput.showPicker()));
+
+        // Update the dynamic mass-send summary sentence
+        function updateMassSendSummary() {
+            const summaryEl = document.getElementById('massSendSummaryText');
+            if (!summaryEl) return;
+            const recipientsCount = document.querySelectorAll('.customer-checkbox:checked').length;
+            const startVal = document.getElementById('startDate')?.value || '';
+            if (recipientsCount > 0 && startVal) {
+                const d = new Date(startVal);
+                const formatted = isNaN(d) ? startVal : d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+                summaryEl.textContent = `This campaign will send ${recipientsCount} message${ recipientsCount !== 1 ? 's' : '' } on ${formatted}.`;
+            } else if (recipientsCount > 0) {
+                summaryEl.textContent = `${recipientsCount} recipient${ recipientsCount !== 1 ? 's' : '' } selected. Set a start date to schedule.`;
+            } else {
+                summaryEl.textContent = 'Select recipients and a start date to see the scheduled send summary.';
+            }
+        }
 
 
 
@@ -2154,10 +2173,21 @@
             });
         }
 
+        // Prevent native form submission on the campaign wizard (Enter key, etc.)
+        const campaignWizardForm = document.getElementById('campaignWizard');
+        if (campaignWizardForm) {
+            campaignWizardForm.addEventListener('submit', function(e) { e.preventDefault(); });
+        }
+
         // Dynamically load templates when the campaign modal opens
         const emailModalEl = document.getElementById('emailModal');
         let campaignTemplatesMap = {};
         if (emailModalEl) {
+            // Reset the submit guard whenever the modal fully closes so it can't get stuck
+            emailModalEl.addEventListener('hidden.bs.modal', function() {
+                window._campaignSubmitting = false;
+            });
+
             emailModalEl.addEventListener('show.bs.modal', async function() {
                 try {
                     const r = await fetch('/api/templates');
@@ -2219,7 +2249,23 @@
                             });
                         }
                     }
-                    // load senders and languages as well
+                    // Init Flatpickr for campaign date/time pickers (works reliably inside Bootstrap fullscreen modal)
+                    try {
+                        const fpOpts = {
+                            enableTime: true,
+                            dateFormat: 'Y-m-d H:i',
+                            time_24hr: false,
+                            allowInput: false,
+                            disableMobile: true,
+                            onReady: function(sel, str, fp) { fp.calendarContainer && (fp.calendarContainer.style.zIndex = '9999'); }
+                        };
+                        const sdEl = document.getElementById('startDate');
+                        const edEl = document.getElementById('endDate');
+                        if (sdEl && !sdEl._flatpickr) flatpickr(sdEl, { ...fpOpts,
+                            onChange: function(sel) { updateMassSendSummary(); }
+                        });
+                        if (edEl && !edEl._flatpickr) flatpickr(edEl, fpOpts);
+                    } catch (fpErr) { console.warn('Flatpickr init failed', fpErr); }
                     try {
                         const sres = await fetch('/api/senders');
                         if (sres.ok) {
@@ -2241,7 +2287,7 @@
                                     gTeams.label = 'Teams';
                                     teams.forEach(t => {
                                         const o = document.createElement('option');
-                                        o.value = `team:${t.id}`;
+                                        o.value = t.id;  // numeric id — NOT 'team:id'
                                         o.dataset.type = 'team';
                                         o.dataset.roleId = t.id;
                                         o.text = t.label;
@@ -2423,7 +2469,7 @@
                 updateButtonVisibility();
 
                 // Previous button click handler
-                $('#prevStep').click(function(e) {
+                $('#prevStep').off('click.campaignWizard').on('click.campaignWizard', function(e) {
                     e.preventDefault();
                     if (currentTab > 0) {
                         currentTab--;
@@ -2434,7 +2480,7 @@
                 });
 
                 // Next button click handler
-                $('#nextStep').click(function(e) {
+                $('#nextStep').off('click.campaignWizard').on('click.campaignWizard', function(e) {
                     e.preventDefault();
                     if (currentTab < $tabs.length - 1) {
                         currentTab++;
@@ -2444,30 +2490,34 @@
                     }
                 });
 
-                // Finish button click handler
-                $('#finishStep').click(function(e) {
+                // Guard against concurrent submits — window-scoped so shared across any duplicate registrations
+                if (typeof window._campaignSubmitting === 'undefined') window._campaignSubmitting = false;
+
+                // Use .off().on() to ensure we never stack more than one handler on the button
+                $('#finishStep').off('click.campaignWizard').on('click.campaignWizard', function(e) {
                     e.preventDefault();
-                    currentTab = $tabs.length - 1;
-                    updateActiveTab();
-                    updateProgressBar();
-                    updateButtonVisibility();
+                    // If not already on the last tab, just navigate there (show summary) without submitting
+                    if (currentTab < $tabs.length - 1) {
+                        currentTab = $tabs.length - 1;
+                        updateActiveTab();
+                        updateProgressBar();
+                        updateButtonVisibility();
+                        return;
+                    }
+                    // Prevent double-submission
+                    if (window._campaignSubmitting) return;
+                    window._campaignSubmitting = true;
                     // gather campaign data from wizard and submit via API
                     try {
-                        // collect selected recipients (checked rows)
+                        // collect selected recipients (checked customer checkboxes by class)
                         const recipients = [];
-                        document.querySelectorAll('tbody tr td .form-check-input:checked')
+                        document.querySelectorAll('.customer-checkbox:checked')
                             .forEach(cb => {
-                                const tr = cb.closest('tr');
-                                const cid = tr?.dataset?.customerId || tr?.getAttribute(
-                                    'data-customer-id') || null;
-                                if (cid) {
-                                    const n = Number(cid);
-                                    recipients.push(Number.isNaN(n) ? cid : n);
-                                } else if (cb.value && cb.value.includes && cb.value
-                                    .indexOf('@') !== -1) {
-                                    recipients.push(cb.value);
-                                } else if (cb.value) {
-                                    recipients.push(cb.value);
+                                const cid = cb.getAttribute('data-customer-id') || cb.value;
+                                if (cid && !isNaN(Number(cid))) {
+                                    recipients.push(Number(cid));
+                                } else if (cid) {
+                                    recipients.push(cid);
                                 }
                             });
 
@@ -2499,16 +2549,29 @@
                             }
                         }
 
+                        // Determine actual sender id: if team is selected, use assignedToSelect user id
+                        const senderEl = document.getElementById('senderSelect');
+                        const senderOpt = senderEl?.selectedOptions?.[0];
+                        const senderType = senderOpt?.dataset?.type || 'individual';
+                        let senderId = null;
+                        if (senderType === 'team') {
+                            const assignedVal = document.getElementById('assignedToSelect')?.value;
+                            senderId = (assignedVal && !isNaN(Number(assignedVal))) ? Number(assignedVal) : (senderEl?.value && !isNaN(Number(senderEl.value)) ? Number(senderEl.value) : null);
+                        } else {
+                            senderId = senderEl?.value && !isNaN(Number(senderEl.value)) ? Number(senderEl.value) : null;
+                        }
+
+                        const backupRaw = document.getElementById('backupSender')?.value || null;
+                        const backupId = (backupRaw && !isNaN(Number(backupRaw))) ? Number(backupRaw) : null;
+
                         const payload = {
                             name: document.getElementById('campaignNameField')?.value ||
                                 null,
                             template_id: selectedTemplateId,
                             template_name: selectedTemplateName,
-                            sender_type: document.getElementById('senderSelect')
-                                ?.selectedOptions?.[0]?.dataset?.type || null,
-                            sender: document.getElementById('senderSelect')?.value || null,
-                            backup_sender: document.getElementById('backupSender')?.value ||
-                                null,
+                            sender_type: senderType,
+                            sender: senderId,
+                            backup_sender: backupId,
                             language: document.getElementById('languageSelect')?.value ||
                                 null,
                             subject: document.getElementById('subjectField')?.value || null,
@@ -2517,7 +2580,7 @@
                             start_at: document.getElementById('startDate')?.value || null,
                             end_at: document.getElementById('endDate')?.value || null,
                             set_type: document.getElementById('massSend')?.checked ?
-                                'mass' : 'drip',
+                                'once' : 'drip',
                             drip_initial_count: document.getElementById('dripInitialCount')
                                 ?.value || null,
                             drip_days: document.getElementById('dripDays')?.value || null,
@@ -2546,39 +2609,39 @@
                             }
 
                             if (!res.ok) {
+                                window._campaignSubmitting = false;
                                 // Prefer server-provided message and validation errors
                                 if (json && json.errors) {
                                     const errs = Object.values(json.errors).flat()
                                         .join('\n');
                                     const msg = (json.message ? json.message +
                                         '\n' : '') + errs;
-                                    alert('Failed to save campaign: ' + msg);
+                                    if (typeof showToast === 'function') showToast('Failed: ' + msg, 'error'); else alert('Failed to save campaign: ' + msg);
                                 } else if (json && json.message) {
-                                    alert('Failed to save campaign: ' + json
-                                        .message);
+                                    if (typeof showToast === 'function') showToast('Failed: ' + json.message, 'error'); else alert('Failed to save campaign: ' + json.message);
                                 } else {
                                     const txt = await res.text().catch(() => null);
-                                    alert('Failed to save campaign: ' + (txt || res
-                                        .status));
+                                    if (typeof showToast === 'function') showToast('Failed to save campaign', 'error'); else alert('Failed to save campaign: ' + (txt || res.status));
                                 }
                                 return;
                             }
 
                             // Success: show server message if provided
                             if (!json) json = await res.json().catch(() => null);
-                            const successMsg = (json && json.message) ? json
-                                .message : 'Campaign saved';
+                            const successMsg = (json && json.message) ? json.message : 'Campaign saved';
+                            window._campaignSubmitting = false;
                             $('#emailModal').modal('hide');
-                            if (typeof showToast === 'function') showToast(
-                                successMsg);
+                            if (typeof showToast === 'function') showToast(successMsg, 'success');
                             else alert(successMsg);
                         }).catch(err => {
+                            window._campaignSubmitting = false;
                             console.error('Save campaign error', err);
-                            alert('Failed to save campaign');
+                            if (typeof showToast === 'function') showToast('Failed to save campaign', 'error'); else alert('Failed to save campaign');
                         });
                     } catch (err) {
+                        window._campaignSubmitting = false;
                         console.error(err);
-                        alert('Failed to save campaign');
+                        if (typeof showToast === 'function') showToast('Failed to save campaign', 'error'); else alert('Failed to save campaign');
                     }
                 });
 
@@ -2615,20 +2678,25 @@
                     $progressBar.css('width', percent + '%');
                 }
 
-                // Populate the summary fields on the final review tab
                 function updateCampaignSummary() {
                     try {
                         const templateSelectEl = document.getElementById('templateSelect');
-                        const templateName = templateSelectEl?.selectedOptions?.[0]?.text || '';
+                        const templateName = templateSelectEl?.tomselect
+                            ? (templateSelectEl.tomselect.getOption(templateSelectEl.tomselect.getValue())?.textContent || templateSelectEl?.selectedOptions?.[0]?.text || '')
+                            : (templateSelectEl?.selectedOptions?.[0]?.text || '');
                         const senderEl = document.getElementById('senderSelect');
-                        const senderText = senderEl?.selectedOptions?.[0]?.text || '';
+                        const senderOpt = senderEl?.selectedOptions?.[0];
+                        const senderType = senderOpt?.dataset?.type || 'individual';
+                        const senderText = senderOpt?.text || '';
+                        const assignedEl = document.getElementById('assignedToSelect');
+                        const assignedText = (senderType === 'team' && assignedEl?.selectedOptions?.[0]?.value)
+                            ? assignedEl.selectedOptions[0].text
+                            : '—';
                         const backupEl = document.getElementById('backupSender');
                         const backupText = backupEl?.selectedOptions?.[0]?.text || '';
-                        const assignedEl = document.getElementById('assignedToSelect');
-                        const assignedText = assignedEl?.selectedOptions?.[0]?.text || '';
-                        const langEl = document.querySelector('#account-2 select[aria-label]') ||
-                            document.querySelector('#account-2 select');
-                        const langText = langEl?.selectedOptions?.[0]?.text || '';
+                        const langEl = document.getElementById('languageSelect');
+                        const langText = langEl?.selectedOptions?.[0]?.text || langEl?.value || '';
+
                         const campaignName = document.getElementById('campaignNameField')?.value || '';
                         const subject = document.getElementById('subjectField')?.value || '';
                         const bodyHtml = window.froalaEditor ? window.froalaEditor.html.get() : (
@@ -2638,44 +2706,49 @@
                         const endAt = document.getElementById('endDate')?.value || '';
                         const setType = document.getElementById('massSend')?.checked ?
                             'One-time Mass Send' : 'Dripping Function';
+
+                        const checkedBoxes = document.querySelectorAll('tbody tr td .form-check-input:checked');
                         const recipients = [];
-                        document.querySelectorAll('tbody tr td .form-check-input:checked').forEach(
-                            cb => {
-                                const tr = cb.closest('tr');
-                                const cid = tr?.dataset?.customerId || tr?.getAttribute(
-                                    'data-customer-id') || null;
-                                if (cid) recipients.push(cid);
-                            });
+                        let excludedCount = 0;
+                        checkedBoxes.forEach(cb => {
+                            const tr = cb.closest('tr');
+                            const cid = tr?.dataset?.customerId || tr?.getAttribute('data-customer-id') || null;
+                            const email = tr?.dataset?.email || '';
+                            if (cid) recipients.push(cid);
+                            if (!email) excludedCount++;
+                        });
                         const recipientsCount = recipients.length;
                         const dripInitial = document.getElementById('dripInitialCount')?.value || '';
                         const dripDays = Number(document.getElementById('dripDays')?.value || 0) || 0;
 
                         // set summary fields
-                        const setText = (id, text) => {
-                            const el = document.getElementById(id);
-                            if (el) el.textContent = text;
-                        };
+                        const setText = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+                        const setHTML = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
+
                         setText('summaryTemplate', templateName || '—');
-                        setText('summarySender', senderText || '—');
+                        setText('summarySender', senderType === 'team' ? `${senderText} (team)` : (senderText || '—'));
+                        setText('summaryAssignedTo', assignedText);
                         setText('summaryFallbackSender', backupText || '—');
+                        setText('summaryLanguage', langText || '—');
                         setText('summaryCampaignName', campaignName || '—');
-                        setText('summaryStartDate', startAt ? (new Date(startAt)).toLocaleString() :
-                            '—');
-                        setText('summaryEndDate', endAt ? (new Date(endAt)).toLocaleString() : '—');
+                        setText('summaryStartDate', startAt ? (new Date(startAt)).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—');
+                        setText('summaryEndDate', endAt ? (new Date(endAt)).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—');
                         setText('summarySetType', setType);
                         setText('summaryRecipients', `${recipientsCount} selected`);
+                        setText('summaryExcluded', excludedCount > 0 ? `${excludedCount} without email` : 'None');
                         // drip schedule and totals
                         if (setType === 'One-time Mass Send') {
-                            setText('summaryDripSchedule', 'All at once');
+                            const dateLabel = startAt ? ` on ${(new Date(startAt)).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}` : '';
+                            setText('summaryDripSchedule', `All ${recipientsCount} at once${dateLabel}`);
                         } else {
-                            const perDay = dripDays > 0 ? Math.ceil((recipientsCount || 0) / dripDays) :
-                                (dripInitial ? dripInitial + ' initial' : '—');
+                            const perDay = dripDays > 0
+                                ? Math.ceil((recipientsCount || 0) / dripDays)
+                                : (dripInitial ? `${dripInitial} initial` : '—');
                             setText('summaryDripSchedule', perDay ? `${perDay} per day` : '—');
                         }
-                        setText('summaryDripTotal', `${recipientsCount} messages`);
+                        setText('summaryDripTotal', `${recipientsCount} message${recipientsCount !== 1 ? 's' : ''}`);
                         setText('summarySubject', subject || '—');
-                        const summaryBodyEl = document.getElementById('summaryBody');
-                        if (summaryBodyEl) summaryBodyEl.innerHTML = bodyHtml || '';
+                        setHTML('summaryBody', bodyHtml || '<em class="text-muted">No body content</em>');
                     } catch (e) {
                         console.warn('Failed to populate campaign summary', e);
                     }
@@ -2721,6 +2794,7 @@
                     selectAllCheckbox.checked = allChecked;
                 }
                 updateSendCampaignButton();
+                if (typeof updateMassSendSummary === 'function') updateMassSendSummary();
             });
         });
 

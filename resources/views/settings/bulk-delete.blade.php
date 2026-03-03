@@ -41,23 +41,14 @@
                                                     <div class="row g-3 mb-4">
                                                         <div class="col-md-6 col-lg-3">
                                                             <label class="form-label">Assigned Manager</label>
-                                                            <select class="form-select">
+                                                            <select class="form-select" id="leadAssignedManagerFilter">
                                                                 <option value="">All Users</option>
-                                                                <option value="David Johnson">David Johnson</option>
-                                                                <option value="Amanda Lee">Amanda Lee</option>
-                                                                <option value="Steven Clark">Steven Clark</option>
                                                             </select>
                                                         </div>
                                                         <div class="col-md-6 col-lg-3">
                                                             <label class="form-label">Assigned To</label>
                                                             <select class="form-select" id="leadAssignedToFilter">
                                                                 <option value="">All Users</option>
-                                                                <option value="john_doe">John Doe</option>
-                                                                <option value="jane_smith">Jane Smith</option>
-                                                                <option value="bob_johnson">Bob Johnson</option>
-                                                                <option value="sarah_williams">Sarah Williams
-                                                                </option>
-                                                                <option value="mike_brown">Mike Brown</option>
                                                             </select>
                                                         </div>
                                                         <div class="col-md-6 col-lg-3">
@@ -65,19 +56,12 @@
                                                             <select class="form-select"
                                                                 id="leadSecondaryAssignedFilter">
                                                                 <option value="">All Users</option>
-                                                                <option value="john_doe">John Doe</option>
-                                                                <option value="jane_smith">Jane Smith</option>
-                                                                <option value="bob_johnson">Bob Johnson</option>
-                                                                <option value="sarah_williams">Sarah Williams
-                                                                </option>
-                                                                <option value="mike_brown">Mike Brown</option>
                                                             </select>
                                                         </div>
                                                         <div class="col-md-6 col-lg-3">
                                                             <label class="form-label">BDC Agent</label>
                                                             <select class="form-select" id="leadBDCAgentFilter">
                                                                 <option value="">All Users</option>
-                                                                <option value="john_doe">John Doe</option>
                                                                 <option value="jane_smith">Jane Smith</option>
                                                                 <option value="bob_johnson">Bob Johnson</option>
                                                                 <option value="sarah_williams">Sarah Williams
@@ -281,74 +265,7 @@
                                                                 </tr>
                                                             </thead>
                                                             <tbody id="leadsTableBody">
-                                                                <tr>
-                                                                    <td><input type="checkbox"
-                                                                            class="form-check-input row-checkbox">
-                                                                    </td>
-                                                                    <td>Robert Miller</td>
-                                                                    <td>Direct Sale</td>
-                                                                    <td>New</td>
-                                                                    <td>New</td>
-                                                                    <td>SUV</td>
-                                                                    <td>In Progress</td>
-                                                                    <td>Dec 12, 2025</td>
-                                                                    <td>Website</td>
-                                                                    <td>Retail</td>
-                                                                    <td>John Doe</td>
-                                                                    <td>Jane Smith</td>
-                                                                    <td>Bob Johnson</td>
-                                                                </tr>
-                                                                <tr>
-                                                                    <td><input type="checkbox"
-                                                                            class="form-check-input row-checkbox">
-                                                                    </td>
-                                                                    <td>Anna Taylor</td>
-                                                                    <td>Lease</td>
-                                                                    <td>Existing</td>
-                                                                    <td>Contacted</td>
-                                                                    <td>Sedan</td>
-                                                                    <td>Pending</td>
-                                                                    <td>Dec 12, 2025</td>
-                                                                    <td>Referral</td>
-                                                                    <td>Lease</td>
-                                                                    <td>Jane Smith</td>
-                                                                    <td>Bob Johnson</td>
-                                                                    <td>Sarah Williams</td>
-                                                                </tr>
-                                                                <tr>
-                                                                    <td><input type="checkbox"
-                                                                            class="form-check-input row-checkbox">
-                                                                    </td>
-                                                                    <td>James Wilson</td>
-                                                                    <td>Finance</td>
-                                                                    <td>Referral</td>
-                                                                    <td>Qualified</td>
-                                                                    <td>Truck</td>
-                                                                    <td>Negotiation</td>
-                                                                    <td>Dec 12, 2025</td>
-                                                                    <td>Ad Campaign</td>
-                                                                    <td>Finance</td>
-                                                                    <td>Bob Johnson</td>
-                                                                    <td>Sarah Williams</td>
-                                                                    <td>Mike Brown</td>
-                                                                </tr>
-                                                                <tr>
-                                                                    <td><input type="checkbox"
-                                                                            class="form-check-input row-checkbox">
-                                                                    </td>
-                                                                    <td>Sophia Martinez</td>
-                                                                    <td>Direct Sale</td>
-                                                                    <td>Walk-in</td>
-                                                                    <td>Proposal</td>
-                                                                    <td>Convertible</td>
-                                                                    <td>Closed Won</td>
-                                                                    <td>Dec 12, 2025</td>
-                                                                    <td>Walk-in</td>
-                                                                    <td>Retail</td>
-                                                                    <td>Sarah Williams</td>
-                                                                    <td>Mike Brown</td>
-                                                                    <td>John Doe</td>
-                                                                </tr>
+                                                                <tr><td colspan="13" class="text-center">Loading data...</td></tr>
                                                             </tbody>
                                                         </table>
                                                     </div>
@@ -379,14 +296,6 @@
                                                             <label class="form-label">Previous Undo History</label>
                                                             <select class="form-select" id="leadUndoHistory">
                                                                 <option value="">-- Select Previous Undo --</option>
-                                                                <option value="undo1">Dec 23, 2025; 4:59 AM - John
-                                                                    Doe</option>
-                                                                <option value="undo2">Dec 22, 2025; 3:30 PM - Jane
-                                                                    Smith</option>
-                                                                <option value="undo3">Dec 21, 2025; 11:15 AM - Bob
-                                                                    Johnson</option>
-                                                                <option value="undo4">Dec 20, 2025; 2:45 PM - Sarah
-                                                                    Williams</option>
                                                             </select>
                                                         </div>
                                                     </div>
@@ -394,11 +303,8 @@
                                                     <div class="row g-3 mb-4">
                                                         <div class="col-md-6 col-lg-3">
                                                             <label class="form-label">Assigned Manager</label>
-                                                            <select class="form-select">
+                                                            <select class="form-select" id="undeleteLeadAssignedManagerFilter">
                                                                 <option value="">All Users</option>
-                                                                <option value="David Johnson">David Johnson</option>
-                                                                <option value="Amanda Lee">Amanda Lee</option>
-                                                                <option value="Steven Clark">Steven Clark</option>
                                                             </select>
                                                         </div>
                                                         <div class="col-md-6 col-lg-3">
@@ -406,12 +312,6 @@
                                                             <select class="form-select"
                                                                 id="undeleteLeadAssignedToFilter">
                                                                 <option value="">All Users</option>
-                                                                <option value="john_doe">John Doe</option>
-                                                                <option value="jane_smith">Jane Smith</option>
-                                                                <option value="bob_johnson">Bob Johnson</option>
-                                                                <option value="sarah_williams">Sarah Williams
-                                                                </option>
-                                                                <option value="mike_brown">Mike Brown</option>
                                                             </select>
                                                         </div>
                                                         <div class="col-md-6 col-lg-3">
@@ -419,12 +319,6 @@
                                                             <select class="form-select"
                                                                 id="undeleteLeadSecondaryAssignedFilter">
                                                                 <option value="">All Users</option>
-                                                                <option value="john_doe">John Doe</option>
-                                                                <option value="jane_smith">Jane Smith</option>
-                                                                <option value="bob_johnson">Bob Johnson</option>
-                                                                <option value="sarah_williams">Sarah Williams
-                                                                </option>
-                                                                <option value="mike_brown">Mike Brown</option>
                                                             </select>
                                                         </div>
                                                         <div class="col-md-6 col-lg-3">
@@ -432,7 +326,6 @@
                                                             <select class="form-select"
                                                                 id="undeleteLeadBDCAgentFilter">
                                                                 <option value="">All Users</option>
-                                                                <option value="john_doe">John Doe</option>
                                                                 <option value="jane_smith">Jane Smith</option>
                                                                 <option value="bob_johnson">Bob Johnson</option>
                                                                 <option value="sarah_williams">Sarah Williams
@@ -616,60 +509,7 @@
                                                                 </tr>
                                                             </thead>
                                                             <tbody id="deletedLeadsTableBody">
-                                                                <tr>
-                                                                    <td><input type="checkbox"
-                                                                            class="form-check-input row-checkbox">
-                                                                    </td>
-                                                                    <td>Peter Johnson</td>
-                                                                    <td>Lease</td>
-                                                                    <td>Existing</td>
-                                                                    <td>Closed</td>
-                                                                    <td>Sedan</td>
-                                                                    <td>Closed Lost</td>
-                                                                    <td>Dec 12, 2025</td>
-                                                                    <td>Website</td>
-                                                                    <td>Lease</td>
-                                                                    <td>John Doe</td>
-                                                                    <td>Jane Smith</td>
-                                                                    <td>Bob Johnson</td>
-                                                                    <td>Dec 12, 2025</td>
-                                                                </tr>
-                                                                <tr>
-                                                                    <td><input type="checkbox"
-                                                                            class="form-check-input row-checkbox">
-                                                                    </td>
-                                                                    <td>Laura Clark</td>
-                                                                    <td>Direct Sale</td>
-                                                                    <td>New</td>
-                                                                    <td>New</td>
-                                                                    <td>SUV</td>
-                                                                    <td>Pending</td>
-                                                                    <td>Dec 12, 2025</td>
-                                                                    <td>Walk-in</td>
-                                                                    <td>Retail</td>
-                                                                    <td>Jane Smith</td>
-                                                                    <td>Bob Johnson</td>
-                                                                    <td>Sarah Williams</td>
-                                                                    <td>Dec 12, 2025</td>
-                                                                </tr>
-                                                                <tr>
-                                                                    <td><input type="checkbox"
-                                                                            class="form-check-input row-checkbox">
-                                                                    </td>
-                                                                    <td>Mark Evans</td>
-                                                                    <td>Finance</td>
-                                                                    <td>Referral</td>
-                                                                    <td>Qualified</td>
-                                                                    <td>Truck</td>
-                                                                    <td>Negotiation</td>
-                                                                    <td>Dec 12, 2025</td>
-                                                                    <td>Referral</td>
-                                                                    <td>Finance</td>
-                                                                    <td>Bob Johnson</td>
-                                                                    <td>Sarah Williams</td>
-                                                                    <td>Mike Brown</td>
-                                                                    <td>Dec 12, 2025</td>
-                                                                </tr>
+                                                                <tr><td colspan="14" class="text-center">Loading data...</td></tr>
                                                             </tbody>
                                                         </table>
                                                     </div>
@@ -685,3 +525,406 @@
                                             </div>
                                         </div>
                                     </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Load filters
+    loadFilters();
+    loadDeletionHistory();
+    
+    // Load initial data
+    loadCustomers();
+    loadDeletedCustomers();
+    
+    // Setup table selections
+    setupTableSelection('leadsTableBody', 'selectAllLeads', 'leadsSelectionInfo', 'deleteLeadsBtn');
+    setupTableSelection('deletedLeadsTableBody', 'selectAllDeletedLeads', 'deletedLeadsSelectionInfo', 'undeleteLeadsBtn');
+    
+    // Filter change listeners - Active Customers
+    const activeFilters = document.querySelectorAll('#leads-delete select, #leads-delete input.cf-datepicker');
+    activeFilters.forEach(filter => {
+        filter.addEventListener('change', loadCustomers);
+    });
+    
+    // Filter change listeners - Deleted Customers
+    const deletedFilters = document.querySelectorAll('#leads-undelete select, #leads-undelete input.cf-datepicker');
+    deletedFilters.forEach(filter => {
+        filter.addEventListener('change', loadDeletedCustomers);
+    });
+    
+    // Refresh buttons
+    document.getElementById('refreshLeadsBtn').addEventListener('click', loadCustomers);
+    document.getElementById('refreshDeletedLeadsBtn').addEventListener('click', loadDeletedCustomers);
+    
+    // Delete button
+    document.getElementById('deleteLeadsBtn').addEventListener('click', handleDelete);
+    
+    // Restore button
+    document.getElementById('undeleteLeadsBtn').addEventListener('click', handleRestore);
+});
+
+// Load filter options
+async function loadFilters() {
+    try {
+        const res = await fetch('/settings/bulk-delete/filters', {
+            headers: { 'Accept': 'application/json' },
+            credentials: 'same-origin'
+        });
+        if (!res.ok) throw new Error('Failed to load filters');
+        const data = await res.json();
+        
+        // Populate user dropdowns (both tabs)
+        populateUserDropdowns(data.users);
+        
+        // Populate other filter dropdowns
+        populateSelect('sourcesFilter', data.sources);
+        populateSelect('undeleteSourcesFilter', data.sources);
+        populateSelect('leadStatusFilter', data.statuses);
+        populateSelect('undeleteLeadStatusFilter', data.statuses);
+        populateSelect('inventoryTypeFilter', data.inventory_types);
+        populateSelect('undeleteInventoryTypeFilter', data.inventory_types);
+        populateSelect('dealTypeFilter', data.deal_types);
+        populateSelect('undeleteDealTypeFilter', data.deal_types);
+        populateSelect('leadTypeFilter', data.lead_types);
+        populateSelect('undeleteLeadTypeFilter', data.lead_types);
+        
+    } catch (err) {
+        console.error('Error loading filters:', err);
+    }
+}
+
+// Load deletion history
+async function loadDeletionHistory() {
+    try {
+        const res = await fetch('/settings/bulk-delete/deletion-history', {
+            headers: { 'Accept': 'application/json' },
+            credentials: 'same-origin'
+        });
+        if (!res.ok) throw new Error('Failed to load deletion history');
+        const history = await res.json();
+        
+        const select = document.getElementById('leadUndoHistory');
+        if (select) {
+            // Clear existing options except first
+            while (select.options.length > 1) {
+                select.remove(1);
+            }
+            // Add history options
+            history.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.value;
+                option.textContent = item.label;
+                select.appendChild(option);
+            });
+        }
+        
+    } catch (err) {
+        console.error('Error loading deletion history:', err);
+    }
+}
+
+function populateUserDropdowns(users) {
+    const userSelects = [
+        'leadAssignedManagerFilter',
+        'leadAssignedToFilter',
+        'leadSecondaryAssignedFilter',
+        'leadBDCAgentFilter',
+        'undeleteLeadAssignedManagerFilter',
+        'undeleteLeadAssignedToFilter',
+        'undeleteLeadSecondaryAssignedFilter',
+        'undeleteLeadBDCAgentFilter'
+    ];
+    
+    userSelects.forEach(selectId => {
+        const select = document.getElementById(selectId);
+        if (select) {
+            // Clear existing options except first
+            while (select.options.length > 1) {
+                select.remove(1);
+            }
+            // Add user options
+            users.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = user.name;
+                select.appendChild(option);
+            });
+        }
+    });
+}
+
+function populateSelect(selectId, items) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    
+    // Clear existing options except first
+    while (select.options.length > 1) {
+        select.remove(1);
+    }
+    
+    // Add items
+    items.forEach(item => {
+        if (item) {
+            const option = document.createElement('option');
+            option.value = item;
+            option.textContent = item;
+            select.appendChild(option);
+        }
+    });
+}
+
+// Load active customers
+async function loadCustomers() {
+    const filters = {
+        assigned_manager: document.getElementById('leadAssignedManagerFilter')?.value || '',
+        assigned_to: document.getElementById('leadAssignedToFilter')?.value || '',
+        secondary_assigned: document.getElementById('leadSecondaryAssignedFilter')?.value || '',
+        bdc_agent: document.getElementById('leadBDCAgentFilter')?.value || '',
+        lead_source: document.getElementById('sourcesFilter')?.value || '',
+        status: document.getElementById('leadStatusFilter')?.value || '',
+        inventory_type: document.getElementById('inventoryTypeFilter')?.value || '',
+        deal_type: document.getElementById('dealTypeFilter')?.value || '',
+        lead_type: document.getElementById('leadTypeFilter')?.value || '',
+        start_date: document.getElementById('startLeadCreatedDate')?.value || '',
+        end_date: document.getElementById('endLeadCreatedDate')?.value || ''
+    };
+    
+    const params = new URLSearchParams(filters);
+    
+    try {
+        const res = await fetch('/settings/bulk-delete/customers?' + params.toString(), {
+            headers: { 'Accept': 'application/json' },
+            credentials: 'same-origin'
+        });
+        if (!res.ok) throw new Error('Failed to load customers');
+        const data = await res.json();
+        
+        renderCustomersTable(data.items);
+        document.getElementById('leadsCount').textContent = `Showing ${data.count} leads`;
+        setupTableSelection('leadsTableBody', 'selectAllLeads', 'leadsSelectionInfo', 'deleteLeadsBtn');
+    } catch (err) {
+        console.error('Error loading customers:', err);
+        document.getElementById('leadsTableBody').innerHTML = '<tr><td colspan="13" class="text-center text-danger">Error loading data</td></tr>';
+    }
+}
+
+// Load deleted customers
+async function loadDeletedCustomers() {
+    const filters = {
+        deletion_date: document.getElementById('leadUndoHistory')?.value || '',
+        assigned_manager: document.getElementById('undeleteLeadAssignedManagerFilter')?.value || '',
+        assigned_to: document.getElementById('undeleteLeadAssignedToFilter')?.value || '',
+        secondary_assigned: document.getElementById('undeleteLeadSecondaryAssignedFilter')?.value || '',
+        bdc_agent: document.getElementById('undeleteLeadBDCAgentFilter')?.value || '',
+        lead_source: document.getElementById('undeleteSourcesFilter')?.value || '',
+        status: document.getElementById('undeleteLeadStatusFilter')?.value || '',
+        inventory_type: document.getElementById('undeleteInventoryTypeFilter')?.value || '',
+        deal_type: document.getElementById('undeleteDealTypeFilter')?.value || '',
+        lead_type: document.getElementById('undeleteLeadTypeFilter')?.value || '',
+        start_date: document.getElementById('undeleteStartLeadCreatedDate')?.value || '',
+        end_date: document.getElementById('undeleteEndLeadCreatedDate')?.value || ''
+    };
+    
+    const params = new URLSearchParams(filters);
+    
+    try {
+        const res = await fetch('/settings/bulk-delete/deleted-customers?' + params.toString(), {
+            headers: { 'Accept': 'application/json' },
+            credentials: 'same-origin'
+        });
+        if (!res.ok) throw new Error('Failed to load deleted customers');
+        const data = await res.json();
+        
+        renderDeletedCustomersTable(data.items);
+        document.getElementById('deletedLeadsCount').textContent = `Showing ${data.count} deleted leads`;
+        setupTableSelection('deletedLeadsTableBody', 'selectAllDeletedLeads', 'deletedLeadsSelectionInfo', 'undeleteLeadsBtn');
+    } catch (err) {
+        console.error('Error loading deleted customers:', err);
+        document.getElementById('deletedLeadsTableBody').innerHTML = '<tr><td colspan="14" class="text-center text-danger">Error loading data</td></tr>';
+    }
+}
+
+// Render customers table
+function renderCustomersTable(items) {
+    const tbody = document.getElementById('leadsTableBody');
+    tbody.innerHTML = '';
+    
+    if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="13" class="text-center">No leads found</td></tr>';
+        return;
+    }
+    
+    items.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><input type="checkbox" class="form-check-input row-checkbox" data-id="${item.id}"></td>
+            <td>${item.customer_name}</td>
+            <td>${item.sales_type}</td>
+            <td>${item.lead_type}</td>
+            <td>${item.lead_status}</td>
+            <td>${item.inventory_type}</td>
+            <td>${item.sales_status}</td>
+            <td>${item.created_date}</td>
+            <td>${item.source}</td>
+            <td>${item.deal_type}</td>
+            <td>${item.assigned_to}</td>
+            <td>${item.secondary_assigned}</td>
+            <td>${item.bdc_agent}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Render deleted customers table
+function renderDeletedCustomersTable(items) {
+    const tbody = document.getElementById('deletedLeadsTableBody');
+    tbody.innerHTML = '';
+    
+    if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="14" class="text-center">No deleted leads found</td></tr>';
+        return;
+    }
+    
+    items.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><input type="checkbox" class="form-check-input row-checkbox" data-id="${item.id}"></td>
+            <td>${item.customer_name}</td>
+            <td>${item.sales_type}</td>
+            <td>${item.lead_type}</td>
+            <td>${item.lead_status}</td>
+            <td>${item.inventory_type}</td>
+            <td>${item.sales_status}</td>
+            <td>${item.created_date}</td>
+            <td>${item.source}</td>
+            <td>${item.deal_type}</td>
+            <td>${item.assigned_to}</td>
+            <td>${item.secondary_assigned}</td>
+            <td>${item.bdc_agent}</td>
+            <td>${item.deleted_date}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Setup table selection
+function setupTableSelection(bodyId, selectAllId, infoId, btnId) {
+    const tbody = document.getElementById(bodyId);
+    const selectAll = document.getElementById(selectAllId);
+    const info = document.getElementById(infoId);
+    const btn = document.getElementById(btnId);
+    
+    if (!tbody || !selectAll || !info || !btn) return;
+    
+    // Select all checkbox
+    selectAll.addEventListener('change', function() {
+        const checkboxes = tbody.querySelectorAll('.row-checkbox');
+        checkboxes.forEach(cb => cb.checked = this.checked);
+        updateSelection();
+    });
+    
+    // Individual checkboxes
+    tbody.addEventListener('change', function(e) {
+        if (e.target.classList.contains('row-checkbox')) {
+            updateSelection();
+        }
+    });
+    
+    function updateSelection() {
+        const checkboxes = tbody.querySelectorAll('.row-checkbox');
+        const checkedBoxes = tbody.querySelectorAll('.row-checkbox:checked');
+        const count = checkedBoxes.length;
+        
+        selectAll.checked = checkboxes.length > 0 && count === checkboxes.length;
+        info.textContent = `${count} leads selected`;
+        btn.disabled = count === 0;
+    }
+    
+    // Initial update
+    updateSelection();
+}
+
+// Handle delete
+async function handleDelete() {
+    const checkedBoxes = document.querySelectorAll('#leadsTableBody .row-checkbox:checked');
+    const customerIds = Array.from(checkedBoxes).map(cb => cb.getAttribute('data-id'));
+    
+    if (customerIds.length === 0) {
+        alert('Please select at least one customer to delete');
+        return;
+    }
+    
+    if (!confirm(`Are you sure you want to delete ${customerIds.length} customer(s)? This action can be undone from the Undelete tab.`)) {
+        return;
+    }
+    
+    try {
+        const res = await fetch('/settings/bulk-delete/delete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ customer_ids: customerIds })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+            alert(data.message);
+            loadCustomers();
+            loadDeletedCustomers();
+            loadDeletionHistory();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    } catch (err) {
+        console.error('Error deleting customers:', err);
+        alert('Failed to delete customers. Please try again.');
+    }
+}
+
+// Handle restore
+async function handleRestore() {
+    const checkedBoxes = document.querySelectorAll('#deletedLeadsTableBody .row-checkbox:checked');
+    const customerIds = Array.from(checkedBoxes).map(cb => cb.getAttribute('data-id'));
+    
+    if (customerIds.length === 0) {
+        alert('Please select at least one customer to restore');
+        return;
+    }
+    
+    if (!confirm(`Are you sure you want to restore ${customerIds.length} customer(s)?`)) {
+        return;
+    }
+    
+    try {
+        const res = await fetch('/settings/bulk-delete/restore', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ customer_ids: customerIds })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+            alert(data.message);
+            loadCustomers();
+            loadDeletedCustomers();
+            loadDeletionHistory();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    } catch (err) {
+        console.error('Error restoring customers:', err);
+        alert('Failed to restore customers. Please try again.');
+    }
+}
+</script>

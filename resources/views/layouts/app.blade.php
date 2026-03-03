@@ -127,7 +127,7 @@
     <div class="offcanvas offcanvas-end customerProfileOffcanvas" tabindex="-1" id="commonCanvas">
         <div class="offcanvas-header d-block pb-0">
             <div class="border-bottom d-flex align-items-center justify-content-between pb-3">
-                <h5 class="offcanvas-title">Add Customer</h5>
+                <h5 class="offcanvas-title" id="customerOffcanvasTitle">Add Customer</h5>
                 <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
                
             </div>
@@ -1201,6 +1201,125 @@ function warningAlert(message) {
 | PAGE-LEVEL JS
 ============================================================== --}}
     @stack('scripts')
+
+    {{-- =============================================================
+| CAMPAIGN BACKGROUND PROCESSOR
+| Silently checks for due campaigns every 60 s (mirrors email auto-fetch).
+| Only active when a user is authenticated.
+============================================================== --}}
+    {{-- @auth
+    <script>
+        (function startCampaignPoll() {
+            var INTERVAL_MS = 60000;
+            var CSRF = document.querySelector('meta[name="csrf-token"]');
+
+            function processDueCampaigns() {
+                if (!CSRF) return;
+                fetch('/campaigns/process', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': CSRF.getAttribute('content'),
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(function(r) { return r.ok ? r.json() : null; })
+                .then(function(data) {
+                    if (data && data.dispatched > 0) {
+                        console.info('[CampaignPoll] Dispatched ' + data.dispatched + ' campaign(s).');
+                        // Reload only if on campaigns page to reflect updated statuses
+                        if (window.location.pathname.startsWith('/campaigns')) {
+                            window.location.reload();
+                        }
+                    }
+                })
+                .catch(function() { /* silent fail */ });
+            }
+
+            // Run immediately on page load, then on a 60-second interval
+            processDueCampaigns();
+            setInterval(processDueCampaigns, INTERVAL_MS);
+        })();
+
+        /**
+ * Manually trigger IMAP inbound email fetch.
+ * Attached to the mail-down icon button in the toolbar.
+ */
+/**
+ * Manually trigger IMAP inbound email fetch.
+ * Attached to the mail-down icon button in the toolbar.
+ */
+function initFetchRepliesBtn() {
+    const btn  = document.getElementById('fetchRepliesBtn');
+    const icon = document.getElementById('fetchRepliesIcon');
+    if (!btn) return;
+
+    btn.addEventListener('click', function () {
+        btn.disabled = true;
+        icon.classList.replace('ti-mail-down', 'ti-loader-2');
+        icon.style.animation = 'spin 1s linear infinite';
+
+        fetch('{{ route("email.fetch-inbound") }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json',
+            },
+        })
+        .then(r => r.json())
+        .then(data => {
+            icon.classList.replace('ti-loader-2', 'ti-mail-down');
+            icon.style.animation = '';
+            btn.disabled = false;
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Fetch failed: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(() => {
+            icon.classList.replace('ti-loader-2', 'ti-mail-down');
+            icon.style.animation = '';
+            btn.disabled = false;
+            alert('Network error while fetching replies.');
+        });
+    });
+}
+
+/**
+ * Silent background auto-poll: call fetch-inbound every 60 seconds
+ * while the inbox page is open. No cron job needed.
+ * Reloads the page only if new emails were imported.
+ */
+(function startAutoFetch() {
+    const INTERVAL_MS = 60000; // 60 seconds
+
+    function silentFetch() {
+        fetch('{{ route("email.fetch-inbound") }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json',
+            },
+        })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+            if (data && data.imported && data.imported > 0) {
+                window.location.reload();
+            }
+        })
+        .catch(() => { /* silently ignore network errors */ });
+    }
+
+    // Run once immediately on load, then every 60 s
+    silentFetch();
+    setInterval(silentFetch, INTERVAL_MS);
+})();
+
+    </script>
+    
+    @endauth --}}
 
     <script>
         // Open customer profile in the global offcanvas (`#commonCanvas`)

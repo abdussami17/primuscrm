@@ -929,7 +929,9 @@ class CustomerController extends Controller
         $data = $customers->map(function ($customer) {
             return [
                 'id' => $customer->id,
-                'name' => $customer->name,
+                'first_name' => $customer->first_name,
+                'last_name' => $customer->last_name,
+                'name' => $customer->full_name,
                 'email' => $customer->email,
                 'phone' => $customer->phone,
                 'deals' => $customer->task_deals

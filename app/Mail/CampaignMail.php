@@ -2,15 +2,13 @@
 
 namespace App\Mail;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 use App\Models\Campaign;
 
-class CampaignMail extends Mailable implements ShouldQueue
+class CampaignMail extends Mailable
 {
-    use Queueable, SerializesModels;
+    use SerializesModels;
 
     public $campaign;
     public $recipientName;
@@ -19,7 +17,6 @@ class CampaignMail extends Mailable implements ShouldQueue
     {
         $this->campaign = $campaign;
         $this->recipientName = $recipientName;
-        $this->onQueue('campaigns');
     }
 
     public function build()

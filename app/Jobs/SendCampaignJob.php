@@ -45,7 +45,7 @@ class SendCampaignJob implements ShouldQueue
                 $cust = Customer::find($r);
                 if ($cust) {
                     $email = $cust->email;
-                    $name = $cust->name ?? null;
+                    $name  = $cust->full_name ?? trim(($cust->first_name ?? '') . ' ' . ($cust->last_name ?? ''));
                 }
             } elseif (is_string($r) && strpos($r, '@') !== false) {
                 $email = $r;

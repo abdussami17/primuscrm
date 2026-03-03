@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @section('title', 'Email Reply')
 
@@ -127,13 +127,23 @@
                                     </div>
                                 </div>
                             </div>
+                            @php
+                                // For inbound emails (customer wrote to us), reply goes to from_email.
+                                // For outbound (we sent it, thread root), reply goes to to_email.
+                                $replyToEmail = $email->is_sent ? $email->to_email : $email->from_email;
+                                $replyToName  = $email->is_sent
+                                    ? ($email->to_email)
+                                    : ($email->customer
+                                        ? trim($email->customer->first_name . ' ' . $email->customer->last_name)
+                                        : $email->from_email);
+                            @endphp
                             <div>
-                                <h6 class="mb-2">Dear {{ $email->sender->name ?? 'Sender' }}</h6>
+                                <h6 class="mb-2">Dear {{ $replyToName }},</h6>
                                 <p class="text-dark">Reply to: {{ $email->subject }}</p>
                             </div>
-                            <form action="{{ route('email.send') }}" method="POST" enctype="multipart/form-data">
+                            <form id="replyEmailForm" action="{{ route('email.send') }}" method="POST" enctype="multipart/form-data">
                                 @csrf
-                                <input type="hidden" name="to_email" value="{{ $email->sender->email ?? $email->to_email }}">
+                                <input type="hidden" name="to_email" value="{{ $replyToEmail }}">
                                 <input type="hidden" name="subject" value="Re: {{ $email->subject }}">
                                 <input type="hidden" name="parent_id" value="{{ $email->id }}">
 
@@ -141,7 +151,7 @@
                                     <div class="p-3 position-relative border-bottom">
                                         <div class="tag-with-img d-flex align-items-center">
                                             <label class="form-label me-2 mb-0">To</label>
-                                            <input class="input-tags form-control border-0 h-100" type="text" readonly value="{{ $email->sender->name ?? '' }} <{{ $email->sender->email ?? $email->to_email }}>">
+                                            <input class="input-tags form-control border-0 h-100" type="text" readonly value="{{ $replyToName }} &lt;{{ $replyToEmail }}&gt;">
                                         </div>
                                         <div class="d-flex align-items-center email-cc">
                                             <a href="javascript:void(0);" class="d-inline-flex me-2" id="replyCcBtn">Cc</a>
@@ -192,9 +202,10 @@
                     <div class="card shadow-none">
                         <div class="card-body">
                             <div>
+                               
                                 <h6 class="mb-3">Dear {{ $email->user->name ?? 'Recipient' }}</h6>
                                 <div class="text-dark email-content">
-                                    {!! nl2br(e($email->body)) !!}
+                                    {!! $preview !!}
                                 </div>
                             </div>
 
@@ -226,16 +237,17 @@
                         </div>
                     </div>
 
-                    {{-- Previous Messages in Thread --}}
-                    @if($threadEmails->count() > 1)
+                    {{-- Thread Messages (all except the root email shown above) --}}
+                    @php $otherEmails = $threadEmails->filter(fn($e) => $e->id !== $email->id)->values(); @endphp
+                    @if($otherEmails->count() > 0)
                         <div class="text-center">
                             <a href="javascript:void(0);" class="btn btn-dark btn-sm" id="viewOlderMessages">
-                                View Older Messages ({{ $threadEmails->count() - 1 }})
+                                View Thread Messages ({{ $otherEmails->count() }})
                             </a>
                         </div>
 
                         <div class="older-messages d-none" id="olderMessagesContainer">
-                            @foreach($threadEmails->reverse()->skip(1) as $threadEmail)
+                            @foreach($otherEmails as $threadEmail)
                                 <div class="card shadow-none mt-3">
                                     <div class="card-body">
                                         <div class="bg-light rounded p-3 mb-3">
@@ -244,21 +256,31 @@
                                                     @if($threadEmail->sender && $threadEmail->sender->avatar)
                                                         <img src="{{ asset('storage/' . $threadEmail->sender->avatar) }}" alt="{{ $threadEmail->sender->name }}">
                                                     @else
-                                                        <span class="avatar-title bg-primary">{{ $threadEmail->sender_initials }}</span>
+                                                        <span class="avatar-title {{ $threadEmail->is_sent ? 'bg-primary' : 'bg-success' }}">
+                                                            {{ $threadEmail->sender_initials }}
+                                                        </span>
                                                     @endif
                                                 </a>
                                                 <div class="flex-fill">
                                                     <div class="d-flex align-items-start justify-content-between">
                                                         <div>
-                                                            <h6 class="mb-1">{{ $threadEmail->sender->name ?? 'Unknown' }}</h6>
+                                                            <h6 class="mb-1">
+                                                                @if($threadEmail->is_sent)
+                                                                    {{ $threadEmail->sender->name ?? auth()->user()->name }}
+                                                                    <span class="badge bg-primary ms-1" style="font-size:9px">You</span>
+                                                                @else
+                                                                    {{ $threadEmail->sender->name ?? $threadEmail->from_email }}
+                                                                    <span class="badge bg-success ms-1" style="font-size:9px">Customer</span>
+                                                                @endif
+                                                            </h6>
                                                             <p class="mb-0 text-muted">{{ $threadEmail->created_at->format('M d, Y g:i A') }}</p>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="text-dark">
-                                            {!! nl2br(e($threadEmail->body)) !!}
+                                        <div class="text-dark email-content">
+                                            {!! preg_replace('/<span[^>]*class=["\']token["\'][^>]*>(.*?)<\/span>/is', '$1', $threadEmail->body ?? '') !!}
                                         </div>
                                     </div>
                                 </div>
@@ -292,10 +314,28 @@
         const container = document.getElementById('olderMessagesContainer');
         if (container) {
             container.classList.toggle('d-none');
-            this.textContent = container.classList.contains('d-none') 
-                ? 'View Older Messages ({{ $threadEmails->count() - 1 }})' 
-                : 'Hide Older Messages';
+            const count = container.querySelectorAll('.card').length;
+            this.textContent = container.classList.contains('d-none')
+                ? `View Thread Messages (${count})`
+                : 'Hide Thread Messages';
         }
     });
 </script>
 @endpush
+
+
+<style>
+.email-content .token{
+    background: transparent;
+    color: unset;
+    padding: 0px;
+    border-radius:0px;
+    font-size: unset;
+    font-weight: inherit;
+    cursor:auto;
+}
+.search-area form{
+    margin: 0;
+}
+
+</style>

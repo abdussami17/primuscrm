@@ -6,14 +6,69 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Campaign;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Artisan;
 
 class CampaignController extends Controller
 {
     public function index(Request $request)
     {
-        $q = Campaign::query();
-    
-        return response()->json(['data' => $q->latest()->paginate(20)]);
+        $campaigns = Campaign::latest()->paginate(20);
+
+        // Enrich each campaign with creator name and real metrics
+        $campaigns->getCollection()->transform(function (Campaign $c) {
+            // Resolve creator name
+            $creator = null;
+            if ($c->created_by) {
+                $creator = \App\Models\User::find($c->created_by);
+            }
+            $c->created_by_name = $creator ? $creator->name : null;
+
+            // Resolve recipients — track who has an email vs. not
+            $recipients = $c->recipients ?? [];
+            if (!is_array($recipients)) {
+                try { $recipients = json_decode($recipients, true) ?: []; } catch (\Throwable $e) { $recipients = []; }
+            }
+
+            $ids    = [];
+            $emails = [];
+            foreach ($recipients as $r) {
+                if (is_numeric($r))                                    $ids[]    = (int) $r;
+                elseif (is_array($r) && isset($r['id']))               $ids[]    = (int) $r['id'];
+                elseif (is_string($r) && filter_var($r, FILTER_VALIDATE_EMAIL)) $emails[] = $r;
+            }
+
+            $customers = collect();
+            if ($ids || $emails) {
+                $q = \App\Models\Customer::query();
+                if ($ids)    $q->whereIn('id', $ids);
+                if ($emails) $q->orWhereIn('email', $emails);
+                $customers = $q->get();
+            }
+
+            $totalRecipients = $customers->count() + count($emails);
+            // "sent" = campaign has been dispatched (status sent/sending)
+            $sent = in_array($c->status, ['sent', 'sending']) ? $totalRecipients : 0;
+            // customers with no email = excluded/bounced proxy
+            $noEmail = $customers->whereNull('email')->count()
+                     + $customers->where('email', '')->count();
+
+            $c->metrics = [
+                'sent'         => $sent,
+                'bounced'      => $noEmail,
+                'appointments' => 0,   // no tracking table yet
+                'unsubscribed' => 0,
+                'delivered'    => max(0, $sent - $noEmail),
+                'opened'       => 0,
+                'clicked'      => 0,
+                'replied'      => 0,
+            ];
+
+            $c->recipients_resolved_count = $totalRecipients;
+
+            return $c;
+        });
+
+        return response()->json(['data' => $campaigns]);
     }
 
     public function show(Campaign $campaign)
@@ -22,30 +77,72 @@ class CampaignController extends Controller
     }
 
     /**
-     * Return recipients/customers associated with a campaign.
-     * If campaign->recipients contains customer IDs or emails, we'll resolve them.
+     * Return recipients/customers associated with a campaign with full profile fields.
      */
     public function recipients(Campaign $campaign, Request $request)
     {
-        $status = $request->query('status');
-
         $recipients = $campaign->recipients ?? [];
-        $ids = [];
-        $emails = [];
+        if (!is_array($recipients)) {
+            try { $recipients = json_decode($recipients, true) ?: []; } catch (\Throwable $e) { $recipients = []; }
+        }
 
+        $ids    = [];
+        $emails = [];
         foreach ((array) $recipients as $r) {
-            if (is_numeric($r)) $ids[] = (int) $r;
-            elseif (is_array($r) && isset($r['id'])) $ids[] = (int) $r['id'];
+            if (is_numeric($r))                                             $ids[]    = (int) $r;
+            elseif (is_array($r) && isset($r['id']))                        $ids[]    = (int) $r['id'];
             elseif (is_string($r) && filter_var($r, FILTER_VALIDATE_EMAIL)) $emails[] = $r;
         }
 
-        $customersQuery = \App\Models\Customer::query();
-        if ($ids) $customersQuery->whereIn('id', $ids);
-        if ($emails) $customersQuery->orWhereIn('email', $emails);
+        $customers = collect();
+        if ($ids || $emails) {
+            $q = \App\Models\Customer::with(['assignedUser', 'secondaryAssignedUser']);
+            if ($ids)    $q->whereIn('id', $ids);
+            if ($emails) $q->orWhereIn('email', $emails);
+            $customers = $q->get();
+        }
 
-        $customers = $customersQuery->get();
+        $data = $customers->map(function ($c) use ($campaign) {
+            return [
+                'id'                => $c->id,
+                'name'              => $c->full_name ?? trim(($c->first_name ?? '') . ' ' . ($c->last_name ?? '')),
+                'first_name'        => $c->first_name,
+                'last_name'         => $c->last_name,
+                'email'             => $c->email,
+                'cell_phone'        => $c->cell_phone,
+                'phone'             => $c->phone,
+                'work_phone'        => $c->work_phone,
+                'city'              => $c->city,
+                'state'             => $c->state,
+                'assigned_to'       => $c->assignedUser->name ?? null,
+                'assigned_by'       => $c->assigned_by ?? null,
+                'lead_type'         => $c->lead_type ?? null,
+                'deal_type'         => $c->deal_type ?? null,
+                'lead_status'       => $c->status ?? null,
+                'sales_status'      => $c->sales_status ?? null,
+                'source'            => $c->lead_source ?? null,
+                'inventory_type'    => $c->inventory_type ?? null,
+                'sales_type'        => $c->sales_type ?? null,
+                'created_by'        => $c->created_by ?? null,
+                'created_at'        => $c->created_at ? $c->created_at->toDateTimeString() : null,
+                'vehicle'           => trim(implode(' ', array_filter([
+                    $c->interested_year ?? null,
+                    $c->interested_make ?? null,
+                    $c->interested_model ?? null,
+                ]))),
+                // Status-specific dates — populated when tracking is added
+                'sent'              => in_array($campaign->status, ['sent','sending']) ? ($campaign->last_sent_at?->toDateTimeString() ?? $campaign->updated_at?->toDateTimeString()) : null,
+                'delivered'         => in_array($campaign->status, ['sent','sending']) && $c->email ? ($campaign->last_sent_at?->toDateTimeString() ?? $campaign->updated_at?->toDateTimeString()) : null,
+                'bounced'           => (!$c->email) ? $campaign->updated_at?->toDateTimeString() : null,
+                'opened'            => null,
+                'clicked'           => null,
+                'replied'           => null,
+                'appointments'      => null,
+                'unsubscribed'      => null,
+            ];
+        });
 
-        return response()->json(['data' => $customers]);
+        return response()->json(['data' => $data]);
     }
 
     public function store(Request $request)
@@ -104,33 +201,27 @@ class CampaignController extends Controller
         }
 
         try {
-            $campaign = Campaign::create(array_merge($data, ['created_by' => $request->user()->id ?? null]));
+            // Always save as 'scheduled' — ProcessCampaigns handles sending via the JS poll
+            $recipientsCount = is_array($data['recipients'] ?? null) ? count($data['recipients']) : 0;
+            $campaign = Campaign::create(array_merge($data, [
+                'created_by'       => auth()->id() ?? ($request->user()->id ?? null),
+                'status'           => 'scheduled',
+                'recipients_count' => $recipientsCount,
+            ]));
         } catch (\Throwable $e) {
             logger()->error('Campaign create failed', ['error' => $e->getMessage(), 'data' => $data]);
             return response()->json(['message' => 'Failed to create campaign', 'error' => $e->getMessage()], 500);
         }
 
-        // Dispatch send job: immediate or scheduled based on start_at
-        $dispatched = true;
+        // Immediately try to process — if start_at is past/null it will send right away
         try {
-            if (!empty($campaign->start_at)) {
-                $start = \Illuminate\Support\Carbon::parse($campaign->start_at);
-                if ($start->isFuture()) {
-                    \App\Jobs\SendCampaignJob::dispatch($campaign)->delay($start);
-                } else {
-                    \App\Jobs\SendCampaignJob::dispatch($campaign);
-                }
-            } else {
-                // default: dispatch immediately
-                \App\Jobs\SendCampaignJob::dispatch($campaign);
-            }
+            \Illuminate\Support\Facades\Artisan::call('campaigns:process');
         } catch (\Throwable $e) {
-            $dispatched = false;
-            logger()->error('Failed to dispatch campaign send job', ['campaign_id' => $campaign->id, 'error' => $e->getMessage()]);
+            logger()->error('Auto-process after store failed', ['campaign_id' => $campaign->id, 'error' => $e->getMessage()]);
         }
 
-        $message = $dispatched ? 'Campaign created and dispatch scheduled' : 'Campaign created but failed to dispatch send job';
-        return response()->json(['message' => $message, 'data' => $campaign], 201);
+        $campaign->refresh();
+        return response()->json(['message' => 'Campaign created', 'data' => $campaign], 201);
     }
 
     public function update(Request $request, Campaign $campaign)
@@ -144,5 +235,30 @@ class CampaignController extends Controller
     {
         $campaign->delete();
         return response()->json(['message' => 'Campaign deleted']);
+    }
+
+    /**
+     * Trigger campaign processing (called by the JS background poll).
+     * Runs the campaigns:process artisan command and returns a JSON count.
+     */
+    public function process(Request $request)
+    {
+        try {
+            $exitCode = Artisan::call('campaigns:process');
+            $output   = Artisan::output();
+
+            // Parse how many were dispatched from the command output
+            preg_match('/(\d+)\s+campaign/', $output, $m);
+            $dispatched = isset($m[1]) ? (int) $m[1] : 0;
+
+            return response()->json([
+                'success'    => $exitCode === 0,
+                'dispatched' => $dispatched,
+                'output'     => trim($output),
+            ]);
+        } catch (\Throwable $e) {
+            logger()->error('Campaign process endpoint failed', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'dispatched' => 0, 'error' => $e->getMessage()], 500);
+        }
     }
 }

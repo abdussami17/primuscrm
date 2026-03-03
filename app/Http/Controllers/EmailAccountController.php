@@ -2,189 +2,133 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\CrmEmail;
 use App\Models\EmailAccount;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Artisan;
-use Illuminate\Contracts\Mail\Mailer;
-use Symfony\Component\Mailer\Transport\Smtp\SmtpTransport;
+use Illuminate\Support\Str;
 
 class EmailAccountController extends Controller
 {
-    public function show()
+    /**
+     * GET /settings/email-account/data
+     */
+    public function show(): JsonResponse
     {
-        $account = EmailAccount::first();
-        if (! $account) {
-            return response()->json(['success' => true, 'data' => []]);
-        }
+        $account = EmailAccount::active() ?? new EmailAccount();
 
-        $data = [
-            'smtp_host' => $account->smtp_host,
-            'smtp_port' => $account->smtp_port,
-            'smtp_user' => $account->smtp_user,
-            'smtp_pass' => $account->smtp_pass,
-            'smtp_enc' => $account->smtp_enc,
-            'smtp_from' => $account->smtp_from,
-        ];
-
-        // merge any extra json data
-        if (is_array($account->data)) {
-            $data = array_merge($data, $account->data);
-        }
-
-        return response()->json(['success' => true, 'data' => $data]);
-    }
-
-    public function update(Request $request)
-    {
-        $allowed = [
-            'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_enc', 'smtp_from',
-            'host', 'port', 'username', 'password', 'encryption', 'from_name'
-        ];
-
-        $sanitized = [];
-        foreach ($allowed as $k) {
-            if ($request->has($k)) {
-                $sanitized[$k] = $request->input($k);
-            }
-        }
-
-        // prefer sanitized keys; if none provided, take all request payload
-        $emailPayload = count($sanitized) ? $sanitized : $request->all();
-
-        $account = EmailAccount::first();
-        if (! $account) {
-            $account = EmailAccount::create([
-                'smtp_host' => $emailPayload['smtp_host'] ?? ($emailPayload['host'] ?? null),
-                'smtp_port' => $emailPayload['smtp_port'] ?? ($emailPayload['port'] ?? null),
-                'smtp_user' => $emailPayload['smtp_user'] ?? ($emailPayload['username'] ?? null),
-                'smtp_pass' => $emailPayload['smtp_pass'] ?? ($emailPayload['password'] ?? null),
-                'smtp_enc'  => $emailPayload['smtp_enc'] ?? ($emailPayload['encryption'] ?? null),
-                'smtp_from' => $emailPayload['smtp_from'] ?? ($emailPayload['from_name'] ?? null),
-                'data' => []
-            ]);
-        } else {
-            $account->smtp_host = $emailPayload['smtp_host'] ?? ($emailPayload['host'] ?? $account->smtp_host);
-            $account->smtp_port = $emailPayload['smtp_port'] ?? ($emailPayload['port'] ?? $account->smtp_port);
-            $account->smtp_user = $emailPayload['smtp_user'] ?? ($emailPayload['username'] ?? $account->smtp_user);
-            $account->smtp_pass = $emailPayload['smtp_pass'] ?? ($emailPayload['password'] ?? $account->smtp_pass);
-            $account->smtp_enc  = $emailPayload['smtp_enc'] ?? ($emailPayload['encryption'] ?? $account->smtp_enc);
-            $account->smtp_from = $emailPayload['smtp_from'] ?? ($emailPayload['from_name'] ?? $account->smtp_from);
-
-            // keep any extra keys in json data
-            $extra = is_array($account->data) ? $account->data : [];
-            foreach ($emailPayload as $k => $v) {
-                if (! in_array($k, ['smtp_host','smtp_port','smtp_user','smtp_pass','smtp_enc','smtp_from'])) {
-                    $extra[$k] = $v;
-                }
-            }
-            $account->data = $extra;
-            $account->save();
-        }
-
-        // Persist SMTP settings into environment file so they apply across requests.
-        try {
-            $this->setEnvValue('MAIL_MAILER', 'smtp');
-            $this->setEnvValue('MAIL_HOST', $account->smtp_host);
-            $this->setEnvValue('MAIL_PORT', $account->smtp_port);
-            $this->setEnvValue('MAIL_USERNAME', $account->smtp_user);
-            // strip spaces from stored app-passwords (users sometimes copy with spaces)
-            $this->setEnvValue('MAIL_PASSWORD', str_replace(' ', '', $account->smtp_pass));
-            $this->setEnvValue('MAIL_ENCRYPTION', strtolower($account->smtp_enc));
-            $this->setEnvValue('MAIL_FROM_ADDRESS', $account->smtp_user);
-            $this->setEnvValue('MAIL_FROM_NAME', $account->smtp_from ?? config('mail.from.name'));
-
-            // Clear config cache so new env values take effect on subsequent requests
-            try {
-                Artisan::call('config:clear');
-            } catch (\Throwable $e) {
-                logger()->warning('Failed to call config:clear after writing .env', ['err' => $e->getMessage()]);
-            }
-        } catch (\Throwable $e) {
-            logger()->error('Failed to persist SMTP settings to .env', ['err' => $e->getMessage()]);
-        }
-
-        return response()->json(['success' => true, 'data' => [
-            'smtp_host'=>$account->smtp_host,
-            'smtp_port'=>$account->smtp_port,
-            'smtp_user'=>$account->smtp_user,
-            'smtp_pass'=>$account->smtp_pass,
-            'smtp_enc'=>$account->smtp_enc,
-            'smtp_from'=>$account->smtp_from,
-        ]]);
+        return response()->json([
+            'success'          => true,
+            'data' => [
+                'id'               => $account->id,
+                'name'             => $account->name,
+                'smtp_host'        => $account->smtp_host,
+                'smtp_port'        => $account->smtp_port,
+                'smtp_user'        => $account->smtp_user,
+                'smtp_pass'        => $account->exists && $account->smtp_pass ? '••••••••' : '',
+                'smtp_enc'         => $account->smtp_enc ?? 'tls',
+                'smtp_from'        => $account->smtp_from,
+                'smtp_from_name'   => $account->smtp_from_name,
+                'imap_host'        => $account->imap_host,
+                'imap_port'        => $account->imap_port ?? 993,
+                'imap_encryption'  => $account->imap_encryption ?? 'ssl',
+                'imap_username'    => $account->imap_username,
+                'imap_password'    => $account->exists && $account->imap_password ? '••••••••' : '',
+                'imap_mailbox'     => $account->imap_mailbox ?? 'INBOX',
+                'is_active'        => $account->is_active ?? true,
+            ],
+        ]);
     }
 
     /**
-     * Helper to set or append an environment value in the .env file.
+     * POST /settings/email-account/update
      */
-    protected function setEnvValue(string $key, $value): bool
+    public function update(Request $request): JsonResponse
     {
-        $envPath = base_path('.env');
-        if (! file_exists($envPath) || ! is_writable($envPath)) {
-            logger()->warning('.env file missing or not writable', ['path' => $envPath]);
-            return false;
+        $request->validate([
+            'smtp_host'       => 'required|string|max:255',
+            'smtp_port'       => 'required|integer|min:1|max:65535',
+            'smtp_user'       => 'required|string|max:255',
+            'smtp_pass'       => 'nullable|string|max:500',
+            'smtp_enc'        => 'nullable|string|in:tls,ssl,none',
+            'smtp_from'       => 'required|email|max:255',
+            'smtp_from_name'  => 'nullable|string|max:120',
+            'name'            => 'nullable|string|max:120',
+            'imap_host'       => 'nullable|string|max:255',
+            'imap_port'       => 'nullable|integer|min:1|max:65535',
+            'imap_encryption' => 'nullable|string|in:ssl,tls,none',
+            'imap_username'   => 'nullable|string|max:255',
+            'imap_password'   => 'nullable|string|max:500',
+            'imap_mailbox'    => 'nullable|string|max:120',
+        ]);
+
+        $account = EmailAccount::active() ?? new EmailAccount(['is_active' => true]);
+
+        // Map any legacy field aliases
+        $fill = [
+            'name'            => $request->input('name'),
+            'smtp_host'       => $request->input('smtp_host', $request->input('host')),
+            'smtp_port'       => $request->input('smtp_port', $request->input('port')),
+            'smtp_user'       => $request->input('smtp_user', $request->input('username')),
+            'smtp_enc'        => $request->input('smtp_enc', $request->input('encryption', 'tls')),
+            'smtp_from'       => $request->input('smtp_from'),
+            'smtp_from_name'  => $request->input('smtp_from_name', $request->input('from_name')),
+            'imap_host'       => $request->input('imap_host'),
+            'imap_port'       => $request->input('imap_port', 993),
+            'imap_encryption' => $request->input('imap_encryption', 'ssl'),
+            'imap_username'   => $request->input('imap_username'),
+            'imap_mailbox'    => $request->input('imap_mailbox', 'INBOX'),
+        ];
+
+        // Only update password fields when a real value is submitted
+        $smtpPass = $request->input('smtp_pass');
+        if ($smtpPass && $smtpPass !== '••••••••') {
+            $fill['smtp_pass'] = str_replace(' ', '', $smtpPass); // strip spaces from app passwords
         }
 
-        $escaped = str_replace('"', '\\"', (string) $value);
-        $line = $key . '="' . $escaped . '"';
-
-        $contents = file_get_contents($envPath);
-        if (preg_match('/^' . preg_quote($key, '/') . '=.*/m', $contents)) {
-            $contents = preg_replace('/^' . preg_quote($key, '/') . '=.*/m', $line, $contents);
-        } else {
-            $contents = rtrim($contents, "\n") . "\n" . $line . "\n";
+        $imapPass = $request->input('imap_password');
+        if ($imapPass && $imapPass !== '••••••••') {
+            $fill['imap_password'] = $imapPass;
         }
 
-        try {
-            file_put_contents($envPath, $contents, LOCK_EX);
-            return true;
-        } catch (\Throwable $e) {
-            logger()->error('Failed writing .env file', ['err' => $e->getMessage()]);
-            return false;
-        }
+        $account->fill(array_filter($fill, fn($v) => !is_null($v)));
+        $account->save();
+
+        return response()->json(['success' => true, 'message' => 'Email account saved successfully.']);
     }
 
-    public function test(Request $request)
+    /**
+     * GET /settings/email-account/test
+     * Sends a test email using the saved SMTP settings.
+     */
+    public function test(Request $request): JsonResponse
     {
-        $account = EmailAccount::first();
-        if (! $account) {
-            return response()->json(['success' => false, 'message' => 'No email account configured'], 422);
+        $account = EmailAccount::active();
+
+        if (!$account) {
+            return response()->json(['success' => false, 'message' => 'No email account configured.'], 422);
         }
-
-        // $to = $request->input('to') ?: (Auth::check() ? Auth::user()->email : null);
-        $to = 'yousiftheking2001@gmail.com';
-        if (! $to) {
-            return response()->json(['success' => false, 'message' => 'No recipient specified'], 422);
-        }
-
-        // Temporarily configure mailer
-        config(['mail.mailers.smtp.host' => $account->smtp_host]);
-        config(['mail.mailers.smtp.port' => $account->smtp_port]);
-        config(['mail.mailers.smtp.encryption' => $account->smtp_enc]);
-        config(['mail.mailers.smtp.username' => $account->smtp_user]);
-        config(['mail.mailers.smtp.password' => $account->smtp_pass]);
-        config(['mail.from.address' => $account->smtp_user ?? config('mail.from.address')]);
-        config(['mail.from.name' => $account->smtp_from ?? config('mail.from.name')]);
-
-        // dd([
-        //     'mail.mailers.smtp.host' => config('mail.mailers.smtp.host'),
-        //     'mail.mailers.smtp.port' => config('mail.mailers.smtp.port'),
-        //     'mail.mailers.smtp.encryption' => config('mail.mailers.smtp.encryption'),
-        //     'mail.mailers.smtp.username' => config('mail.mailers.smtp.username'),
-        //     'mail.mailers.smtp.password' => config('mail.mailers.smtp.password'),
-        //     'mail.from.address' => config('mail.from.address'),
-        //     'mail.from.name' => config('mail.from.name'),
-        // ]);
 
         try {
-            Mail::raw('This is a test email from Primus CRM. If you received this, SMTP is configured correctly.', function ($message) use ($to) {
-                $message->to($to)->subject('Primus CRM SMTP Test');
-            });
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
-        }
+            config(['mail.mailers.smtp'  => $account->toSmtpConfig()]);
+            config(['mail.from.address' => $account->smtp_from]);
+            config(['mail.from.name'    => $account->smtp_from_name ?? 'Primus CRM']);
 
-        return response()->json(['success' => true, 'message' => 'Test email sent to ' . $to]);
+            Mail::mailer('smtp')
+                ->to($account->smtp_from)
+                ->send(new CrmEmail(
+                    subject:    'Primus CRM — SMTP Test',
+                    body:       'This is an automated test email confirming your SMTP settings are working correctly.',
+                    messageId:  'test-' . Str::uuid() . '@primuscrm',
+                ));
+
+            return response()->json(['success' => true, 'message' => 'Test email sent to ' . $account->smtp_from]);
+
+        } catch (\Throwable $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
     }
 }
+
+

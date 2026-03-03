@@ -46,8 +46,24 @@
             <button class="btn btn-danger delete-all-btn" id="deleteAllBtn" disabled><i class="ti ti-trash me-1"></i>Delete All</button>
         </div>
     </div>
-    
-    <div class="table-responsive datatable-has-controls templates-preload">
+    <!-- Loader overlay -->
+<div id="templateLoaderOverlay" style="
+position: fixed;
+top: 0; left: 0;
+width: 100%; height: 100%;
+background: rgba(255,255,255,0.9);
+z-index: 9999;
+display: flex;
+align-items: center;
+justify-content: center;
+flex-direction: column;
+">
+<div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+    <span class="visually-hidden">Loading...</span>
+</div>
+<div class="mt-2 text-dark fw-bold">Loading template...</div>
+</div>
+    <div class="table-responsive datatable-has-controls templates-preload" id="templateTableWrapper" style="display:none;">
         <table class="table templates-table datatable no-dt-auto table-nowrap">
             <thead class="table-light">
                 <tr>
@@ -126,7 +142,18 @@
             </tbody>
         </table>
     </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+    const loaderOverlay = document.getElementById('templateLoaderOverlay');
+    const tableWrapper = document.getElementById('templateTableWrapper');
 
+    // Small timeout to ensure table DOM is ready (especially if large data)
+    setTimeout(() => {
+        if (tableWrapper) tableWrapper.style.display = 'block';
+        if (loaderOverlay) loaderOverlay.style.display = 'none';
+    }, 200); // 200ms delay, adjust if needed
+});
+</script>
     <div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">

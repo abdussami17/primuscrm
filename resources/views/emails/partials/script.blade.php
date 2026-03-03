@@ -5,18 +5,19 @@
  */
 console.log('🔵 inbox.js loaded');
 
-// Prevent multiple initializations
-let emailModuleInitialized = false;
-
+// Prevent multiple initializations across script re-executions (use window for persistence)
 function initEmailModule() {
-    if (emailModuleInitialized) {
+    if (window.emailModuleInitialized) {
         console.log('⚠️ Email module already initialized, skipping...');
         return;
     }
     
     console.log('🟢 initEmailModule called');
     try {
-        // Initialize all email functionality ONCE
+        // initComposeForm MUST run first so its isSubmitting guard is registered before any other
+        // init function touches the form. Also add initFetchRepliesBtn for inbox toolbar button.
+        if (typeof initComposeForm === 'function') initComposeForm();
+        if (typeof initReplyForm === 'function') initReplyForm();
         if (typeof initUserAutocomplete === 'function') initUserAutocomplete();
         if (typeof initFavoriteToggle === 'function') initFavoriteToggle();
         if (typeof initTemplateToggle === 'function') initTemplateToggle();
@@ -26,11 +27,11 @@ function initEmailModule() {
         if (typeof initBulkActions === 'function') initBulkActions();
         if (typeof initRestoreForms === 'function') initRestoreForms();
         if (typeof initReplyToggle === 'function') initReplyToggle();
+        if (typeof initFetchRepliesBtn === 'function') initFetchRepliesBtn();
         // Refresh counts on initial load to ensure they're current
         if (typeof refreshSidebarCounts === 'function') refreshSidebarCounts();
-        if (typeof initComposeForm === 'function') initComposeForm();
         
-        emailModuleInitialized = true;
+        window.emailModuleInitialized = true;
         console.log('✅ Email module initialized successfully');
     } catch (e) { 
         console.error('❌ initEmailModule error', e); 
@@ -47,8 +48,26 @@ if (document.readyState === 'loading') {
     setTimeout(initEmailModule, 0);
 }
 
-// Track pending requests to avoid duplicate submissions
-const pendingRequests = new Set();
+// Track pending requests to avoid duplicate submissions (window-scoped so it persists across re-executions)
+window.emailPendingRequests = window.emailPendingRequests || new Set();
+const pendingRequests = window.emailPendingRequests;
+
+/**
+ * Show a toast notification using SweetAlert2
+ * @param {string} message
+ * @param {'success'|'error'|'warning'|'info'} type
+ */
+function showEmailToast(message, type = 'success') {
+    Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: type,
+        title: message,
+        showConfirmButton: false,
+        timer: 3500,
+        timerProgressBar: true,
+    });
+}
 
 /**
  * Refresh sidebar counts by calling backend endpoint
@@ -165,15 +184,33 @@ function initRestoreForms() {
 /**
  * Handle compose form submission via AJAX and process HTML/JSON responses.
  */
-function initComposeForm() {
+ function initComposeForm() {
     const form = document.getElementById('composeEmailForm');
     if (!form) return;
+    // Prevent attaching multiple submit listeners on the same form element
+    if (form.dataset.composeHandled) return;
+    form.dataset.composeHandled = '1';
+
+    let isSubmitting = false;
 
     form.addEventListener('submit', function(e) {
         e.preventDefault();
+        if (isSubmitting) return;
 
-        if (pendingRequests.has('compose')) return;
-        pendingRequests.add('compose');
+        // Sync rich-text editor → hidden textarea before building FormData
+        const editor = document.getElementById('editor');
+        const emailBody = document.getElementById('email-body');
+        if (editor && emailBody) emailBody.value = editor.innerHTML;
+
+        isSubmitting = true;
+
+        // Disable all submit buttons
+        const submitButtons = form.querySelectorAll('button[type="submit"]');
+        submitButtons.forEach(btn => {
+            btn.disabled = true;
+            btn.dataset.originalText = btn.innerHTML;
+            btn.innerHTML = 'Sending...';
+        });
 
         const action = this.action;
         const method = (this.method || 'POST').toUpperCase();
@@ -183,7 +220,8 @@ function initComposeForm() {
             method,
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                'Accept': 'application/json, text/html'
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
             },
             body: formData
         })
@@ -193,64 +231,69 @@ function initComposeForm() {
             return response.text().then(t => ({ type: 'html', data: t }));
         })
         .then(result => {
-            if (result.type === 'json') {
-                const data = result.data;
-                if (data.success) {
-                    if (data.html) {
-                        try {
-                            const parser = new DOMParser();
-                            const doc = parser.parseFromString(data.html, 'text/html');
-                            const newList = doc.querySelector('.mails-list');
-                            const currentList = document.querySelector('.mails-list');
-                            if (newList && currentList) {
-                                currentList.innerHTML = newList.innerHTML;
-                            }
-                        } catch (e) { console.error(e); }
-                    }
-                    // close modal and reset form
-                    try { const modalEl = document.getElementById('email-view'); const bs = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl); bs.hide(); } catch(e){}
-                    form.reset();
-                    const attachmentList = document.getElementById('attachmentList');
-                    if (attachmentList) attachmentList.innerHTML = '';
-                    refreshSidebarCounts();
+            if (result.type === 'json' && result.data.success) {
+                handleComposeSuccess(result.data.html);
+                if (result.data.warning) {
+                    showEmailToast(result.data.warning, 'warning');
                 } else {
-                    console.warn('Compose returned success=false', data);
+                    showEmailToast('Email sent successfully!');
                 }
             } else if (result.type === 'html') {
-                // server returned full page HTML (redirect followed); try to extract .mails-list
-                try {
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(result.data, 'text/html');
-                    const newList = doc.querySelector('.mails-list');
-                    const currentList = document.querySelector('.mails-list');
-                    if (newList && currentList) {
-                        currentList.innerHTML = newList.innerHTML;
-                    }
-                    // close modal and reset form
-                    try { const modalEl = document.getElementById('email-view'); const bs = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl); bs.hide(); } catch(e){}
-                    form.reset();
-                    const attachmentList2 = document.getElementById('attachmentList');
-                    if (attachmentList2) attachmentList2.innerHTML = '';
-                    refreshSidebarCounts();
-                } catch (e) { console.error('Error processing compose HTML response', e); }
+                handleComposeSuccess(result.data);
+                showEmailToast('Email sent successfully!');
+            } else {
+                console.warn('Compose returned failure:', result);
+                showEmailToast((result.data && result.data.message) || 'Failed to send email. Please try again.', 'error');
             }
         })
-        .catch(err => console.error('Compose submit error', err))
-        .finally(() => pendingRequests.delete('compose'));
+        .catch(err => {
+            console.error('Compose submit error', err);
+            showEmailToast('Something went wrong. Please try again.', 'error');
+        })
+        .finally(() => {
+            isSubmitting = false;
+            submitButtons.forEach(btn => {
+                btn.disabled = false;
+                btn.innerHTML = btn.dataset.originalText;
+            });
+        });
+
+        function handleComposeSuccess(html) {
+            if (!html) html = '';
+            try {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newList = doc.querySelector('.mails-list');
+                const currentList = document.querySelector('.mails-list');
+                if (newList && currentList) currentList.innerHTML = newList.innerHTML;
+            } catch (e) { console.error(e); }
+
+            // close modal and reset form
+            try {
+                const modalEl = document.getElementById('email-view');
+                const bs = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                bs.hide();
+            } catch(e){}
+
+            form.reset();
+            const attachmentList = document.getElementById('attachmentList');
+            if (attachmentList) attachmentList.innerHTML = '';
+            refreshSidebarCounts();
+        }
     });
 }
-
 /**
  * User Autocomplete for To field
  */
 function initUserAutocomplete() {
     const inputBox = document.getElementById('composeInputBox');
     const suggestionsList = document.getElementById('compose-suggestions-list');
-    const users = window.emailUsers || [];
+    const customers = window.emailCustomers || [];
 
     if (!inputBox || !suggestionsList) return;
 
     inputBox.addEventListener('input', function() {
+        this.classList.remove('is-invalid');
         const query = this.value.toLowerCase();
         suggestionsList.innerHTML = '';
 
@@ -259,9 +302,9 @@ function initUserAutocomplete() {
             return;
         }
 
-        const filtered = users.filter(user =>
-            user.name.toLowerCase().includes(query) || 
-            user.email.toLowerCase().includes(query)
+        const filtered = customers.filter(c =>
+            c.name.toLowerCase().includes(query) ||
+            c.email.toLowerCase().includes(query)
         );
 
         if (filtered.length === 0) {
@@ -269,12 +312,17 @@ function initUserAutocomplete() {
             return;
         }
 
-        filtered.forEach(user => {
+        filtered.forEach(c => {
             const li = document.createElement('li');
             li.className = 'list-group-item list-group-item-action';
-            li.textContent = `${user.name} <${user.email}>`;
+            li.style.cursor = 'pointer';
+            li.innerHTML = `<span class="fw-semibold">${c.name}</span> <span class="text-muted">&lt;${c.email}&gt;</span>`;
             li.addEventListener('click', () => {
-                inputBox.value = user.email;
+                inputBox.value = c.email;
+                inputBox.classList.remove('is-invalid');
+                // Populate hidden customer_id so token resolution works server-side
+                const hiddenCid = document.getElementById('composeCustomerId');
+                if (hiddenCid) hiddenCid.value = c.id;
                 suggestionsList.classList.add('d-none');
             });
             suggestionsList.appendChild(li);
@@ -288,6 +336,130 @@ function initUserAutocomplete() {
         if (!inputBox.contains(e.target) && !suggestionsList.contains(e.target)) {
             suggestionsList.classList.add('d-none');
         }
+    });
+}
+
+/**
+ * Handle reply form submission via AJAX (in reply.blade.php thread view)
+ */
+function initReplyForm() {
+    const form = document.getElementById('replyEmailForm');
+    if (!form) return;
+    // Prevent attaching multiple submit listeners on the same form element
+    if (form.dataset.replyHandled) return;
+    form.dataset.replyHandled = '1';
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        // Use the window-scoped pendingRequests Set as a shared lock so no second
+        // fetch can fire even if multiple closures exist (e.g., from script re-execution)
+        if (pendingRequests.has('reply:submit')) return;
+        pendingRequests.add('reply:submit');
+
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = 'Sending...'; }
+
+        const action = form.action;
+        const formData = new FormData(form);
+
+        fetch(action, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            body: formData
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) {
+                showEmailToast(data.message || 'Failed to send reply.', 'error');
+                return;
+            }
+
+            showEmailToast('Reply sent successfully!');
+
+            // Build and inject the new reply card into the thread container
+            const body = formData.get('body') || '';
+            const now = new Date();
+            const timeStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                          + ' ' + now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+            const userName   = document.querySelector('meta[name="user-name"]')?.content
+                             || '{{ auth()->user()->name ?? "You" }}';
+            const userInitials = userName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+
+            const newCard = document.createElement('div');
+            newCard.className = 'card shadow-none mt-3';
+            newCard.innerHTML = `
+                <div class="card-body">
+                    <div class="bg-light rounded p-3 mb-3">
+                        <div class="d-flex align-items-center flex-fill">
+                            <a href="javascript:void(0);" class="avatar avatar-md avatar-rounded flex-shrink-0 me-2">
+                                <span class="avatar-title bg-primary">${userInitials}</span>
+                            </a>
+                            <div class="flex-fill">
+                                <h6 class="mb-1">
+                                    ${userName}
+                                    <span class="badge bg-primary ms-1" style="font-size:9px">You</span>
+                                </h6>
+                                <p class="mb-0 text-muted">${timeStr}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-dark email-content">${body.replace(/\n/g, '<br>')}</div>
+                </div>
+            `;
+
+            // Ensure the container exists and is visible
+            let container = document.getElementById('olderMessagesContainer');
+            if (!container) {
+                // Create container + toggle button if thread has no older messages yet
+                const center = document.createElement('div');
+                center.className = 'text-center';
+                center.innerHTML = '<a href="javascript:void(0);" class="btn btn-dark btn-sm" id="viewOlderMessages">View Thread Messages (0)</a>';
+                const mainCard = document.querySelector('.mail-detail .card.shadow-none');
+                if (mainCard) mainCard.after(center);
+
+                container = document.createElement('div');
+                container.className = 'older-messages';
+                container.id = 'olderMessagesContainer';
+                center.after(container);
+
+                // Wire toggle button
+                center.querySelector('#viewOlderMessages').addEventListener('click', function() {
+                    container.classList.toggle('d-none');
+                    const count = container.querySelectorAll('.card').length;
+                    this.textContent = container.classList.contains('d-none')
+                        ? `View Thread Messages (${count})`
+                        : 'Hide Thread Messages';
+                });
+            }
+
+            container.classList.remove('d-none');
+            container.appendChild(newCard);
+
+            // Update toggle button count
+            const toggleBtn = document.getElementById('viewOlderMessages');
+            if (toggleBtn) {
+                const count = container.querySelectorAll('.card').length;
+                toggleBtn.textContent = `View Thread Messages (${count})`;
+            }
+
+            // Reset reply form and hide reply box
+            form.querySelector('textarea[name="body"]').value = '';
+            document.getElementById('replybackbox')?.classList.add('d-none');
+        })
+        .catch(err => {
+            console.error('Reply submit error', err);
+            showEmailToast('Something went wrong. Please try again.', 'error');
+        })
+        .finally(() => {
+            pendingRequests.delete('reply:submit');
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = 'Send <i class="ti ti-arrow-right ms-2"></i>'; }
+        });
     });
 }
 
@@ -399,14 +571,14 @@ function initFavoriteToggle() {
 /**
  * Template Toggle in Compose Modal
  */
-function initTemplateToggle() {
+ function initTemplateToggle() {
     const insertBtn = document.getElementById('insertTemplateBtn');
-    const emailBody = document.getElementById('email-body-section');
+    const emailBody = document.getElementById('email-body-section'); 
     const templateSelector = document.getElementById('template-select-section');
     const backBtn = document.getElementById('backToBody');
     const templateSelect = document.getElementById('templateSelect');
-    const subjectInput = document.querySelector('input[name="subject"]');
-    const bodyTextarea = document.getElementById('email-body');
+    const subjectInput = document.getElementById('subjectInput');
+    const editor = document.getElementById('editor');
 
     if (!insertBtn || !emailBody || !templateSelector || !backBtn) return;
 
@@ -420,26 +592,36 @@ function initTemplateToggle() {
         templateSelector.classList.add('d-none');
     });
 
-    // Handle template selection
     if (templateSelect) {
-        templateSelect.addEventListener('change', function() {
+        templateSelect.addEventListener('change', function () {
             const selectedOption = this.options[this.selectedIndex];
             const subject = selectedOption.dataset.subject;
             const body = selectedOption.dataset.body;
 
-            if (subject && subjectInput) {
-                subjectInput.value = subject;
-            }
-            if (body && bodyTextarea) {
-                bodyTextarea.value = body;
+            if (subject && subjectInput) subjectInput.value = subject;
+
+            if (body && editor) {
+                editor.innerHTML = body;
+
+                // 🔥 Dispatch InputEvent so preview updates automatically
+                const ev = new InputEvent('input', {
+                    bubbles: true,
+                    cancelable: true,
+                    inputType: 'insertFromPaste',
+                    data: body
+                });
+                editor.dispatchEvent(ev);
             }
 
-            // Switch back to body view
             emailBody.classList.remove('d-none');
             templateSelector.classList.add('d-none');
         });
     }
 }
+
+
+// ✅ ALWAYS initialize after DOM
+document.addEventListener('DOMContentLoaded', initTemplateToggle);
 
 /**
  * CC/BCC Toggle

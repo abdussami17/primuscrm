@@ -589,7 +589,6 @@ document.addEventListener('DOMContentLoaded', function () {
     </script>
 
 
-
 <script>
     let currentNotesRowId = null;
     let checkboxFilterInstances = {};
@@ -599,7 +598,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const table = document.getElementById("filterTable");
         const filtersRow = document.getElementById("filtersRow");
         const filterWrappers = filtersRow.querySelectorAll(".filter-wrapper");
-        const rows = Array.from(table.querySelectorAll("tbody tr"));
+        function getRows(){ return Array.from(table.querySelectorAll('tbody tr')); }
 
         // Centralized filter state management
         const filterState = {
@@ -710,13 +709,13 @@ document.addEventListener('DOMContentLoaded', function () {
         // Initialize filter data for a specific column
         function initializeFilterData(colIndex) {
             const values = new Set();
-            const hasAnyValues = rows.some(row => {
+            const hasAnyValues = getRows().some(row => {
                 const value = getCellValue(row, colIndex);
                 return !isBlankValue(value);
             });
 
             // Collect all unique values from the column
-            rows.forEach(row => {
+            getRows().forEach(row => {
                 const value = getCellValue(row, colIndex);
                 if (!isBlankValue(value) && value) {
                     values.add(value);
@@ -983,7 +982,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Apply all active filters
         function applyAllFilters() {
             // Reset all rows to visible
-            rows.forEach(row => row.style.display = '');
+            getRows().forEach(row => row.style.display = '');
 
             // Apply each column filter
             Object.entries(checkboxFilterInstances).forEach(([colIndexStr, filterData]) => {
@@ -993,7 +992,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (filterData.selectedValues.size === 0) return;
 
                 // Filter rows based on this column
-                rows.forEach(row => {
+                getRows().forEach(row => {
                     if (row.style.display === 'none') return; // Already hidden by another filter
 
                     const cellValue = getCellValue(row, colIndex);
@@ -1025,7 +1024,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Update visible row count
         function updateRowCount() {
-            const visibleCount = rows.filter(row => row.style.display !== 'none').length;
+            const visibleCount = getRows().filter(row => row.style.display !== 'none').length;
             console.log(`Showing ${visibleCount} of ${rows.length} rows`);
             // You could update a counter display here if needed
         }
@@ -1035,7 +1034,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const selectAllCheckbox = document.getElementById("select-all");
             if (!selectAllCheckbox) return;
 
-            const visibleRows = rows.filter(row => row.style.display !== 'none');
+            const visibleRows = getRows().filter(row => row.style.display !== 'none');
             const visibleCheckboxes = visibleRows.flatMap(row =>
                 Array.from(row.querySelectorAll(".form-check-input:not(#select-all)"))
             );
@@ -1056,7 +1055,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const selectAllCheckbox = document.getElementById("select-all");
             if (selectAllCheckbox) {
                 selectAllCheckbox.addEventListener("change", function () {
-                    const visibleRows = rows.filter(row => row.style.display !== 'none');
+                    const visibleRows = getRows().filter(row => row.style.display !== 'none');
                     const visibleCheckboxes = visibleRows.flatMap(row =>
                         Array.from(row.querySelectorAll(".form-check-input:not(#select-all)"))
                     );
@@ -1108,13 +1107,21 @@ document.addEventListener('DOMContentLoaded', function() {
   const taskForm = document.getElementById("taskFormModal");
   const dueDatePicker = document.getElementById("dueDatePickerModal");
 
-  const phoneScriptsDB = [
-    { id: "s1", name: "Follow-up Call", body: "Hi, I'm calling to follow up on your recent inquiry..." },
-    { id: "s2", name: "Sales Introduction", body: "Hello! I wanted to tell you about our latest offers..." },
-    { id: "s3", name: "Service Reminder", body: "Good morning! Your vehicle is due for maintenance..." },
-    { id: "s4", name: "Feedback Request", body: "Hi there! We'd love to hear about your experience..." },
-    { id: "s5", name: "Appointment Confirmation", body: "Thank you for scheduling with us. Your appointment is..." }
-  ];
+  // Fetch phone script templates from backend
+  fetch('/templates/data?type=text', { credentials: 'same-origin' })
+    .then(res => res.json())
+    .then(res => {
+      const templates = Array.isArray(res.data) ? res.data : [];
+      window.phoneScriptSelect = new TomSelect("#phoneScriptSelectModal", {
+        options: templates.map(t => ({ value: t.id, text: t.name })),
+        items: [],
+        maxItems: 1,
+        placeholder: "Search & select script...",
+        searchField: 'text',
+        allowEmptyOption: true,
+        closeAfterSelect: true
+      });
+    });
 
   // -----------------------------
   // FLATPICKR INIT
@@ -1125,21 +1132,10 @@ document.addEventListener('DOMContentLoaded', function() {
     theme: "light"
   });
 
-  // -----------------------------
-  // TOMSELECT INIT FOR PHONE SCRIPTS
-  // -----------------------------
-    window.phoneScriptSelect = new TomSelect("#phoneScriptSelectModal", {
-    options: phoneScriptsDB.map(script => ({
-      value: script.id,
-      text: script.name
-    })),
-    items: [],
-    maxItems: 1,
-    placeholder: "Search & select script...",
-    searchField: 'text',
-    allowEmptyOption: true,
-    closeAfterSelect: true
-  });
+    // -----------------------------
+    // TOMSELECT INIT FOR PHONE SCRIPTS
+    // (initialized from /templates/data?type=text above)
+    // -----------------------------
 
     // -----------------------------
     // FETCH CUSTOMERS FROM API (include credentials so session auth works)
@@ -1179,50 +1175,74 @@ document.addEventListener('DOMContentLoaded', function() {
   // -----------------------------
   // CUSTOMER SEARCH INPUT
   // -----------------------------
-  customerInput.addEventListener("input", () => {
-    const search = customerInput.value.toLowerCase().trim();
-    suggestionsBox.innerHTML = "";
+    customerInput.addEventListener("input", () => {
+        const search = customerInput.value.toLowerCase().trim();
+        suggestionsBox.innerHTML = "";
 
-    if (!search) {
-      suggestionsBox.classList.add("d-none");
-      return;
-    }
+        if (!search) {
+            suggestionsBox.classList.add("d-none");
+            return;
+        }
 
-    const matches = customers.filter(c => {
-      const name = c.name || '';
-      const email = c.email || '';
-      const phone = c.phone || '';
-      return (
-        isFuzzyMatch(name, search) ||
-        email.toLowerCase().includes(search) ||
-        phone.includes(search)
-      );
+        const matches = customers.filter(c => {
+            const first = c.first_name || '';
+            const last = c.last_name || '';
+            const fullName = `${first} ${last}`.trim();
+            const name = (c.name || fullName || '').toString();
+            const email = (c.email || '').toString();
+            const phone = (c.phone || '').toString();
+
+            return (
+                (fullName && fullName.toLowerCase().includes(search)) ||
+                (name && name.toLowerCase().includes(search)) ||
+                isFuzzyMatch(fullName || name, search) ||
+                (email && email.toLowerCase().includes(search)) ||
+                (phone && phone.includes(search))
+            );
+        });
+
+        if (matches.length === 0) {
+            suggestionsBox.classList.add("d-none");
+            return;
+        }
+
+        matches.forEach(c => {
+            let first = (c.first_name || '').toString().trim();
+            let last = (c.last_name || '').toString().trim();
+            const fullName = `${first} ${last}`.trim();
+            // Prefer first+last when available, otherwise fall back to c.name, then email/phone
+            let displayName = fullName || (c.name || '').toString().trim() || c.email || c.phone || 'Unknown';
+            // Title-case only when using first+last
+            if (fullName) displayName = fullName.replace(/\b\w/g, ch => ch.toUpperCase());
+
+            const contactLine = `${c.email ? c.email : ''}${c.email && c.phone ? ' - ' : ''}${c.phone ? c.phone : ''}`;
+            const item = document.createElement("a");
+            item.href = "#";
+            item.className = "list-group-item list-group-item-action";
+            item.innerHTML = `<strong>${displayName}</strong><br><small>${contactLine}</small>`;
+            item.addEventListener("click", (e) => {
+                e.preventDefault();
+                customerInput.value = displayName;
+                suggestionsBox.classList.add("d-none");
+
+                selectedCustomer = {
+                    id: c.id ?? c.customer_id ?? null,
+                    name: displayName,
+                    first_name: c.first_name ?? null,
+                    last_name: c.last_name ?? null,
+                    email: c.email ?? null,
+                    phone: c.phone ?? null,
+                    deals: Array.isArray(c.deals) ? c.deals : []
+                };
+
+                selectedDeal = null;
+                showDeals(selectedCustomer.deals);
+            });
+            suggestionsBox.appendChild(item);
+        });
+
+        suggestionsBox.classList.remove("d-none");
     });
-
-    if (matches.length === 0) {
-      suggestionsBox.classList.add("d-none");
-      return;
-    }
-
-    matches.forEach(c => {
-      const displayName = c.name || c.email; // fallback to email
-      const item = document.createElement("a");
-      item.href = "#";
-      item.className = "list-group-item list-group-item-action";
-      item.innerHTML = `<strong>${displayName}</strong><br><small>${c.email} - ${c.phone}</small>`;
-      item.addEventListener("click", (e) => {
-        e.preventDefault();
-        customerInput.value = displayName;
-        suggestionsBox.classList.add("d-none");
-        selectedCustomer = c;
-        selectedDeal = null;
-        showDeals(c.deals);
-      });
-      suggestionsBox.appendChild(item);
-    });
-
-    suggestionsBox.classList.remove("d-none");
-  });
 
   // -----------------------------
   // SHOW DEALS FOR SELECTED CUSTOMER
@@ -1494,7 +1514,7 @@ ${formatTaskType(task.task_type)}
 <td style="white-space:normal;">
   <div class="note-area">
     ${task.notes.length ? task.notes[0].description : ''}
-    <a href="#" class="view-notes-link" data-bs-toggle="modal" data-customer-id="${task.customer.id}"  data-task-id="${task.id }" data-bs-target="#viewfullnote">
+    <a href="#" class="view-notes-link" data-bs-toggle="modal" data-customer-id="${task.customer?.id ?? task.customer_id ?? ''}"  data-task-id="${task.id }" data-bs-target="#viewfullnote">
       <i class="fas fa-edit" title="View & Edit Notes"></i>
     </a>
   </div>

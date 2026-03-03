@@ -56,7 +56,7 @@
                         <div class="form-check form-check-md"><input class="form-check-input" type="checkbox"></div>
                     </td>
                     <td style="padding: 16px 12px; vertical-align: middle;">
-                        <a href="{{ route('reports.show', 'activity-report_new') }}" class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">Activity Report</a>
+                        <a class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">Activity Report</a>
                         <div style="font-size: 12px; color: #6c757d; margin-top: 3px;">View detailed activity metrics</div>
                     </td>
                     <td style="padding: 16px 12px; vertical-align: middle;">
@@ -82,7 +82,7 @@
                         <div class="form-check form-check-md"><input class="form-check-input" type="checkbox"></div>
                     </td>
                     <td style="padding: 16px 12px; vertical-align: middle;">
-                        <a href="{{ route('reports.show', 'sold_deals-report') }}" class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">Sold Deals Report</a>
+                        <a  class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">Sold Deals Report</a>
                         <div style="font-size: 12px; color: #6c757d; margin-top: 3px;">Track completed deals and transactions</div>
                     </td>
                     <td style="padding: 16px 12px; vertical-align: middle;">
@@ -108,7 +108,7 @@
                         <div class="form-check form-check-md"><input class="form-check-input" type="checkbox"></div>
                     </td>
                     <td style="padding: 16px 12px; vertical-align: middle;">
-                        <a href="{{ route('reports.show', 'Internet-roi-report_new') }}" class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">Internet ROI Report</a>
+                        <a  class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">Internet ROI Report</a>
                         <div style="font-size: 12px; color: #6c757d; margin-top: 3px;">Analyze return on investment metrics</div>
                     </td>
                     <td style="padding: 16px 12px; vertical-align: middle;">
@@ -134,7 +134,7 @@
                         <div class="form-check form-check-md"><input class="form-check-input" type="checkbox"></div>
                     </td>
                     <td style="padding: 16px 12px; vertical-align: middle;">
-                        <a href="{{ route('reports.show', 'campaigns-report') }}" class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">Campaigns Report</a>
+                        <a  class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">Campaigns Report</a>
                         <div style="font-size: 12px; color: #6c757d; margin-top: 3px;">Monitor campaign performance data</div>
                     </td>
                     <td style="padding: 16px 12px; vertical-align: middle;">
@@ -160,7 +160,7 @@
                         <div class="form-check form-check-md"><input class="form-check-input" type="checkbox"></div>
                     </td>
                     <td style="padding: 16px 12px; vertical-align: middle;">
-                        <a href="{{ route('reports.show', 'dms-success-fail-report_new') }}" class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">DMS Success/Fail Report</a>
+                        <a  class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">DMS Success/Fail Report</a>
                         <div style="font-size: 12px; color: #6c757d; margin-top: 3px;">System integration status overview</div>
                     </td>
                     <td style="padding: 16px 12px; vertical-align: middle;">
@@ -186,7 +186,7 @@
                         <div class="form-check form-check-md"><input class="form-check-input" type="checkbox"></div>
                     </td>
                     <td style="padding: 16px 12px; vertical-align: middle;">
-                        <a href="{{ route('reports.show', 'new-lead-by-rep-report_new') }}" class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">New Lead By Rep Report</a>
+                        <a  class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">New Lead By Rep Report</a>
                         <div style="font-size: 12px; color: #6c757d; margin-top: 3px;">Track leads by sales representative</div>
                     </td>
                     <td style="padding: 16px 12px; vertical-align: middle;">
@@ -212,7 +212,7 @@
                         <div class="form-check form-check-md"><input class="form-check-input" type="checkbox"></div>
                     </td>
                     <td style="padding: 16px 12px; vertical-align: middle;">
-                        <a href="{{ route('reports.show', 'service-appointment-report') }}" class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">Service Appointment Report</a>
+                        <a  class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">Service Appointment Report</a>
                         <div style="font-size: 12px; color: #6c757d; margin-top: 3px;">Service scheduling and completion data</div>
                     </td>
                     <td style="padding: 16px 12px; vertical-align: middle;">
@@ -238,7 +238,7 @@
                         <div class="form-check form-check-md"><input class="form-check-input" type="checkbox"></div>
                     </td>
                     <td style="padding: 16px 12px; vertical-align: middle;">
-                        <a href="{{ route('reports.show', 'lead-type&tracking-report') }}" class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">Lead Type & Tracking Code Report</a>
+                        <a  class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">Lead Type & Tracking Code Report</a>
                         <div style="font-size: 12px; color: #6c757d; margin-top: 3px;">Lead source and tracking analysis</div>
                     </td>
                     <td style="padding: 16px 12px; vertical-align: middle;">
@@ -264,7 +264,7 @@
                         <div class="form-check form-check-md"><input class="form-check-input" type="checkbox"></div>
                     </td>
                     <td style="padding: 16px 12px; vertical-align: middle;">
-                        <a href="{{ route('reports.show', 'sales-tracking-report') }}" class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">Sales Tracking Report</a>
+                        <a  class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">Sales Tracking Report</a>
                         <div style="font-size: 12px; color: #6c757d; margin-top: 3px;">Comprehensive sales pipeline tracking</div>
                     </td>
                     <td style="padding: 16px 12px; vertical-align: middle;">
@@ -290,7 +290,7 @@
                         <div class="form-check form-check-md"><input class="form-check-input" type="checkbox"></div>
                     </td>
                     <td style="padding: 16px 12px; vertical-align: middle;">
-                        <a href="{{ route('reports.show', 'trade-in-report') }}" class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">Trade-In Report</a>
+                        <a  class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">Trade-In Report</a>
                         <div style="font-size: 12px; color: #6c757d; margin-top: 3px;">Vehicle trade-in transaction details</div>
                     </td>
                     <td style="padding: 16px 12px; vertical-align: middle;">
@@ -316,7 +316,7 @@
                         <div class="form-check form-check-md"><input class="form-check-input" type="checkbox"></div>
                     </td>
                     <td style="padding: 16px 12px; vertical-align: middle;">
-                        <a href="{{ route('reports.show', 'customer-email-collection-report') }}" class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">Customer Email Collection Report</a>
+                        <a  class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">Customer Email Collection Report</a>
                         <div style="font-size: 12px; color: #6c757d; margin-top: 3px;">Email database growth metrics</div>
                     </td>
                     <td style="padding: 16px 12px; vertical-align: middle;">
@@ -342,7 +342,7 @@
                         <div class="form-check form-check-md"><input class="form-check-input" type="checkbox"></div>
                     </td>
                     <td style="padding: 16px 12px; vertical-align: middle;">
-                        <a href="{{ route('reports.show', 'invalid-email-report') }}" class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">Invalid Email Report</a>
+                        <a  class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">Invalid Email Report</a>
                         <div style="font-size: 12px; color: #6c757d; margin-top: 3px;">Identify and clean invalid contacts</div>
                     </td>
                     <td style="padding: 16px 12px; vertical-align: middle;">
@@ -368,7 +368,7 @@
                         <div class="form-check form-check-md"><input class="form-check-input" type="checkbox"></div>
                     </td>
                     <td style="padding: 16px 12px; vertical-align: middle;">
-                        <a href="{{ route('reports.show', 'appointment-capture-report') }}" class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">Appointment Capture Report</a>
+                        <a  class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">Appointment Capture Report</a>
                         <div style="font-size: 12px; color: #6c757d; margin-top: 3px;">Appointment booking effectiveness</div>
                     </td>
                     <td style="padding: 16px 12px; vertical-align: middle;">
@@ -394,7 +394,7 @@
                       <div class="form-check form-check-md"><input class="form-check-input" type="checkbox"></div>
                   </td>
                   <td style="padding: 16px 12px; vertical-align: middle;">
-                      <a href="{{ route('reports.show', 'text-sent-received-report') }}" class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">Text Send / Received Report</a>
+                      <a  class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">Text Send / Received Report</a>
                       <div style="font-size: 12px; color: #6c757d; margin-top: 3px;">SMS communication analytics</div>
                   </td>
                   <td style="padding: 16px 12px; vertical-align: middle;">
@@ -420,7 +420,7 @@
                       <div class="form-check form-check-md"><input class="form-check-input" type="checkbox"></div>
                   </td>
                   <td style="padding: 16px 12px; vertical-align: middle;">
-                      <a href="{{ route('reports.show', 'email-sent-received-report') }}" class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">Email Send / Received Report</a>
+                      <a  class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">Email Send / Received Report</a>
                       <div style="font-size: 12px; color: #6c757d; margin-top: 3px;">Email campaign performance metrics</div>
                   </td>
                   <td style="padding: 16px 12px; vertical-align: middle;">
@@ -446,7 +446,7 @@
                       <div class="form-check form-check-md"><input class="form-check-input" type="checkbox"></div>
                   </td>
                   <td style="padding: 16px 12px; vertical-align: middle;">
-                      <a href="{{ route('reports.show', 'user-activity-report') }}" class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">User Activity Report</a>
+                      <a  class="text-decoration-underline" style="font-weight: 600; font-size: 14px; color: var(--name-change);" target="_blank">User Activity Report</a>
                       <div style="font-size: 12px; color: #6c757d; margin-top: 3px;">System user engagement tracking</div>
                   </td>
                   <td style="padding: 16px 12px; vertical-align: middle;">

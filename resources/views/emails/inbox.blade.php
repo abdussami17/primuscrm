@@ -78,6 +78,9 @@
                                     <a href="{{ route('email.' . ($currentFolder ?? 'inbox')) }}" class="btn btn-icon btn-sm rounded-circle" title="Refresh">
                                         <i class="ti ti-refresh"></i>
                                     </a>
+                                    <button type="button" id="fetchRepliesBtn" class="btn btn-icon btn-sm rounded-circle" title="Fetch customer replies now">
+                                        <i class="ti ti-mail-down" id="fetchRepliesIcon"></i>
+                                    </button>
                                 </div>
                             </div>
                         </div>

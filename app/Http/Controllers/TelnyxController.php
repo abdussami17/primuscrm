@@ -18,6 +18,52 @@ class TelnyxController extends Controller
         return filter_var(env('TELNYX_ALLOW_SIMULATE', false), FILTER_VALIDATE_BOOLEAN);
     }
 
+    /**
+     * Return WebRTC SIP credentials to the authenticated browser client.
+     * These are used by the Telnyx WebRTC JS SDK to register a softphone.
+     */
+    public function webrtcCredentials()
+    {
+        return response()->json([
+            'login'         => config('services.telnyx.sip_username'),
+            'password'      => config('services.telnyx.sip_password'),
+            'caller_number' => preg_replace('/[\s\-().]+/', '', config('services.telnyx.from_number') ?? ''),
+            'configured'    => !empty(config('services.telnyx.sip_username')) && !empty(config('services.telnyx.sip_password')),
+        ]);
+    }
+
+    /**
+     * Normalize a phone number to E.164 format.
+     */
+    private function normalizePhone(string $number): string
+    {
+        // Strip everything except digits and leading +
+        $cleaned = preg_replace('/[^\d+]/', '', $number);
+
+        // Already in E.164
+        if (str_starts_with($cleaned, '+')) {
+            return $cleaned;
+        }
+
+        // Remove trunk prefix (leading zeros)
+        $digits = ltrim($cleaned, '0');
+
+        // If empty after stripping, return original cleaned
+        if ($digits === '') {
+            return '+' . $cleaned;
+        }
+
+        $countryCode = config('services.telnyx.default_country_code', '1');
+
+        // If digits already start with the country code, just prepend +
+        if (str_starts_with($digits, $countryCode)) {
+            return '+' . $digits;
+        }
+
+        // Otherwise prepend + and country code
+        return '+' . $countryCode . $digits;
+    }
+
     public function sendSms(Request $request)
     {
         $request->validate([
@@ -26,7 +72,7 @@ class TelnyxController extends Controller
         ]);
 
         $apiKey = config('services.telnyx.api_key');
-        $from = config('services.telnyx.from_number');
+        $from = preg_replace('/[\s\-().]+/', '', config('services.telnyx.from_number') ?? '');
 
         // If required configuration missing, allow simulated response when enabled
         if (empty($apiKey) || empty($from)) {
@@ -67,9 +113,11 @@ class TelnyxController extends Controller
             return response()->json(['success' => false, 'message' => 'Telnyx not configured'], 500);
         }
 
+        $to = $this->normalizePhone($request->input('to'));
+
         $payload = [
             'from' => $from,
-            'to' => $request->input('to'),
+            'to' => $to,
             'text' => $request->input('message', 'Message from Dealer')
         ];
 
@@ -100,7 +148,7 @@ class TelnyxController extends Controller
                 'direction' => 'outbound',
                 'type' => 'sms',
                 'from' => $from,
-                'to' => $request->input('to'),
+                'to' => $to,
                 'body' => $request->input('message', ''),
                 'status' => $response->json('data.state') ?? $response->status(),
                 'raw' => $response->json()
@@ -123,7 +171,7 @@ class TelnyxController extends Controller
         ]);
 
         $apiKey = config('services.telnyx.api_key');
-        $from = config('services.telnyx.from_number');
+        $from = preg_replace('/[\s\-().]+/', '', config('services.telnyx.from_number') ?? '');
         $connectionId = config('services.telnyx.connection_id');
 
         if (empty($apiKey) || empty($from) || empty($connectionId)) {
@@ -241,7 +289,7 @@ class TelnyxController extends Controller
         ]);
 
         $apiKey = config('services.telnyx.api_key');
-        $from = config('services.telnyx.from_number');
+        $from = preg_replace('/[\s\-().]+/', '', config('services.telnyx.from_number') ?? '');
         $connectionId = config('services.telnyx.connection_id');
 
         if (empty($apiKey) || empty($from) || empty($connectionId)) {
@@ -304,12 +352,12 @@ class TelnyxController extends Controller
      */
     public function webhook(Request $request)
     {
-        $raw = $request->getContent();
+        $raw     = $request->getContent();
         $payload = $request->all();
 
-        // Verify signature if public key configured
+        // ── Signature verification ──────────────────────────────────────────
         $publicKey = env('TELNYX_PUBLIC_KEY') ?: env('TELNYX_WEBHOOK_SECRET');
-        $sig = $request->header('Telnyx-Signature-Ed25519') ?: $request->header('telnyx-signature-ed25519');
+        $sig       = $request->header('Telnyx-Signature-Ed25519') ?: $request->header('telnyx-signature-ed25519');
         $timestamp = $request->header('Telnyx-Timestamp') ?: $request->header('telnyx-timestamp');
 
         if ($publicKey && $sig && $timestamp) {
@@ -326,51 +374,116 @@ class TelnyxController extends Controller
                     }
                 }
             } catch (\Throwable $e) {
-                Log::warning('Telnyx webhook signature verification error: '.$e->getMessage());
+                Log::warning('Telnyx webhook signature verification error: ' . $e->getMessage());
                 return response()->json(['success' => false, 'message' => 'Signature verification error'], 401);
             }
         }
 
-        // Determine event type (Telnyx payloads sometimes use meta.event_type or data.event_type)
-        $eventType = $payload['meta']['event_type'] ?? $payload['data']['event_type'] ?? $payload['type'] ?? null;
+        // ── Event type ──────────────────────────────────────────────────────
+        $eventType = $payload['data']['event_type']
+            ?? $payload['meta']['event_type']
+            ?? $payload['type']
+            ?? null;
 
-        // Normalize data container
-        $data = $payload['data'] ?? [];
+        $data    = $payload['data']    ?? [];
+        $msgData = $data['payload']    ?? $data;   // Telnyx wraps SMS fields inside payload
 
-        try {
-            // Persist or update existing record by telnyx id
-            $telnyxId = $data['id'] ?? null;
-            $record = null;
-            if ($telnyxId) {
-                $record = TelnyxMessage::where('telnyx_id', $telnyxId)->first();
+        Log::info('Telnyx webhook received', ['event_type' => $eventType]);
+
+        // ── Handle inbound SMS ──────────────────────────────────────────────
+        if (in_array($eventType, ['message.received', 'message.finalized'], true)) {
+            try {
+                // Prefer the message ID (payload.id) over the event ID (data.id)
+                // so we can match records already created by send()
+                $telnyxId  = $msgData['id'] ?? ($data['id'] ?? null);
+                $direction = $msgData['direction'] ?? 'inbound';
+
+                // For outbound message.finalized, just update the existing record
+                if ($direction === 'outbound' && $eventType === 'message.finalized') {
+                    if ($telnyxId) {
+                        TelnyxMessage::where('telnyx_id', $telnyxId)
+                            ->update(['status' => $msgData['status'] ?? 'delivered']);
+                    }
+                    return response()->json(['received' => true]);
+                }
+                $bodyText  = $msgData['text'] ?? null;
+
+                // from / to are objects: { "phone_number": "+1..." }
+                $fromRaw = $msgData['from'] ?? null;
+                $toRaw   = $msgData['to']   ?? null;
+                $from    = is_array($fromRaw) ? ($fromRaw['phone_number'] ?? null) : $fromRaw;
+                $to      = is_array($toRaw)
+                    ? (isset($toRaw[0]) ? ($toRaw[0]['phone_number'] ?? null) : ($toRaw['phone_number'] ?? null))
+                    : $toRaw;
+
+                // Try to find matching customer by normalized phone
+                $customer    = null;
+                $contactName = null;
+                if ($from) {
+                    $normalized = preg_replace('/\D/', '', $from);
+                    $customer   = \App\Models\Customer::where(function ($q) use ($normalized) {
+                        $q->whereRaw("REGEXP_REPLACE(cell_phone, '[^0-9]', '') LIKE ?", ["%{$normalized}%"])
+                          ->orWhereRaw("REGEXP_REPLACE(phone, '[^0-9]', '') LIKE ?", ["%{$normalized}%"]);
+                    })->first();
+                    if ($customer) {
+                        $contactName = trim($customer->first_name . ' ' . $customer->last_name);
+                    }
+                }
+
+                // Upsert: avoid duplicate records for the same telnyx_id
+                $existing = $telnyxId
+                    ? TelnyxMessage::withTrashed()->where('telnyx_id', $telnyxId)->first()
+                    : null;
+
+                $attrs = [
+                    'telnyx_id'    => $telnyxId,
+                    'direction'    => $direction,
+                    'type'         => 'sms',
+                    'from'         => $from,
+                    'to'           => $to,
+                    'body'         => $bodyText,
+                    'status'       => $msgData['status'] ?? null,
+                    'is_read'      => false,
+                    'is_draft'     => false,
+                    'customer_id'  => $customer?->id,
+                    'contact_name' => $contactName,
+                    'raw'          => $payload,
+                ];
+
+                if ($existing) {
+                    $existing->update($attrs);
+                } else {
+                    TelnyxMessage::create($attrs);
+                }
+
+                Log::info('Telnyx inbound SMS saved', ['from' => $from, 'to' => $to]);
+            } catch (\Exception $e) {
+                Log::error('Telnyx inbound SMS save failed: ' . $e->getMessage(), [
+                    'payload' => $payload,
+                ]);
             }
 
-            $bodyText = $data['payload']['text'] ?? ($data['payload'] ?? null);
-            $from = $data['from'] ?? ($data['payload']['from'] ?? null);
-            $to = $data['to'] ?? ($data['payload']['to'] ?? null);
-            $status = $data['state'] ?? null;
-
-            $attrs = [
-                'telnyx_id' => $telnyxId,
-                'direction' => $data['direction'] ?? ($payload['direction'] ?? 'inbound'),
-                'type' => $eventType ?? 'event',
-                'from' => is_array($from) ? ($from['phone_number'] ?? null) : $from,
-                'to' => is_array($to) ? ($to[0]['phone_number'] ?? null) : $to,
-                'body' => is_array($bodyText) ? json_encode($bodyText) : $bodyText,
-                'status' => $status,
-                'raw' => $payload,
-            ];
-
-            if ($record) {
-                $record->update($attrs);
-            } else {
-                TelnyxMessage::create($attrs);
-            }
-        } catch (\Exception $e) {
-            Log::error('Telnyx webhook save failed: '.$e->getMessage());
+            return response()->json(['received' => true]);
         }
 
-        // Optionally, you can trigger application events here (dispatch job, notify users, etc.)
+        // ── Handle delivery status updates ──────────────────────────────────
+        if (in_array($eventType, ['message.sent', 'message.delivery_confirmed', 'message.delivery_failed'], true)) {
+            try {
+                // Prefer message ID (payload.id) over event ID (data.id) to match stored records
+                $telnyxId = $msgData['id'] ?? ($data['id'] ?? null);
+                $status   = $msgData['status'] ?? $data['payload']['status'] ?? null;
+                if ($telnyxId && $status) {
+                    TelnyxMessage::where('telnyx_id', $telnyxId)->update(['status' => $status]);
+                }
+            } catch (\Exception $e) {
+                Log::error('Telnyx status update failed: ' . $e->getMessage());
+            }
+
+            return response()->json(['received' => true]);
+        }
+
+        // ── Fallback for other event types ──────────────────────────────────
+        Log::info('Telnyx webhook: unhandled event type', ['event_type' => $eventType]);
         return response()->json(['received' => true]);
     }
 }

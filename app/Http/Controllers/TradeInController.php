@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\TradeIn;
 use App\Models\Activity;
+use App\Models\Inventory;
+use App\Models\TradeIn;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -135,6 +136,30 @@ class TradeInController extends Controller
                 'model' => null,
                 'trim' => null,
                 'message' => 'VIN decoder integration required'
+            ]
+        ]);
+    }
+
+    public function decodeManually($vin)
+    {
+        $vin = strtoupper(trim($vin));
+    
+        // Trim & Uppercase for safe match
+        $vehicle = Inventory::whereRaw('TRIM(UPPER(vin)) = ?', [$vin])->first();
+    
+        if (!$vehicle) {
+            return response()->json([
+                'success' => false,
+                'message' => 'VIN not found in inventory'
+            ]);
+        }
+    
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'year' => $vehicle->year,
+                'make' => $vehicle->make,
+                'model' => $vehicle->model,
             ]
         ]);
     }

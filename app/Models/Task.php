@@ -3,10 +3,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Task extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'due_date',
@@ -18,7 +19,17 @@ class Task extends Model
         'priority',
         'script',
         'description',
-        'created_by'
+        'created_by',
+        'deleted_by'
+    ];
+
+    protected $casts = [
+        'due_date' => 'datetime',
+        'assigned_to' => 'integer',
+        'customer_id' => 'integer',
+        'deal_id' => 'integer',
+        'created_by' => 'integer',
+        'deleted_by' => 'integer',
     ];
 
     public function customer()
@@ -36,7 +47,12 @@ class Task extends Model
         return $this->belongsTo(User::class, 'assigned_to');
     }
 
-    public function created_by()
+    public function deletedByUser()
+    {
+        return $this->belongsTo(User::class, 'deleted_by');
+    }
+
+    public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by');
     }
@@ -46,14 +62,9 @@ class Task extends Model
     {
         return $this->hasMany(Note::class);
     }
+    
     public function taskNotes()
     {
         return $this->hasMany(TaskNote::class);
     }
-    // Task.php
-public function createdBy()
-{
-    return $this->belongsTo(User::class, 'created_by');
-}
-
 }

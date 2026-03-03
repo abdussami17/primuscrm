@@ -2,14 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\CrmEmail;
+use App\Models\Customer;
 use App\Models\Email;
+use App\Models\DealershipInfo;
+use App\Models\EmailAccount;
 use App\Models\EmailAttachment;
 use App\Models\Template;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class EmailController extends Controller
 {
@@ -23,7 +30,7 @@ class EmailController extends Controller
         $search = $request->get('search');
 
         $query = Email::inbox($user->id)
-            ->with(['sender', 'attachments']);
+            ->with(['sender', 'customer', 'attachments']);
 
         // Apply search
         if ($search) {
@@ -52,16 +59,23 @@ class EmailController extends Controller
         // Get templates for compose modal
         $templates = Template::get();
 
-        // Get users for autocomplete
-        $users = User::where('id', '!=', $user->id)
-            ->select('id', 'name', 'email')
-            ->get();
+        // Get customers for compose autocomplete
+        $customers = Customer::whereNotNull('email')
+            ->where('email', '!=', '')
+            ->select('id', 'first_name', 'last_name', 'email')
+            ->orderBy('first_name')
+            ->get()
+            ->map(fn($c) => [
+                'id'    => $c->id,
+                'name'  => trim($c->first_name . ' ' . $c->last_name),
+                'email' => $c->email,
+            ]);
 
         return view('emails.inbox', compact(
             'emails',
             'counts',
             'templates',
-            'users',
+            'customers',
             'filter',
             'search'
         ));
@@ -81,9 +95,9 @@ class EmailController extends Controller
 
         $counts = $this->getEmailCounts($user->id);
         $templates = Template::get();
-        $users = User::where('id', '!=', $user->id)->select('id', 'name', 'email')->get();
+        $customers = Customer::whereNotNull('email')->where('email', '!=', '')->select('id', 'first_name', 'last_name', 'email')->orderBy('first_name')->get()->map(fn($c) => ['id' => $c->id, 'name' => trim($c->first_name . ' ' . $c->last_name), 'email' => $c->email]);
 
-        return view('emails.inbox', compact('emails', 'counts', 'templates', 'users'))
+        return view('emails.inbox', compact('emails', 'counts', 'templates', 'customers'))
             ->with('currentFolder', 'starred');
     }
 
@@ -94,16 +108,18 @@ class EmailController extends Controller
     {
         $user = Auth::user();
 
+        // Order threads by the latest activity (most recent reply or the email itself)
         $emails = Email::sent($user->id)
-            ->with(['user', 'attachments'])
-            ->orderBy('created_at', 'desc')
+            ->with(['user', 'attachments', 'customer'])
+            ->withCount('replies')
+            ->orderByRaw('COALESCE((SELECT MAX(r.created_at) FROM emails r WHERE r.thread_id = emails.thread_id AND r.deleted_at IS NULL), emails.created_at) DESC')
             ->paginate(20);
 
-        $counts = $this->getEmailCounts($user->id);
+        $counts    = $this->getEmailCounts($user->id);
         $templates = Template::get();
-        $users = User::where('id', '!=', $user->id)->select('id', 'name', 'email')->get();
+        $customers = Customer::whereNotNull('email')->where('email', '!=', '')->select('id', 'first_name', 'last_name', 'email')->orderBy('first_name')->get()->map(fn($c) => ['id' => $c->id, 'name' => trim($c->first_name . ' ' . $c->last_name), 'email' => $c->email]);
 
-        return view('emails.inbox', compact('emails', 'counts', 'templates', 'users'))
+        return view('emails.inbox', compact('emails', 'counts', 'templates', 'customers'))
             ->with('currentFolder', 'sent');
     }
 
@@ -121,9 +137,9 @@ class EmailController extends Controller
 
         $counts = $this->getEmailCounts($user->id);
         $templates = Template::get();
-        $users = User::where('id', '!=', $user->id)->select('id', 'name', 'email')->get();
+        $customers = Customer::whereNotNull('email')->where('email', '!=', '')->select('id', 'first_name', 'last_name', 'email')->orderBy('first_name')->get()->map(fn($c) => ['id' => $c->id, 'name' => trim($c->first_name . ' ' . $c->last_name), 'email' => $c->email]);
 
-        return view('emails.inbox', compact('emails', 'counts', 'templates', 'users'))
+        return view('emails.inbox', compact('emails', 'counts', 'templates', 'customers'))
             ->with('currentFolder', 'drafts');
     }
 
@@ -143,9 +159,9 @@ class EmailController extends Controller
 
         $counts = $this->getEmailCounts($user->id);
         $templates = Template::get();
-        $users = User::where('id', '!=', $user->id)->select('id', 'name', 'email')->get();
+        $customers = Customer::whereNotNull('email')->where('email', '!=', '')->select('id', 'first_name', 'last_name', 'email')->orderBy('first_name')->get()->map(fn($c) => ['id' => $c->id, 'name' => trim($c->first_name . ' ' . $c->last_name), 'email' => $c->email]);
 
-        return view('emails.inbox', compact('emails', 'counts', 'templates', 'users'))
+        return view('emails.inbox', compact('emails', 'counts', 'templates', 'customers'))
             ->with('currentFolder', 'deleted');
     }
 
@@ -156,35 +172,46 @@ class EmailController extends Controller
     {
         $user = Auth::user();
 
-        // Ensure user owns this email
+        // Ensure user owns this email (inbound replies have user_id = agent, from_user_id = null)
         if ($email->user_id !== $user->id && $email->from_user_id !== $user->id) {
             abort(403);
         }
 
-        // Mark as read
-        if (!$email->is_read && $email->user_id === $user->id) {
-            $email->update(['is_read' => true]);
-        }
+        // Resolve thread_id — if email has no thread_id yet, use its own id
+        $threadId = $email->thread_id ?? $email->id;
 
-        // Get thread emails
-        $threadEmails = [];
-        if ($email->thread_id) {
-            $threadEmails = Email::where('thread_id', $email->thread_id)
-                ->with(['sender', 'user', 'attachments'])
-                ->orderBy('created_at', 'asc')
-                ->get();
-        } else {
+        // Load all emails in this thread (sent by CRM + inbound replies from customers)
+        $threadEmails = Email::where('thread_id', $threadId)
+            ->with(['sender', 'customer', 'user', 'attachments'])
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        // If the email itself isn't in the thread (edge case: thread_id not yet set), add it
+        if ($threadEmails->isEmpty()) {
             $threadEmails = collect([$email->load(['sender', 'user', 'attachments'])]);
         }
 
-        // Get people in thread
+        // Mark all unread emails in the thread as read for this user
+        Email::where('thread_id', $threadId)
+            ->where('user_id', $user->id)
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
+
+        // Build participants list — handle inbound emails where from_user_id is null
         $peopleInThread = $threadEmails->map(function ($e) {
-            return $e->sender ?? $e->user;
+            if ($e->sender) {
+                return (object)['id' => $e->sender->id, 'name' => $e->sender->name, 'email' => $e->sender->email];
+            }
+            // Inbound customer email — no User record
+            return (object)['id' => 'ext_' . $e->from_email, 'name' => $e->from_email, 'email' => $e->from_email];
         })->unique('id')->values();
 
         $counts = $this->getEmailCounts($user->id);
         $templates = Template::get();
-        $users = User::where('id', '!=', $user->id)->select('id', 'name', 'email')->get();
+        $customers = Customer::whereNotNull('email')->where('email', '!=', '')->select('id', 'first_name', 'last_name', 'email')->orderBy('first_name')->get()->map(fn($c) => ['id' => $c->id, 'name' => trim($c->first_name . ' ' . $c->last_name), 'email' => $c->email]);
+
+        // Strip leftover <span class="token"> wrappers from the body before display
+        $preview = preg_replace('/<span[^>]*class=["\']token["\'][^>]*>(.*?)<\/span>/is', '$1', $email->body ?? '');
 
         return view('emails.reply', compact(
             'email',
@@ -192,7 +219,8 @@ class EmailController extends Controller
             'peopleInThread',
             'counts',
             'templates',
-            'users'
+            'customers',
+            'preview'
         ));
     }
 
@@ -202,142 +230,209 @@ class EmailController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'to_email' => 'required|email',
-            'subject' => 'required|string|max:255',
-            'body' => 'required|string',
-
-            'cc' => 'nullable|array',
-            'cc.*' => 'nullable|email',
-
-            'bcc' => 'nullable|array',
-            'bcc.*' => 'nullable|email',
-
-            'attachments' => 'nullable|array',
-            'attachments.*' => 'file|max:10240',
-
-            'is_draft' => 'nullable|boolean',
-            'parent_id' => 'nullable|exists:emails,id',
+            'to_email'     => 'required|email',
+            'subject'      => 'required|string|max:255',
+            'body'         => 'required|string',
+            'cc'           => 'nullable|array',
+            'cc.*'         => 'nullable|email',
+            'bcc'          => 'nullable|array',
+            'bcc.*'        => 'nullable|email',
+            'attachments'  => 'nullable|array',
+            'attachments.*'=> 'file|max:10240',
+            'is_draft'     => 'nullable|boolean',
+            'parent_id'    => 'nullable|exists:emails,id',
         ]);
 
+        $user     = Auth::user();
+        $isDraft  = $request->boolean('is_draft', false);
 
-        $user = Auth::user();
-        $isDraft = $request->boolean('is_draft', false);
+        // Sanitize to_email: accept plain 'email@domain' or 'Name <email@domain>' format
+        $rawTo  = trim($request->to_email ?? '');
+        if (preg_match('/<([^>]+)>/', $rawTo, $m)) {
+            $toEmail = trim($m[1]); // extracted from "Name <email>"
+        } else {
+            $toEmail = $rawTo;
+        }
+        if (!filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
+            return response()->json(['success' => false, 'message' => 'Invalid recipient email address: ' . $rawTo], 422);
+        }
 
-        // Find recipient user
-        $recipient = User::where('email', $request->to_email)->first();
+        // Resolve template tokens in subject / body
+        $resolvedBody    = $request->body;
+        $resolvedSubject = $request->subject;
+        {
+            $tokenCustomer = Customer::where('email', $toEmail)->first()
+                             ?? ($request->filled('customer_id') ? Customer::find($request->customer_id) : null);
+            $dealership    = DealershipInfo::first();
+
+            $firstName   = $tokenCustomer?->first_name ?? '';
+            $lastName    = $tokenCustomer?->last_name  ?? '';
+            $advisorName = $user->name;
+            $dealerName  = $dealership?->name  ?? config('app.name');
+            $dealerPhone = $dealership?->phone ?? '';
+
+            // Support both {{ token }} and @{{ token }} formats used by the template builder
+            $tokens = [
+                '@{{ first_name }}'   => $firstName,
+                '@{{ last_name }}'    => $lastName,
+                '@{{ advisor_name }}' => $advisorName,
+                '@{{ dealer_name }}'  => $dealerName,
+                '@{{ dealer_phone }}' => $dealerPhone,
+                '{{ first_name }}'    => $firstName,
+                '{{ last_name }}'     => $lastName,
+                '{{ advisor_name }}'  => $advisorName,
+                '{{ dealer_name }}'   => $dealerName,
+                '{{ dealer_phone }}'  => $dealerPhone,
+            ];
+            $resolvedBody    = str_replace(array_keys($tokens), array_values($tokens), $resolvedBody);
+            $resolvedSubject = str_replace(array_keys($tokens), array_values($tokens), $resolvedSubject);
+
+            // Strip <span class="token">...</span> wrappers left over from the template editor
+            // but keep their inner content intact
+            $resolvedBody    = preg_replace('/<span[^>]*class=["\']token["\'][^>]*>(.*?)<\/span>/is', '$1', $resolvedBody);
+            $resolvedSubject = preg_replace('/<span[^>]*class=["\']token["\'][^>]*>(.*?)<\/span>/is', '$1', $resolvedSubject);
+        }
+
+        // Generate a unique SMTP Message-ID for reply tracking
+        $messageId = Str::uuid() . '@' . parse_url(config('app.url'), PHP_URL_HOST);
+
+        // Resolve parent message_id for In-Reply-To header
+        $parentMessageId = null;
+        $threadId        = null;
+        if ($request->parent_id) {
+            $parentEmail     = Email::find($request->parent_id);
+            $threadId        = $parentEmail->thread_id ?? $parentEmail->id;
+            $parentMessageId = $parentEmail->message_id;
+        }
 
         DB::beginTransaction();
         try {
-            // Determine thread_id
-            $threadId = null;
-            if ($request->parent_id) {
-                $parentEmail = Email::find($request->parent_id);
-                $threadId = $parentEmail->thread_id ?? $parentEmail->id;
+            // Collect uploaded attachment paths first (outside loop)
+            $attachmentPaths = [];
+            if ($request->hasFile('attachments')) {
+                foreach ($request->file('attachments') as $file) {
+                    $attachmentPaths[] = $file->store('email-attachments', 'public');
+                }
             }
 
-            // Create email for sender (sent copy)
+            // Create email record for sender (sent copy)
             $senderEmail = Email::create([
-                'user_id' => $user->id,
+                'user_id'      => $user->id,
                 'from_user_id' => $user->id,
-                'to_email' => $request->to_email,
-                'cc' => $request->cc,
-                'bcc' => $request->bcc,
-                'subject' => $request->subject,
-                'body' => $request->body,
-                'is_read' => true,
-                'is_starred' => false,
-                'is_draft' => $isDraft,
-                'is_sent' => !$isDraft,
-                'parent_id' => $request->parent_id,
-                'thread_id' => $threadId,
+                'from_email'   => $user->email,
+                'to_email'     => $toEmail,
+                'cc'           => $request->cc,
+                'bcc'          => $request->bcc,
+                'subject'      => $resolvedSubject,
+                'body'         => $resolvedBody,
+                'is_read'      => true,
+                'is_starred'   => false,
+                'is_draft'     => $isDraft,
+                'is_sent'      => !$isDraft,
+                'parent_id'    => $request->parent_id,
+                'thread_id'    => $threadId,
+                'message_id'   => $messageId,
             ]);
 
-            // If not draft and recipient exists, create email for recipient
-            if (!$isDraft && $recipient) {
-                $recipientEmail = Email::create([
-                    'user_id' => $recipient->id,
-                    'from_user_id' => $user->id,
-                    'to_email' => $request->to_email,
-                    'cc' => $request->cc,
-                    'bcc' => $request->bcc,
-                    'subject' => $request->subject,
-                    'body' => $request->body,
-                    'is_read' => false,
-                    'is_starred' => false,
-                    'is_draft' => false,
-                    'is_sent' => false,
-                    'parent_id' => $request->parent_id,
-                    'thread_id' => $threadId ?? $senderEmail->id,
+            // Attach stored files to sender record
+            foreach ($attachmentPaths as $path) {
+                EmailAttachment::create([
+                    'email_id'          => $senderEmail->id,
+                    'filename'          => basename($path),
+                    'original_filename' => basename($path),
+                    'file_path'         => $path,
+                    'file_size'         => Storage::disk('public')->size($path),
+                    'mime_type'         => mime_content_type(Storage::disk('public')->path($path)) ?: 'application/octet-stream',
                 ]);
+            }
 
-                // Update thread_id if this is the first email
-                if (!$threadId) {
-                    $senderEmail->update(['thread_id' => $senderEmail->id]);
-                    $recipientEmail->update(['thread_id' => $senderEmail->id]);
-                }
-
-                // Handle attachments
-                if ($request->hasFile('attachments')) {
-                    foreach ($request->file('attachments') as $file) {
-                        $path = $file->store('email-attachments', 'public');
-
-                        // Create attachment for both emails
-                        foreach ([$senderEmail, $recipientEmail] as $email) {
-                            EmailAttachment::create([
-                                'email_id' => $email->id,
-                                'filename' => basename($path),
-                                'original_filename' => $file->getClientOriginalName(),
-                                'file_path' => $path,
-                                'file_size' => $file->getSize(),
-                                'mime_type' => $file->getMimeType(),
-                            ]);
-                        }
-                    }
-                }
-            } else {
-                // Handle attachments for draft
-                if ($request->hasFile('attachments')) {
-                    foreach ($request->file('attachments') as $file) {
-                        $path = $file->store('email-attachments', 'public');
-                        EmailAttachment::create([
-                            'email_id' => $senderEmail->id,
-                            'filename' => basename($path),
-                            'original_filename' => $file->getClientOriginalName(),
-                            'file_path' => $path,
-                            'file_size' => $file->getSize(),
-                            'mime_type' => $file->getMimeType(),
-                        ]);
-                    }
-                }
+            // Update thread_id if this is a root email
+            if (!$threadId) {
+                $senderEmail->update(['thread_id' => $senderEmail->id]);
             }
 
             DB::commit();
 
+            // Send the real SMTP email (not for drafts)
+            if (!$isDraft) {
+                try {
+                    // Load active email account from DB and configure SMTP dynamically
+                    $account = EmailAccount::active();
+
+                    if (!$account) {
+                        throw new \RuntimeException('No active email account configured. Please set one up in Settings.');
+                    }
+
+                    // Override the default SMTP mailer config at runtime
+                    Config::set('mail.mailers.smtp', $account->toSmtpConfig());
+                    Config::set('mail.from.address', $account->smtp_from);
+                    Config::set('mail.from.name', $account->smtp_from_name ?? config('mail.from.name'));
+
+                    // Update sender record with the actual from address
+                    $senderEmail->update(['from_email' => $account->smtp_from]);
+
+                    Mail::mailer('smtp')
+                        ->to($toEmail)
+                        ->send(new CrmEmail(
+                            subject:         $resolvedSubject,
+                            body:            $resolvedBody,
+                            messageId:       $messageId,
+                            inReplyTo:       $parentMessageId,
+                            cc:              $request->cc ?? [],
+                            bcc:             $request->bcc ?? [],
+                            attachmentPaths: $attachmentPaths,
+                        ));
+
+                } catch (\Exception $mailException) {
+                    // Email saved in DB but SMTP failed — log but don't roll back
+                    Log::error('SMTP send failed: ' . $mailException->getMessage());
+                    if (request()->ajax()) {
+                        return response()->json([
+                            'success' => true,
+                            'warning' => 'Email saved but could not be delivered: ' . $mailException->getMessage(),
+                        ]);
+                    }
+                    return redirect()->route('email.inbox')
+                        ->with('warning', 'Email saved but delivery failed: ' . $mailException->getMessage());
+                }
+            }
+
             if ($isDraft) {
                 if (request()->ajax()) {
-                    return response()->json([
-                        'success' => true,
-                    ]);
+                    return response()->json(['success' => true]);
                 }
                 return redirect()->route('email.drafts')
                     ->with('success', 'Email saved as draft.');
             }
 
             if (request()->ajax()) {
-                return response()->json([
-                    'success' => true,
-                ]);
+                return response()->json(['success' => true]);
             }
             return redirect()->route('email.inbox')
                 ->with('success', 'Email sent successfully.');
+
         } catch (\Exception $e) {
             DB::rollBack();
             if (request()->ajax()) {
-                return response()->json([
-                    'success' => false,
-                ]);
+                return response()->json(['success' => false, 'message' => $e->getMessage()]);
             }
-            return back()->with('error', 'Failed to send email. Please try again.');
+            return back()->with('error', 'Failed to send email: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Manually trigger IMAP inbound email fetch (also runs on schedule every 2 min).
+     */
+    public function fetchInbound(): \Illuminate\Http\JsonResponse
+    {
+        try {
+            $beforeCount = \App\Models\Email::count();
+            \Illuminate\Support\Facades\Artisan::call('email:fetch-inbound', ['--limit' => 50]);
+            $output   = \Illuminate\Support\Facades\Artisan::output();
+            $imported = \App\Models\Email::count() - $beforeCount;
+            return response()->json(['success' => true, 'imported' => $imported, 'output' => trim($output)]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -422,20 +517,22 @@ class EmailController extends Controller
     public function bulkDelete(Request $request)
     {
         $request->validate([
-            'email_ids' => 'required|array',
-            'email_ids.*' => 'exists:emails,id',
+            'email_ids'   => 'required|array',
+            'email_ids.*' => 'integer',
         ]);
 
         $user = Auth::user();
         $emailIds = $request->email_ids;
 
-        // Only allow deleting own emails or if manager
-        $query = Email::whereIn('id', $emailIds);
-        // if (!$user->isManager()) {
-        //     $query->where('user_id', $user->id);
-        // }
+        $emails = Email::withTrashed()->whereIn('id', $emailIds)->get();
 
-        $query->delete();
+        foreach ($emails as $email) {
+            if ($email->trashed()) {
+                $email->forceDelete();
+            } else {
+                $email->delete();
+            }
+        }
 
         if (request()->ajax()) {
             return response()->json(['success' => true]);
@@ -490,23 +587,29 @@ class EmailController extends Controller
     }
 
     /**
-     * Search users for autocomplete
+     * Search customers for compose autocomplete
      */
     public function searchUsers(Request $request)
     {
         $search = $request->get('q', '');
-        $user = Auth::user();
 
-        $users = User::where('id', '!=', $user->id)
+        $customers = Customer::whereNotNull('email')
+            ->where('email', '!=', '')
             ->where(function ($query) use ($search) {
-                $query->where('name', 'like', "%{$search}%")
+                $query->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%");
             })
-            ->select('id', 'name', 'email')
+            ->select('id', 'first_name', 'last_name', 'email')
             ->limit(10)
-            ->get();
+            ->get()
+            ->map(fn($c) => [
+                'id'    => $c->id,
+                'name'  => trim($c->first_name . ' ' . $c->last_name),
+                'email' => $c->email,
+            ]);
 
-        return response()->json($users);
+        return response()->json($customers);
     }
 
     /**

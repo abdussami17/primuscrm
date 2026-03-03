@@ -12,7 +12,7 @@ class Campaign extends Model
 
     protected $fillable = [
         'name', 'template_id', 'template_name', 'sender_type', 'sender', 'backup_sender', 'language',
-        'subject', 'body', 'start_at', 'end_at', 'set_type', 'drip_initial_count', 'drip_days',
+        'subject', 'body', 'start_at', 'end_at', 'last_sent_at', 'set_type', 'drip_initial_count', 'drip_days',
         'recipients', 'recipients_count', 'status', 'created_by'
     ];
 
@@ -20,6 +20,7 @@ class Campaign extends Model
         'recipients' => 'array',
         'start_at' => 'datetime',
         'end_at' => 'datetime',
+        'last_sent_at' => 'datetime',
         'drip_initial_count' => 'integer',
         'drip_days' => 'integer',
         'recipients_count' => 'integer'

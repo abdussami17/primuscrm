@@ -276,4 +276,27 @@ class SmartSequenceService
         }
         return $results;
     }
+
+    /**
+     * Manually trigger processing for a single sequence (or all active sequences).
+     * Useful for the "Run Now" button in the UI.
+     *
+     * @return array Summary with counts
+     */
+    public function processNow(?SmartSequence $sequence = null): array
+    {
+        $args = [];
+        if ($sequence) {
+            $args['--sequence'] = $sequence->id;
+        }
+
+        \Illuminate\Support\Facades\Artisan::call('sequences:process', $args);
+
+        $output = \Illuminate\Support\Facades\Artisan::output();
+
+        return [
+            'success' => true,
+            'output' => $output,
+        ];
+    }
 }

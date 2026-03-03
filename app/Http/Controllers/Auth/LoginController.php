@@ -43,6 +43,14 @@ class LoginController extends Controller
         $this->middleware('auth')->only('logout');
     }
 
+    /**
+     * The user has been authenticated — stamp last_login_at.
+     */
+    protected function authenticated(Request $request, $user)
+    {
+        $user->forceFill(['last_login_at' => now()])->save();
+    }
+
     // /**
     //  * Attempt to log the user into the application.
     //  * We override to enforce IP restrictions prior to authenticating.

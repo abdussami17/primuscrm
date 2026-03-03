@@ -21,6 +21,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/{smartSequence}/toggle-status', [SmartSequenceController::class, 'toggleStatus'])->name('toggle-status');
         Route::post('/{smartSequence}/duplicate', [SmartSequenceController::class, 'duplicate'])->name('duplicate');
         Route::post('/{smartSequence}/validate-actions', [SmartSequenceController::class, 'validateActions'])->name('validate-actions');
+        Route::post('/{smartSequence}/run-now', [SmartSequenceController::class, 'runNow'])->name('run-now');
         
         // Configuration endpoints
         Route::get('/config/fields', [SmartSequenceController::class, 'getFieldConfig'])->name('config.fields');
@@ -45,6 +46,9 @@ Route::middleware(['auth'])->group(function () {
 
         // Compose/Send
         Route::post('/send', [EmailController::class, 'store'])->name('send');
+
+        // Manually trigger inbound email fetch (IMAP poll)
+        Route::post('/fetch-inbound', [EmailController::class, 'fetchInbound'])->name('fetch-inbound');
 
         // Single email actions
         Route::get('/sidebar-counts', [EmailController::class, 'liveEmailCounts'])->name('email.counts');

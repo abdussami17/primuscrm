@@ -50,7 +50,21 @@
             <!-- Priority Legend -->
             <div class="priority-legend">
 
-                <div>
+                <div class="d-flex align-items-center gap-2">
+                    <select id="tasksPresetSelect" class="form-select form-select-sm d-inline-block me-3" style="min-width:260px; width:260px;">
+                        <option value="today">Today</option>
+                        <option value="yesterday">Yesterday</option>
+                        <option value="last7">Last 7 Days</option>
+                        <option value="next7">Next 7 Days</option>
+                        <option value="thisMonth">This Month</option>
+                        <option value="lastMonth">Last Month</option>
+                        <option value="lastQuarter">Last Quarter</option>
+                        <option value="beginning">Beginning Of Time</option>
+                        <option value="thisYear">This Year</option>
+                        <option value="lastYear">Last Year</option>
+                        <option value="custom">Custom</option>
+                    </select>
+
                     <span class="priority-legend-item">
                         <span class="status-dot overdue"></span> Overdue Tasks
                     </span>
@@ -66,6 +80,25 @@
                 style="background-color: rgb(0, 33, 64); color: #fff; border: none; padding: 10px 20px; border-radius: 6px;">
                 Primus AI Priority Suggestion
             </button>
+        </div>
+
+        <!-- Date Preset Filter -->
+        <div class="d-flex flex-wrap justify-content-center gap-2 mb-3 align-items-center">
+            {{-- <button id="tasks_beginningbtn" class="btn btn-light border border-1">Beginning Of Time</button>
+            <button id="tasks_yesterdayBtn" class="btn btn-light border border-1">Yesterday</button>
+            <button id="tasks_todayBtn" class="btn btn-light border border-1">Today</button>
+            <button id="tasks_last7Btn" class="btn btn-light border border-1">Last 7 Days</button>
+            <button id="tasks_next7Btn" class="btn btn-light border border-1">Next 7 Days</button>
+            <button id="tasks_thisMonthBtn" class="btn btn-light border border-1">This Month</button>
+            <button id="tasks_lastMonthBtn" class="btn btn-light border border-1">Last Month</button>
+            <button id="tasks_lastQuarterBtn" class="btn btn-light border border-1">Last Quarter</button>
+            <button id="tasks_thisYearBtn" class="btn btn-light border border-1">This Year</button>
+            <button id="tasks_lastYearBtn" class="btn btn-light border border-1">Last Year</button> --}}
+
+            <div id="tasksCustomDateContainer" class="d-none ms-2">
+                <input type="text" id="tasksCustomFrom" class="form-control form-control-sm d-inline-block" style="width:140px;" placeholder="From" readonly />
+                <input type="text" id="tasksCustomTo" class="form-control form-control-sm d-inline-block ms-1" style="width:140px;" placeholder="To" readonly />
+            </div>
         </div>
 
         <!-- AI Modal -->
@@ -438,4 +471,49 @@
 
 @push('scripts')
     @include('tasks.script')
+@endpush
+
+@push('scripts')
+    <script>
+        (function(){
+            function parseDate(d){ if(!d) return null; var dt = new Date(d); if(!isNaN(dt)) return dt; var p = d.split('-'); if(p.length===3) return new Date(p[0], p[1]-1, p[2]); return null; }
+            var preset = document.getElementById('tasksPresetSelect');
+            var customContainer = document.getElementById('tasksCustomDateContainer');
+            var customFrom = document.getElementById('tasksCustomFrom');
+            var customTo = document.getElementById('tasksCustomTo');
+
+            function attachPickers(){
+                if(window.flatpickr){
+                    flatpickr(customFrom, { dateFormat: 'Y-m-d', allowInput:true, onChange:applyFilter });
+                    flatpickr(customTo, { dateFormat: 'Y-m-d', allowInput:true, onChange:applyFilter });
+                } else { customFrom.type='date'; customTo.type='date'; customFrom.addEventListener('change', applyFilter); customTo.addEventListener('change', applyFilter); }
+            }
+
+            function getRange(p){ var now=new Date(); var s,e; switch(p){ case 'beginning': s=new Date(1970,0,1); e=new Date(3000,0,1); break; case 'yesterday': s=new Date(now); s.setDate(now.getDate()-1); e=new Date(s); break; case 'today': s=new Date(now); e=new Date(now); break; case 'last7': s=new Date(now); s.setDate(now.getDate()-6); e=new Date(now); break; case 'next7': s=new Date(now); e=new Date(now); e.setDate(now.getDate()+7); break; case 'thisMonth': s=new Date(now.getFullYear(), now.getMonth(),1); e=new Date(now); break; case 'lastMonth': s=new Date(now.getFullYear(), now.getMonth()-1,1); e=new Date(now.getFullYear(), now.getMonth(),0); break; case 'lastQuarter': var q=Math.floor((now.getMonth())/3); s=new Date(now.getFullYear(), (q-1)*3,1); e=new Date(now.getFullYear(), q*3,0); break; case 'thisYear': s=new Date(now.getFullYear(),0,1); e=new Date(now.getFullYear(),11,31); break; case 'lastYear': s=new Date(now.getFullYear()-1,0,1); e=new Date(now.getFullYear()-1,11,31); break; }
+                if(s){ s.setHours(0,0,0,0); e.setHours(23,59,59,999); }
+                return {start:s,end:e}; }
+
+            function applyFilter(){
+                var v = preset ? preset.value : 'beginning';
+                if(v==='custom'){ customContainer.classList.remove('d-none'); var f = parseDate(customFrom.value); var t = parseDate(customTo.value); if(f && t) filterRows(f,t); return; } else { customContainer.classList.add('d-none'); }
+                var range = getRange(v); if(range.start && range.end) filterRows(range.start, range.end);
+            }
+
+            function filterRows(start, end){
+                var rows = document.querySelectorAll('#filterTable tbody tr');
+                rows.forEach(function(r){
+                    var raw = r.getAttribute('data-created-date') || r.getAttribute('data-due-date') || r.getAttribute('data-assigned-date') || r.getAttribute('data-assigned-date');
+                    var d = parseDate(raw);
+                    if(!d){ r.style.display='none'; return; }
+                    d.setHours(12,0,0,0);
+                    r.style.display = (start <= d && d <= end) ? '' : 'none';
+                });
+            }
+
+            if(preset) preset.addEventListener('change', applyFilter);
+            ['tasks_beginningbtn','tasks_yesterdayBtn','tasks_todayBtn','tasks_last7Btn','tasks_next7Btn','tasks_thisMonthBtn','tasks_lastMonthBtn','tasks_lastQuarterBtn','tasks_thisYearBtn','tasks_lastYearBtn'].forEach(function(id){ var el=document.getElementById(id); if(!el) return; el.addEventListener('click', function(){ var map={ 'tasks_beginningbtn':'beginning','tasks_yesterdayBtn':'yesterday','tasks_todayBtn':'today','tasks_last7Btn':'last7','tasks_next7Btn':'next7','tasks_thisMonthBtn':'thisMonth','tasks_lastMonthBtn':'lastMonth','tasks_lastQuarterBtn':'lastQuarter','tasks_thisYearBtn':'thisYear','tasks_lastYearBtn':'lastYear' }; if(preset) preset.value = map[id] || 'beginning'; applyFilter(); }); });
+
+            attachPickers(); if(preset){ preset.value='beginning'; applyFilter(); }
+        })();
+    </script>
 @endpush

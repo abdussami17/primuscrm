@@ -23,6 +23,8 @@ use App\Http\Controllers\SecurityController;
 use App\Http\Controllers\MergeSoldDealsController;
 use App\Http\Controllers\EmailAccountController;
 use App\Http\Controllers\TelnyxController;
+use App\Http\Controllers\SmsInboxController;
+use App\Http\Controllers\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -114,10 +116,16 @@ Route::post('/task-notes/tasks/{task}', [NoteController::class, 'storeTaskNotes'
 
 
 // Reports routes (list + view). Use ReportController to render report blades.
-Route::middleware(['auth', 'permission:Access Reports & Analytics'])->group(function () {
-    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
-    Route::get('/reports/{key}', [ReportController::class, 'show'])->name('reports.show');
-        });
+// Route::middleware(['auth', 'permission:Access Reports & Analytics'])->group(function () {
+//     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+//     Route::get('/reports/{key}', [ReportController::class, 'show'])->name('reports.show');
+//     // Data endpoints for reports
+//     Route::get('/reports-data/activity', [ReportController::class, 'activityData'])->name('reports.activity.data');
+//     Route::get('/reports-data/sold-deals', [ReportController::class, 'soldDealsData'])->name('reports.soldDeals.data');
+//     // Filter options endpoints
+//     Route::get('/reports-filters/activity', [ReportController::class, 'activityFilters'])->name('reports.activity.filters');
+//     Route::get('/reports-filters/sold-deals', [ReportController::class, 'soldDealsFilters'])->name('reports.soldDeals.filters');
+// });
 
     // CUSTOMER ROUTES
 
@@ -152,6 +160,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/telnyx/video', [TelnyxController::class, 'makeVideoCall'])->name('telnyx.video');
     Route::get('/telnyx/message/{id}', [TelnyxController::class, 'getMessage'])->name('telnyx.message');
     Route::get('/telnyx/messages', [TelnyxController::class, 'listMessages'])->name('telnyx.messages');
+    Route::get('/telnyx/webrtc-credentials', [TelnyxController::class, 'webrtcCredentials'])->name('telnyx.webrtc.credentials');
     // Webhook receiver - do NOT require auth; Telnyx will post here
     Route::post('/telnyx/webhook', [TelnyxController::class, 'webhook'])->withoutMiddleware(['auth'])->name('telnyx.webhook');
 
@@ -160,7 +169,39 @@ Route::middleware(['auth'])->group(function () {
 | Dashboard
 |--------------------------------------------------------------------------
 */
-    Route::view('/', 'dashboard')->name('dashboard');
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Dashboard JSON stats endpoints
+    Route::prefix('dashboard/stats')->name('dashboard.stats.')->group(function () {
+        Route::get('/alert-bar',              [DashboardController::class, 'alertBarStats'])->name('alert-bar');
+        Route::get('/uncontacted-leads',      [DashboardController::class, 'uncontactedLeads'])->name('uncontacted-leads');
+        Route::get('/internet-leads',         [DashboardController::class, 'internetLeads'])->name('internet-leads');
+        Route::get('/walk-in-leads',          [DashboardController::class, 'walkInLeads'])->name('walk-in-leads');
+        Route::get('/lead-types',             [DashboardController::class, 'leadTypes'])->name('lead-types');
+        Route::get('/overdue-tasks',          [DashboardController::class, 'overdueTasks'])->name('overdue-tasks');
+        Route::get('/open-tasks',             [DashboardController::class, 'openTasks'])->name('open-tasks');
+        Route::get('/assigned-by',            [DashboardController::class, 'assignedBy'])->name('assigned-by');
+        Route::get('/appointments',           [DashboardController::class, 'appointments'])->name('appointments');
+        Route::get('/purchase-types',         [DashboardController::class, 'purchaseTypes'])->name('purchase-types');
+        Route::get('/contact-rate',           [DashboardController::class, 'contactRate'])->name('contact-rate');
+        Route::get('/appointments-showed',    [DashboardController::class, 'appointmentsShowedRate'])->name('appointments-showed');
+        Route::get('/task-completion',        [DashboardController::class, 'taskCompletionRate'])->name('task-completion');
+        Route::get('/speed-to-sale',          [DashboardController::class, 'speedToSale'])->name('speed-to-sale');
+        Route::get('/finance-contact-rate',   [DashboardController::class, 'financeContactRate'])->name('finance-contact-rate');
+        Route::get('/store-visit-closing',    [DashboardController::class, 'storeVisitClosingRatio'])->name('store-visit-closing');
+        Route::get('/lease-penetration',      [DashboardController::class, 'leasePenetration'])->name('lease-penetration');
+        Route::get('/beback-customers',       [DashboardController::class, 'bebackCustomers'])->name('beback-customers');
+        Route::get('/sold-deal-sources',      [DashboardController::class, 'soldDealSources'])->name('sold-deal-sources');
+        Route::get('/pending-fi-deals',       [DashboardController::class, 'pendingFiDeals'])->name('pending-fi-deals');
+        Route::get('/store-visit-aging',      [DashboardController::class, 'storeVisitDealsAging'])->name('store-visit-aging');
+        Route::get('/sales-funnel',           [DashboardController::class, 'salesFunnel'])->name('sales-funnel');
+        Route::get('/internet-response-time', [DashboardController::class, 'internetResponseTime'])->name('internet-response-time');
+        Route::get('/lost-reasons',           [DashboardController::class, 'lostReasons'])->name('lost-reasons');
+        Route::get('/top-reps',               [DashboardController::class, 'topReps'])->name('top-reps');
+        Route::get('/last-login',             [DashboardController::class, 'lastLogin'])->name('last-login');
+        Route::get('/lead-flow',              [DashboardController::class, 'leadFlow'])->name('lead-flow');
+        Route::get('/users-list',             [DashboardController::class, 'usersList'])->name('users-list');
+    });
 
     /*
 |--------------------------------------------------------------------------
@@ -169,9 +210,8 @@ Route::middleware(['auth'])->group(function () {
 */
 
 
-    Route::get('/text-inbox', function () {
-        return view('text-inbox');
-    })->name('text.inbox')
+    Route::get('/text-inbox', [SmsInboxController::class, 'inbox'])
+        ->name('text.inbox')
         ->middleware('permission:Send Text');
 
     /*
@@ -181,9 +221,24 @@ Route::middleware(['auth'])->group(function () {
 */
 
 
-    Route::get('/text-reply', function () {
-        return view('text-reply');
-    })->name('text.reply');
+    Route::get('/text-reply/{phone}', [SmsInboxController::class, 'thread'])->name('text.reply');
+
+    /*
+|--------------------------------------------------------------------------
+| SMS Action Routes
+|--------------------------------------------------------------------------
+*/
+
+    Route::prefix('sms')->name('sms.')->group(function () {
+        Route::post('/send', [SmsInboxController::class, 'send'])->name('send');
+        Route::post('/draft', [SmsInboxController::class, 'saveDraft'])->name('draft');
+        Route::post('/thread/{phone}/star', [SmsInboxController::class, 'toggleThreadStar'])->name('thread.star');
+        Route::post('/{id}/star', [SmsInboxController::class, 'toggleStar'])->name('star');
+        Route::post('/{id}/read', [SmsInboxController::class, 'toggleRead'])->name('read');
+        Route::post('/{id}/restore', [SmsInboxController::class, 'restore'])->name('restore');
+        Route::delete('/{id}', [SmsInboxController::class, 'destroy'])->name('delete');
+        Route::get('/sidebar-counts', [SmsInboxController::class, 'sidebarCounts'])->name('counts');
+    });
 
     /*
 |--------------------------------------------------------------------------
@@ -263,6 +318,10 @@ Route::prefix('employee/desk-log')->name('employee-desk-log.')->middleware(['aut
         ->name('campaigns')
         ->middleware('permission:Access To Campaigns');
 
+    // Silent background campaign processor — called by JS poll every 60 s
+    Route::post('/campaigns/process', [App\Http\Controllers\Api\CampaignController::class, 'process'])
+        ->name('campaigns.process');
+
     /*
 |--------------------------------------------------------------------------
 | User Routes
@@ -301,6 +360,7 @@ Route::prefix('employee/desk-log')->name('employee-desk-log.')->middleware(['aut
         ->name('deals.customer')
         ->middleware('permission:View All Dealer Deals/Customer Info');#addCustomerCanvas
 
+    Route::get('/api/vin/decode/{vin}', [App\Http\Controllers\TradeInController::class, 'decodeManually']);
     // Global customer canvas (render fragment used by the common offcanvas)
     Route::get('/customers/{customer}/canvas', [App\Http\Controllers\CustomerController::class, 'edit'])
         ->name('customers.canvas')
@@ -393,6 +453,77 @@ Route::middleware(['auth'])->group(function () {
         ->name('settings.customer-reassignment.undo')
         ->middleware('permission:Access To Dealership Settings');
 
+    // Bulk Delete API & helpers
+    Route::get('/settings/bulk-delete/filters', [\App\Http\Controllers\BulkDeleteController::class, 'getFilters'])
+        ->name('settings.bulk-delete.filters')
+        ->middleware('permission:Access To Dealership Settings');
+
+    Route::get('/settings/bulk-delete/deletion-history', [\App\Http\Controllers\BulkDeleteController::class, 'getDeletionHistory'])
+        ->name('settings.bulk-delete.deletion-history')
+        ->middleware('permission:Access To Dealership Settings');
+
+    Route::get('/settings/bulk-delete/customers', [\App\Http\Controllers\BulkDeleteController::class, 'getCustomers'])
+        ->name('settings.bulk-delete.customers')
+        ->middleware('permission:Access To Dealership Settings');
+
+    Route::get('/settings/bulk-delete/deleted-customers', [\App\Http\Controllers\BulkDeleteController::class, 'getDeletedCustomers'])
+        ->name('settings.bulk-delete.deleted-customers')
+        ->middleware('permission:Access To Dealership Settings');
+
+    Route::post('/settings/bulk-delete/delete', [\App\Http\Controllers\BulkDeleteController::class, 'bulkDelete'])
+        ->name('settings.bulk-delete.delete')
+        ->middleware('permission:Access To Dealership Settings');
+
+    Route::post('/settings/bulk-delete/restore', [\App\Http\Controllers\BulkDeleteController::class, 'bulkRestore'])
+        ->name('settings.bulk-delete.restore')
+        ->middleware('permission:Access To Dealership Settings');
+
+    // Bulk Task Delete API & helpers
+    Route::get('/settings/bulk-task-delete/filters', [\App\Http\Controllers\BulkTaskDeleteController::class, 'getFilters'])
+        ->name('settings.bulk-task-delete.filters')
+        ->middleware('permission:Access To Dealership Settings');
+
+    Route::get('/settings/bulk-task-delete/deletion-history', [\App\Http\Controllers\BulkTaskDeleteController::class, 'getDeletionHistory'])
+        ->name('settings.bulk-task-delete.deletion-history')
+        ->middleware('permission:Access To Dealership Settings');
+
+    Route::get('/settings/bulk-task-delete/tasks', [\App\Http\Controllers\BulkTaskDeleteController::class, 'getTasks'])
+        ->name('settings.bulk-task-delete.tasks')
+        ->middleware('permission:Access To Dealership Settings');
+
+    Route::get('/settings/bulk-task-delete/deleted-tasks', [\App\Http\Controllers\BulkTaskDeleteController::class, 'getDeletedTasks'])
+        ->name('settings.bulk-task-delete.deleted-tasks')
+        ->middleware('permission:Access To Dealership Settings');
+
+    Route::post('/settings/bulk-task-delete/delete', [\App\Http\Controllers\BulkTaskDeleteController::class, 'bulkDelete'])
+        ->name('settings.bulk-task-delete.delete')
+        ->middleware('permission:Access To Dealership Settings');
+
+    Route::post('/settings/bulk-task-delete/restore', [\App\Http\Controllers\BulkTaskDeleteController::class, 'bulkRestore'])
+        ->name('settings.bulk-task-delete.restore')
+        ->middleware('permission:Access To Dealership Settings');
+
+    // Role Permission Management API
+    Route::get('/settings/roles', [\App\Http\Controllers\RolePermissionController::class, 'getRoles'])
+        ->name('settings.roles.index')
+        ->middleware('permission:Access To Dealership Settings');
+
+    Route::get('/settings/roles/{role}/permissions', [\App\Http\Controllers\RolePermissionController::class, 'getRolePermissions'])
+        ->name('settings.roles.permissions')
+        ->middleware('permission:Access To Dealership Settings');
+
+    Route::get('/settings/permissions/all', [\App\Http\Controllers\RolePermissionController::class, 'getAllPermissions'])
+        ->name('settings.permissions.all')
+        ->middleware('permission:Access To Dealership Settings');
+
+    Route::post('/settings/roles/{role}/permissions', [\App\Http\Controllers\RolePermissionController::class, 'updateRolePermissions'])
+        ->name('settings.roles.permissions.update')
+        ->middleware('permission:Access To Dealership Settings');
+
+    Route::post('/settings/roles/{role}/permissions/toggle', [\App\Http\Controllers\RolePermissionController::class, 'togglePermission'])
+        ->name('settings.roles.permissions.toggle')
+        ->middleware('permission:Access To Dealership Settings');
+
     // Notification settings (global JSON blob)
     Route::get('/settings/notifications', [\App\Http\Controllers\NotificationSettingController::class, 'show'])
         ->name('settings.notifications.show')
@@ -409,6 +540,23 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('/settings/email-account/update', [EmailAccountController::class, 'update'])
         ->name('settings.email_account.update')
+        ->middleware('permission:Access To Dealership Settings');
+
+    // Lost reasons CRUD (used by settings UI)
+    Route::get('/settings/lost-reasons', [\App\Http\Controllers\LostReasonController::class, 'index'])
+        ->name('settings.lost_reasons.index')
+        ->middleware('permission:Access To Dealership Settings');
+
+    Route::post('/settings/lost-reasons', [\App\Http\Controllers\LostReasonController::class, 'store'])
+        ->name('settings.lost_reasons.store')
+        ->middleware('permission:Access To Dealership Settings');
+
+    Route::put('/settings/lost-reasons/{lostReason}', [\App\Http\Controllers\LostReasonController::class, 'update'])
+        ->name('settings.lost_reasons.update')
+        ->middleware('permission:Access To Dealership Settings');
+
+    Route::delete('/settings/lost-reasons/{lostReason}', [\App\Http\Controllers\LostReasonController::class, 'destroy'])
+        ->name('settings.lost_reasons.destroy')
         ->middleware('permission:Access To Dealership Settings');
 
     Route::get('/settings/email-account/test', [EmailAccountController::class, 'test'])
@@ -502,6 +650,8 @@ Auth::routes();
 require __DIR__ . '/email.php';
 require __DIR__ . '/template.php';
 require __DIR__ . '/inventory.php';
+require __DIR__ . '/report.php';
+
 
             Route::get('/customers/all', [CustomerController::class, 'getAllCustomer'])->name('all');
 
@@ -528,6 +678,3 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/customers/{customer}/social/{platform}', [CustomerController::class, 'updateSocial'])->name('customers.social.update');
     Route::delete('/customers/{customer}/social/{platform}', [CustomerController::class, 'deleteSocial'])->name('customers.social.delete');
 });
-
-
-

@@ -276,7 +276,8 @@ class DealController extends Controller
         $allowedFields = [
             'status', 'lead_type', 'inventory_type', 'deal_type', 'source',
             'sales_person_id', 'sales_manager_id', 'finance_manager_id',
-            'price', 'down_payment', 'trade_in_value', 'notes'
+            'price', 'down_payment', 'trade_in_value', 'notes',
+            'sales_status', 'sold_date', 'delivery_date', 'created_at'
         ];
 
         if (!in_array($field, $allowedFields)) {
@@ -286,6 +287,125 @@ class DealController extends Controller
             ], 400);
         }
 
+        // Special handling for sales_status and related dates
+        if ($field === 'sales_status') {
+            $oldValue = $deal->sales_status;
+            $deal->sales_status = $value;
+
+            // if sold_date provided in request, validate it
+            $soldDate = $request->input('sold_date');
+            if ($soldDate) {
+                $d = date_create($soldDate);
+                if (!$d) {
+                    return response()->json(['success' => false, 'message' => 'Invalid sold_date'], 400);
+                }
+                $now = new \DateTime();
+                $dDt = new \DateTime($soldDate);
+                if ($dDt > $now) {
+                    return response()->json(['success' => false, 'message' => 'Sold date cannot be in the future'], 400);
+                }
+                $deal->sold_date = $dDt->format('Y-m-d');
+            }
+
+            // if delivery_date provided in request, validate it
+            $deliveryDate = $request->input('delivery_date');
+            if ($deliveryDate) {
+                $d = date_create($deliveryDate);
+                if (!$d) {
+                    return response()->json(['success' => false, 'message' => 'Invalid delivery_date'], 400);
+                }
+                $deal->delivery_date = (new \DateTime($deliveryDate))->format('Y-m-d');
+                $deal->status = strtolower($value) === 'delivered' ? 'Delivered' : $deal->status;
+            }
+
+            // If marking as sold, set status text accordingly
+            if (strtolower($value) === 'sold') {
+                $deal->status = 'Sold';
+            }
+
+            $deal->save();
+
+            // Log activity
+            Activity::create([
+                'deal_id' => $deal->id,
+                'customer_id' => $deal->customer_id,
+                'user_id' => Auth::id(),
+                'type' => 'field_update',
+                'description' => "Sales Status changed from '{$oldValue}' to '{$value}'"
+            ]);
+
+            return response()->json(['success' => true, 'message' => 'Field updated', 'deal' => $deal]);
+        }
+
+        if ($field === 'sold_date') {
+            // validate sold_date
+            $d = date_create($value);
+            if (!$d) {
+                return response()->json(['success' => false, 'message' => 'Invalid sold_date'], 400);
+            }
+            $now = new \DateTime();
+            $dDt = new \DateTime($value);
+            if ($dDt > $now) {
+                return response()->json(['success' => false, 'message' => 'Sold date cannot be in the future'], 400);
+            }
+            $oldValue = $deal->sold_date;
+            $deal->sold_date = $dDt->format('Y-m-d');
+            $deal->save();
+
+            Activity::create([
+                'deal_id' => $deal->id,
+                'customer_id' => $deal->customer_id,
+                'user_id' => Auth::id(),
+                'type' => 'field_update',
+                'description' => "Sold Date changed from '{$oldValue}' to '{$deal->sold_date}'"
+            ]);
+
+            return response()->json(['success' => true, 'message' => 'Sold date updated', 'deal' => $deal]);
+        }
+
+        if ($field === 'delivery_date') {
+            // validate delivery_date (future dates allowed)
+            $d = date_create($value);
+            if (!$d) {
+                return response()->json(['success' => false, 'message' => 'Invalid delivery_date'], 400);
+            }
+            $oldValue = $deal->delivery_date;
+            $deal->delivery_date = (new \DateTime($value))->format('Y-m-d');
+            $deal->save();
+
+            Activity::create([
+                'deal_id' => $deal->id,
+                'customer_id' => $deal->customer_id,
+                'user_id' => Auth::id(),
+                'type' => 'field_update',
+                'description' => "Delivery Date changed from '{$oldValue}' to '{$deal->delivery_date}'"
+            ]);
+
+            return response()->json(['success' => true, 'message' => 'Delivery date updated', 'deal' => $deal]);
+        }
+
+        if ($field === 'created_at') {
+            // Allow editing the created date
+            $d = date_create($value);
+            if (!$d) {
+                return response()->json(['success' => false, 'message' => 'Invalid created_at date'], 400);
+            }
+            $oldValue = $deal->created_at;
+            $deal->created_at = \Carbon\Carbon::parse($value)->startOfDay();
+            $deal->save();
+
+            Activity::create([
+                'deal_id' => $deal->id,
+                'customer_id' => $deal->customer_id,
+                'user_id' => Auth::id(),
+                'type' => 'field_update',
+                'description' => "Created Date changed from '{$oldValue}' to '{$deal->created_at}'"
+            ]);
+
+            return response()->json(['success' => true, 'message' => 'Created date updated', 'deal' => $deal]);
+        }
+
+        // Default handling for other fields
         $oldValue = $deal->$field;
         $deal->$field = $value;
         $deal->save();
@@ -300,10 +420,6 @@ class DealController extends Controller
             'description' => "{$fieldName} changed from '{$oldValue}' to '{$value}'"
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Field updated',
-            'deal' => $deal
-        ]);
+        return response()->json(['success' => true, 'message' => 'Field updated', 'deal' => $deal]);
     }
 }

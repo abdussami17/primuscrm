@@ -36,9 +36,13 @@ return [
     ],
 
     'telnyx' => [
-        'api_key' => env('TELNYX_API_KEY'),
-        'from_number' => env('TELNYX_FROM_NUMBER'),
-        'connection_id' => env('TELNYX_CONNECTION_ID'),
+        'api_key'              => env('TELNYX_API_KEY'),
+        'from_number'          => env('TELNYX_FROM_NUMBER'),
+        'messaging_profile_id' => env('TELNYX_MESSAGING_PROFILE_ID'),
+        'default_country_code' => env('TELNYX_DEFAULT_COUNTRY_CODE', '1'),
+        'connection_id'        => env('TELNYX_CONNECTION_ID'),
+        'sip_username'         => env('TELNYX_SIP_USERNAME'),
+        'sip_password'         => env('TELNYX_SIP_PASSWORD'),
     ],
 
 ];

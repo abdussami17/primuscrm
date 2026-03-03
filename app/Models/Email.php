@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Customer;
 
 class Email extends Model
 {
@@ -14,6 +15,7 @@ class Email extends Model
         'user_id',
         'from_user_id',
         'to_email',
+        'from_email',
         'cc',
         'bcc',
         'subject',
@@ -24,6 +26,8 @@ class Email extends Model
         'is_sent',
         'parent_id',
         'thread_id',
+        'message_id',
+        'imap_uid',
     ];
 
     protected $casts = [
@@ -50,11 +54,48 @@ class Email extends Model
     }
 
     /**
-     * Get the sender of this email
+     * Get the sender of this email (CRM user)
      */
     public function sender()
     {
         return $this->belongsTo(User::class, 'from_user_id');
+    }
+
+    /**
+     * Resolve the customer who sent this inbound email (matched by from_email)
+     */
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class, 'from_email', 'email');
+    }
+
+    /**
+     * Display name of whoever sent this email — CRM user, matched customer, or raw email.
+     */
+    public function getSenderDisplayNameAttribute(): string
+    {
+        if ($this->sender) {
+            return $this->sender->name;
+        }
+        if ($this->customer) {
+            return trim($this->customer->first_name . ' ' . $this->customer->last_name);
+        }
+        return $this->from_email ?? 'Unknown';
+    }
+
+    /**
+     * Initials for avatar derived from senderDisplayName.
+     */
+    public function getSenderInitialsAttribute(): string
+    {
+        $name = $this->sender_display_name;
+        if ($name === 'Unknown') return '?';
+        $words    = explode(' ', $name);
+        $initials = '';
+        foreach ($words as $w) {
+            $initials .= strtoupper(mb_substr($w, 0, 1));
+        }
+        return mb_substr($initials, 0, 2);
     }
 
     /**
@@ -90,23 +131,38 @@ class Email extends Model
     }
 
     /**
-     * Scope for inbox emails
+     * Scope for inbox emails:
+     *  - Sent thread roots that have ANY inbound customer reply (read or unread)
+     *  - Also any unsolicited inbound emails (parent_id IS NULL, is_sent = false)
+     * Once a customer replies, the thread lives in inbox — not just while unread.
      */
     public function scopeInbox($query, $userId)
     {
         return $query->where('user_id', $userId)
                      ->where('is_draft', false)
-                     ->where('is_sent', false);
+                     ->whereNull('parent_id')   // only thread roots, never individual replies
+                     ->where(function ($q) {
+                         // Thread roots where a customer (inbound) reply exists
+                         $q->where(function ($q2) {
+                             $q2->where('is_sent', true)
+                                ->whereHas('replies', function ($r) {
+                                    $r->where('is_sent', false); // any inbound reply, read or unread
+                                });
+                         })
+                         // OR inbound emails that started a thread (customer wrote first)
+                         ->orWhere('is_sent', false);
+                     });
     }
 
     /**
-     * Scope for sent emails
+     * Scope for sent emails — only thread roots so replies don't show as separate rows.
      */
     public function scopeSent($query, $userId)
     {
         return $query->where('from_user_id', $userId)
                      ->where('is_sent', true)
-                     ->where('is_draft', false);
+                     ->where('is_draft', false)
+                     ->whereNull('parent_id'); // thread roots only
     }
 
     /**
@@ -142,22 +198,6 @@ class Email extends Model
     {
         return $query->onlyTrashed()
                      ->where('user_id', $userId);
-    }
-
-    /**
-     * Get sender initials for avatar
-     */
-    public function getSenderInitialsAttribute()
-    {
-        if ($this->sender) {
-            $names = explode(' ', $this->sender->name);
-            $initials = '';
-            foreach ($names as $name) {
-                $initials .= strtoupper(substr($name, 0, 1));
-            }
-            return substr($initials, 0, 2);
-        }
-        return 'NA';
     }
 
     /**

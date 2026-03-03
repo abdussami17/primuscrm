@@ -15,6 +15,7 @@ class Deal extends Model
         'inventory_id',
         'deal_number',
         'status',
+        'sales_status',
         'lead_type',
         'inventory_type',
         'vehicle_description',
@@ -28,6 +29,7 @@ class Deal extends Model
         'finance_manager_id',
         'notes',
         'deal_type',
+        'source',
     ];
 
     protected $casts = [
